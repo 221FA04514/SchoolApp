@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/teacher_dashboard_service.dart';
 import '../../models/teacher_dashboard_model.dart';
 import 'dashboard_button.dart';
+import '../messages/teacher_student_list_screen.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -32,23 +33,24 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-if (snapshot.hasError) {
-  print("TEACHER DASHBOARD ERROR: ${snapshot.error}");
-  return Center(
-    child: Text("Error: ${snapshot.error}"),
-  );
-}
 
-if (!snapshot.hasData) {
-  return const Center(child: Text("No data"));
-}
+          if (snapshot.hasError) {
+            print("TEACHER DASHBOARD ERROR: ${snapshot.error}");
+            return Center(
+              child: Text("Error: ${snapshot.error}"),
+            );
+          }
 
+          if (!snapshot.hasData) {
+            return const Center(child: Text("No data"));
+          }
 
           final data = snapshot.data!;
 
-          return Padding(
+          return SingleChildScrollView( // ✅ FIX OVERFLOW
             padding: const EdgeInsets.all(16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
 
                 // 👤 Teacher Info
@@ -105,32 +107,71 @@ if (!snapshot.hasData) {
 
                 const SizedBox(height: 25),
 
-                // 🔘 Action Buttons (Navigation comes later)
+                // 🔘 Action Buttons
+
                 DashboardButton(
                   title: "Student Doubts",
                   icon: Icons.chat,
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const TeacherStudentListScreen(),
+                      ),
+                    );
+                  },
                 ),
+
                 DashboardButton(
                   title: "Attendance",
                   icon: Icons.calendar_today,
-                  onTap: () {},
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Attendance module coming next"),
+                      ),
+                    );
+                  },
                 ),
+
                 DashboardButton(
                   title: "Results",
                   icon: Icons.assignment,
-                  onTap: () {},
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Results module coming next"),
+                      ),
+                    );
+                  },
                 ),
+
                 DashboardButton(
                   title: "Announcements",
                   icon: Icons.announcement,
-                  onTap: () {},
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Announcements module coming next"),
+                      ),
+                    );
+                  },
                 ),
+
                 DashboardButton(
                   title: "Fees Overview",
                   icon: Icons.payments,
-                  onTap: () {},
+                  onTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Fees overview coming next"),
+                      ),
+                    );
+                  },
                 ),
+
+                const SizedBox(height: 20), // extra bottom space
               ],
             ),
           );

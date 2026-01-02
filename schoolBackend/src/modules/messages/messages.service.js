@@ -1,12 +1,26 @@
 const pool = require("../../config/db");
-exports.getTeachers = async () => {
-  const [rows] = await pool.query(`
-    SELECT u.id, t.name, t.subject
-    FROM teachers t
-    JOIN users u ON u.id = t.user_id
-  `);
+
+/**
+ * Get students who messaged a teacher
+ */
+exports.getStudentsForTeacher = async (teacher_id) => {
+  const [rows] = await pool.query(
+    `
+    SELECT DISTINCT
+      u.id,
+      s.name,
+      s.roll_number
+    FROM messages m
+    JOIN students s ON s.user_id = m.student_id
+    JOIN users u ON u.id = s.user_id
+    WHERE m.teacher_id = ?
+    `,
+    [teacher_id]
+  );
+
   return rows;
 };
+
 /**
  * Student sends doubt
  */

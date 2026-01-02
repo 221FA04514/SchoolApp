@@ -3,7 +3,27 @@ const {
   sendStudentMessage,
   sendTeacherMessage,
   getConversation,
+  getStudentsForTeacher,
 } = require("./messages.service");
+
+/**
+ * Get students list (for teacher)
+ */
+exports.getStudentsForTeacher = async (req, res, next) => {
+  try {
+    const { role, userId } = req.user;
+
+    if (role !== "teacher") {
+      return error(res, "Access denied", 403);
+    }
+
+    const students = await getStudentsForTeacher(userId);
+    return success(res, students, "Students fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 /**
  * Student sends doubt
