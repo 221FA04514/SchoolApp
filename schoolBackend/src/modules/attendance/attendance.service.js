@@ -1,9 +1,31 @@
 const pool = require("../../config/db");
 
 /**
- * Teacher marks attendance
+ * Teacher: get students list for attendance
  */
-exports.markAttendance = async ({ student_id, date, status, marked_by }) => {
+exports.getStudentsForTeacher = async () => {
+  const [rows] = await pool.query(`
+    SELECT 
+      u.id AS student_id,
+      s.name,
+      s.roll_number
+    FROM students s
+    JOIN users u ON u.id = s.user_id
+    ORDER BY s.roll_number
+  `);
+
+  return rows;
+};
+
+/**
+ * Insert or update attendance (used by teacher)
+ */
+exports.upsertAttendance = async ({
+  student_id,
+  date,
+  status,
+  marked_by,
+}) => {
   await pool.query(
     `
     INSERT INTO attendance (student_id, date, status, marked_by)
@@ -17,7 +39,24 @@ exports.markAttendance = async ({ student_id, date, status, marked_by }) => {
 };
 
 /**
- * Student fetches attendance by month
+ * Teacher marks attendance for single student (existing API support)
+ */
+exports.markAttendance = async ({
+  student_id,
+  date,
+  status,
+  marked_by,
+}) => {
+  await exports.upsertAttendance({
+    student_id,
+    date,
+    status,
+    marked_by,
+  });
+};
+
+/**
+ * Student fetches attendance (month-wise)
  */
 exports.getStudentAttendance = async (student_id, month, year) => {
   const [rows] = await pool.query(
@@ -36,7 +75,7 @@ exports.getStudentAttendance = async (student_id, month, year) => {
 };
 
 /**
- * Attendance summary for student (month-wise)
+ * Student attendance summary
  */
 exports.getAttendanceSummary = async (student_id, month, year) => {
   const [rows] = await pool.query(
@@ -72,7 +111,7 @@ exports.getAttendanceSummary = async (student_id, month, year) => {
 };
 
 /**
- * Attendance calendar mapping
+ * Attendance calendar mapping (student)
  */
 exports.getAttendanceCalendarMap = async (student_id, month, year) => {
   const [rows] = await pool.query(

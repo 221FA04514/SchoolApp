@@ -3,6 +3,8 @@ import '../../core/api/teacher_dashboard_service.dart';
 import '../../models/teacher_dashboard_model.dart';
 import 'dashboard_button.dart';
 import '../messages/teacher_student_list_screen.dart';
+import '../attendance/teacher_attendance_screen.dart';
+
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -124,17 +126,17 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                 ),
 
                 DashboardButton(
-                  title: "Attendance",
-                  icon: Icons.calendar_today,
+                  title: "Mark Attendance",
+                  icon: Icons.chat,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Attendance module coming next"),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const TeacherAttendanceScreen(),
                       ),
                     );
                   },
                 ),
-
                 DashboardButton(
                   title: "Results",
                   icon: Icons.assignment,
