@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import '../../core/api/dashboard_service.dart';
 import '../../models/student_dashboard_model.dart';
 
-// Widgets
-import 'dashboard_button.dart';
-
 // Screens
 import '../attendance/attendance_screen.dart';
 import '../fees/fees_screen.dart';
@@ -19,13 +16,54 @@ class StudentDashboard extends StatefulWidget {
   State<StudentDashboard> createState() => _StudentDashboardState();
 }
 
-class _StudentDashboardState extends State<StudentDashboard> {
+class _StudentDashboardState extends State<StudentDashboard>
+    with TickerProviderStateMixin {
   late Future<StudentDashboardModel> dashboardFuture;
+
+  bool isCollapsed = false;
+  bool collapsedOnce = false;
+
+  late AnimationController _contentController;
+  late Animation<double> _contentFade;
+  late Animation<Offset> _contentSlide;
 
   @override
   void initState() {
     super.initState();
+
     dashboardFuture = DashboardService().fetchStudentDashboard();
+
+    _contentController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+
+    _contentFade =
+        CurvedAnimation(parent: _contentController, curve: Curves.easeOut);
+
+    _contentSlide = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _contentController, curve: Curves.easeOut),
+    );
+
+    _contentController.forward();
+  }
+
+  @override
+  void dispose() {
+    _contentController.dispose();
+    super.dispose();
+  }
+
+  void autoCollapseHeader() {
+    if (!collapsedOnce) {
+      setState(() {
+        isCollapsed = true;
+        collapsedOnce = true;
+      });
+    }
   }
 
   @override
@@ -37,194 +75,255 @@ class _StudentDashboardState extends State<StudentDashboard> {
       body: FutureBuilder<StudentDashboardModel>(
         future: dashboardFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text("Failed to load dashboard"));
           }
 
           final data = snapshot.data!;
 
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                // ================= HEADER =================
-                Container(
-                  height: size.height * 0.28,
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
-                    ),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(28),
-                      bottomRight: Radius.circular(28),
-                    ),
+          return Column(
+            children: [
+              // ================= PROFILE HEADER =================
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 750),
+                curve: Curves.easeInOutCubic,
+                height:
+                    isCollapsed ? size.height * 0.20 : size.height * 0.40,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
                   ),
-                  child: SafeArea(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Welcome 👋",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          data.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          "Class ${data.className}-${data.section} | Roll ${data.roll}",
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-                      ],
-                    ),
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(32),
                   ),
                 ),
-
-                // ================= BODY =================
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+                child: SafeArea(
+                  child: Row(
                     children: [
-                      // ================= STATS =================
-                      Row(
-                        children: [
-                          _StatCard(
-                            title: "Attendance",
-                            value: "${data.attendancePercentage}%",
-                            icon: Icons.event_available,
-                            color: Colors.green,
+                      AnimatedScale(
+                        scale: isCollapsed ? 0.75 : 1.15,
+                        duration: const Duration(milliseconds: 600),
+                        curve: Curves.easeOutBack,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.white.withOpacity(0.7),
+                                blurRadius: 18,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 12),
-                          _StatCard(
-                            title: "Fees Due",
-                            value: "₹${data.feesDue}",
-                            icon: Icons.payments,
-                            color: Colors.red,
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 25),
-
-                      // ================= QUICK ACTIONS =================
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DashboardButton(
-                              title: "Attendance",
-                              icon: Icons.calendar_today,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const AttendanceScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Expanded(
-                            child: DashboardButton(
-                              title: "Fees",
-                              icon: Icons.currency_rupee,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const FeesScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          Expanded(
-                            child: DashboardButton(
-                              title: "Results",
-                              icon: Icons.assignment,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const ResultsScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      DashboardButton(
-                        title: "Ask Doubt",
-                        icon: Icons.chat,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  const TeacherListScreen(),
-                            ),
-                          );
-                        },
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // ================= ANNOUNCEMENTS =================
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Latest Announcements",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 10),
-
-                      if (data.announcements.isEmpty)
-                        const Text("No announcements"),
-
-                      ...data.announcements.map(
-                        (a) => Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: ListTile(
-                            leading: const Icon(
-                              Icons.announcement,
+                          child: CircleAvatar(
+                            radius: isCollapsed ? 28 : 46,
+                            backgroundColor: Colors.white,
+                            child: const Icon(
+                              Icons.school_rounded,
+                              size: 38,
                               color: Color(0xFF1A4DFF),
                             ),
-                            title: Text(a["title"]),
-                            subtitle: Text(a["description"]),
                           ),
                         ),
+                      ),
+                      const SizedBox(width: 16),
+
+                      /// NAME SHOULD ALWAYS BE VISIBLE
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AnimatedOpacity(
+                            opacity: isCollapsed ? 0.0 : 1.0,
+                            duration: const Duration(milliseconds: 300),
+                            child: const Text(
+                              "Welcome back 👋",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            data.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Class ${data.className}-${data.section}",
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              // ================= DASHBOARD BODY =================
+              Expanded(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: autoCollapseHeader,
+                  child: FadeTransition(
+                    opacity: _contentFade,
+                    child: SlideTransition(
+                      position: _contentSlide,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            // ================= STATS =================
+                            Row(
+                              children: [
+                                _StatCard(
+                                  title: "Attendance",
+                                  value: "${data.attendancePercentage}%",
+                                  icon: Icons.event_available,
+                                  gradient: const [
+                                    Color(0xFF43CEA2),
+                                    Color(0xFF185A9D),
+                                  ],
+                                ),
+                                const SizedBox(width: 12),
+                                _StatCard(
+                                  title: "Fees Due",
+                                  value: "₹${data.feesDue}",
+                                  icon:
+                                      Icons.account_balance_wallet_rounded,
+                                  gradient: const [
+                                    Color(0xFFFF5F6D),
+                                    Color(0xFFFFC371),
+                                  ],
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 28),
+
+                            // ================= GRID =================
+                            GridView.count(
+                              crossAxisCount: 3,
+                              shrinkWrap: true,
+                              physics:
+                                  const NeverScrollableScrollPhysics(),
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              children: [
+                                _MenuTile(
+                                  icon: Icons.calendar_today,
+                                  label: "Attendance",
+                                  onTap: () {
+                                    autoCollapseHeader();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const AttendanceScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _MenuTile(
+                                  icon: Icons.currency_rupee,
+                                  label: "Fees",
+                                  onTap: () {
+                                    autoCollapseHeader();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const FeesScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _MenuTile(
+                                  icon: Icons.assignment,
+                                  label: "Results",
+                                  onTap: () {
+                                    autoCollapseHeader();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const ResultsScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _MenuTile(
+                                  icon: Icons.chat,
+                                  label: "Chat",
+                                  onTap: () {
+                                    autoCollapseHeader();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const TeacherListScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                _MenuTile(
+                                  icon: Icons.support_agent,
+                                  label: "Ask Doubt",
+                                  onTap: () {
+                                    autoCollapseHeader();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const TeacherListScreen(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            // ================= MOTIVATION =================
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF6A11CB),
+                                    Color(0xFF2575FC),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: const Text(
+                                "🚀 Believe in yourself!\nEvery day is a chance to learn & grow 📚✨",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -237,13 +336,13 @@ class _StatCard extends StatelessWidget {
   final String title;
   final String value;
   final IconData icon;
-  final Color color;
+  final List<Color> gradient;
 
   const _StatCard({
     required this.title,
     required this.value,
     required this.icon,
-    required this.color,
+    required this.gradient,
   });
 
   @override
@@ -252,31 +351,75 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          gradient: LinearGradient(colors: gradient),
           borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(height: 8),
+            Text(title,
+                style: const TextStyle(color: Colors.white70)),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ================= MENU TILE =================
+class _MenuTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _MenuTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 10),
+            CircleAvatar(
+              backgroundColor: const Color(0xFF1A4DFF),
+              child: Icon(icon, color: Colors.white),
+            ),
+            const SizedBox(height: 8),
             Text(
-              value,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: color,
+              label,
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(title),
           ],
         ),
       ),
