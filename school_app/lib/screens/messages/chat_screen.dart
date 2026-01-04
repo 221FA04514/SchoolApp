@@ -15,20 +15,41 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen>
+    with SingleTickerProviderStateMixin {
   final ApiService _api = ApiService();
   final TextEditingController _controller = TextEditingController();
 
   List messages = [];
   bool loading = true;
 
+  late AnimationController _pageController;
+  late Animation<double> _fade;
+
   @override
   void initState() {
     super.initState();
     fetchMessages();
+
+    _pageController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _fade = CurvedAnimation(
+      parent: _pageController,
+      curve: Curves.easeOut,
+    );
   }
 
-  // 🔹 Fetch conversation (student + selected teacher)
+  @override
+  void dispose() {
+    _controller.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  // 🔹 Fetch conversation (student ↔ teacher)
   Future<void> fetchMessages() async {
     try {
       final response = await _api.get(
@@ -39,12 +60,14 @@ class _ChatScreenState extends State<ChatScreen> {
         messages = response["data"];
         loading = false;
       });
+
+      _pageController.forward(from: 0);
     } catch (e) {
       setState(() => loading = false);
     }
   }
 
-  // 🔹 Send doubt (student → teacher)
+  // 🔹 Send message
   Future<void> sendMessage() async {
     if (_controller.text.trim().isEmpty) return;
 
@@ -59,15 +82,43 @@ class _ChatScreenState extends State<ChatScreen> {
       },
     );
 
-    fetchMessages(); // refresh chat
+    fetchMessages();
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F6FB),
+
+      // ================= HEADER =================
       appBar: AppBar(
-        title: Text(widget.teacherName),
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF1A4DFF),
+                Color(0xFF3A6BFF),
+                Color(0xFF6A11CB),
+              ],
+            ),
+          ),
+        ),
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Text("👨‍🏫"),
+            ),
+            const SizedBox(width: 8),
+            Text(widget.teacherName),
+          ],
+        ),
       ),
+
+      // ================= BODY =================
       body: Column(
         children: [
           // 🔹 Messages list
@@ -75,54 +126,149 @@ class _ChatScreenState extends State<ChatScreen> {
             child: loading
                 ? const Center(child: CircularProgressIndicator())
                 : messages.isEmpty
-                    ? const Center(child: Text("No messages yet"))
-                    : ListView.builder(
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          final msg = messages[index];
-                          final isStudent = msg["sender"] == "student";
+                    ? const Center(
+                        child: Text(
+                          "💬 No messages yet",
+                          style: TextStyle(color: Colors.black54),
+                        ),
+                      )
+                    : FadeTransition(
+                        opacity: _fade,
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(12),
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) {
+                            final msg = messages[index];
+                            final isStudent =
+                                msg["sender"] == "student";
 
-                          return Align(
-                            alignment: isStudent
-                                ? Alignment.centerRight
-                                : Alignment.centerLeft,
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(
-                                  vertical: 4, horizontal: 8),
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: isStudent
-                                    ? Colors.blue[100]
-                                    : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(8),
+                            return TweenAnimationBuilder<double>(
+                              tween: Tween(begin: 0, end: 1),
+                              duration: Duration(
+                                  milliseconds: 300 + index * 60),
+                              builder: (context, value, child) {
+                                return Opacity(
+                                  opacity: value,
+                                  child: Transform.translate(
+                                    offset: Offset(
+                                        0, 12 * (1 - value)),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: Align(
+                                alignment: isStudent
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: Container(
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 10),
+                                  constraints: BoxConstraints(
+                                      maxWidth:
+                                          size.width * 0.75),
+                                  decoration: BoxDecoration(
+                                    gradient: isStudent
+                                        ? const LinearGradient(
+                                            colors: [
+                                              Color(0xFF1A4DFF),
+                                              Color(0xFF3A6BFF),
+                                            ],
+                                          )
+                                        : null,
+                                    color: isStudent
+                                        ? null
+                                        : Colors.grey.shade300,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft:
+                                          const Radius.circular(16),
+                                      topRight:
+                                          const Radius.circular(16),
+                                      bottomLeft: Radius.circular(
+                                          isStudent ? 16 : 0),
+                                      bottomRight: Radius.circular(
+                                          isStudent ? 0 : 16),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    msg["message"],
+                                    style: TextStyle(
+                                      color: isStudent
+                                          ? Colors.white
+                                          : Colors.black87,
+                                      fontSize: 14.5,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              child: Text(msg["message"]),
-                            ),
-                          );
-                        },
+                            );
+                          },
+                        ),
                       ),
           ),
 
-          // 🔹 Input box
-          Padding(
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _controller,
-                    decoration: const InputDecoration(
-                      hintText: "Type your doubt...",
-                      border: OutlineInputBorder(),
+          // 🔹 INPUT BOX (FIXED POSITION)
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 12,
+                      offset: const Offset(0, -4),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: sendMessage,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _controller,
+                        decoration: InputDecoration(
+                          hintText: "Type your doubt… ✍️",
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            borderSide: BorderSide.none,
+                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: sendMessage,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFF1A4DFF),
+                              Color(0xFF3A6BFF),
+                            ],
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.send,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
