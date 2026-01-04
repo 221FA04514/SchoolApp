@@ -16,59 +16,31 @@ class StudentDashboard extends StatefulWidget {
   State<StudentDashboard> createState() => _StudentDashboardState();
 }
 
-class _StudentDashboardState extends State<StudentDashboard>
-    with TickerProviderStateMixin {
+class _StudentDashboardState extends State<StudentDashboard> {
   late Future<StudentDashboardModel> dashboardFuture;
 
-  bool isCollapsed = false;
-  bool collapsedOnce = false;
-
-  late AnimationController _contentController;
-  late Animation<double> _contentFade;
-  late Animation<Offset> _contentSlide;
+  bool minimized = false;
 
   @override
   void initState() {
     super.initState();
-
     dashboardFuture = DashboardService().fetchStudentDashboard();
 
-    _contentController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    );
-
-    _contentFade =
-        CurvedAnimation(parent: _contentController, curve: Curves.easeOut);
-
-    _contentSlide = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _contentController, curve: Curves.easeOut),
-    );
-
-    _contentController.forward();
-  }
-
-  @override
-  void dispose() {
-    _contentController.dispose();
-    super.dispose();
-  }
-
-  void autoCollapseHeader() {
-    if (!collapsedOnce) {
-      setState(() {
-        isCollapsed = true;
-        collapsedOnce = true;
-      });
-    }
+    /// AUTO MINIMIZE AFTER LOAD
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (mounted) {
+        setState(() => minimized = true);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+
+    /// ✅ HEIGHTS (FIXED)
+    final double expandedHeight = size.height * 0.40;
+    final double minimizedHeight = size.height * 0.20;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
@@ -81,43 +53,158 @@ class _StudentDashboardState extends State<StudentDashboard>
 
           final data = snapshot.data!;
 
-          return Column(
+          return Stack(
             children: [
-              // ================= PROFILE HEADER =================
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 750),
+              // ================= DASHBOARD BODY =================
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 800),
                 curve: Curves.easeInOutCubic,
-                height:
-                    isCollapsed ? size.height * 0.20 : size.height * 0.40,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
-                  ),
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(32),
-                  ),
-                ),
-                child: SafeArea(
-                  child: Row(
+                top: minimized ? minimizedHeight : expandedHeight,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
                     children: [
-                      AnimatedScale(
-                        scale: isCollapsed ? 0.75 : 1.15,
-                        duration: const Duration(milliseconds: 600),
-                        curve: Curves.easeOutBack,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white.withOpacity(0.7),
-                                blurRadius: 18,
+                      Row(
+                        children: [
+                          _StatCard(
+                            title: "Attendance",
+                            value: "${data.attendancePercentage}%",
+                            gradient: const [
+                              Color(0xFF43CEA2),
+                              Color(0xFF185A9D),
+                            ],
+                            icon: Icons.event_available,
+                          ),
+                          const SizedBox(width: 12),
+                          _StatCard(
+                            title: "Fees Due",
+                            value: "₹${data.feesDue}",
+                            gradient: const [
+                              Color(0xFFFF5F6D),
+                              Color(0xFFFFC371),
+                            ],
+                            icon: Icons.account_balance_wallet,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
+
+                      GridView.count(
+                        crossAxisCount: 3,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        children: [
+                          _MenuTile(
+                            icon: Icons.calendar_today,
+                            label: "Attendance",
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const AttendanceScreen(),
                               ),
+                            ),
+                          ),
+                          _MenuTile(
+                            icon: Icons.currency_rupee,
+                            label: "Fees",
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const FeesScreen(),
+                              ),
+                            ),
+                          ),
+                          _MenuTile(
+                            icon: Icons.assignment,
+                            label: "Results",
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const ResultsScreen(),
+                              ),
+                            ),
+                          ),
+                          _MenuTile(
+                            icon: Icons.chat,
+                            label: "Chat",
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    const TeacherListScreen(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFF6A11CB),
+                              Color(0xFF2575FC),
                             ],
                           ),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: const Text(
+                          "🚀 Believe in yourself!\nEvery day is a chance to learn & grow 📚✨",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // ================= PROFILE HEADER =================
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeInOutCubic,
+                top: 0,
+                left: 0,
+                right: 0,
+                height:
+                    minimized ? minimizedHeight : expandedHeight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFF1A4DFF),
+                        Color(0xFF3A6BFF),
+                        Color(0xFF6A11CB),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(30),
+                    ),
+                  ),
+                  child: SafeArea(
+                    child: Row(
+                      children: [
+                        AnimatedScale(
+                          scale: minimized ? 0.85 : 1.2,
+                          duration:
+                              const Duration(milliseconds: 700),
+                          curve: Curves.easeOutBack,
                           child: CircleAvatar(
-                            radius: isCollapsed ? 28 : 46,
+                            radius: minimized ? 26 : 44,
                             backgroundColor: Colors.white,
                             child: const Icon(
                               Icons.school_rounded,
@@ -126,199 +213,43 @@ class _StudentDashboardState extends State<StudentDashboard>
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 16),
+                        const SizedBox(width: 14),
 
-                      /// NAME SHOULD ALWAYS BE VISIBLE
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          AnimatedOpacity(
-                            opacity: isCollapsed ? 0.0 : 1.0,
-                            duration: const Duration(milliseconds: 300),
-                            child: const Text(
-                              "Welcome back 👋",
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            data.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Class ${data.className}-${data.section}",
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ================= DASHBOARD BODY =================
-              Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: autoCollapseHeader,
-                  child: FadeTransition(
-                    opacity: _contentFade,
-                    child: SlideTransition(
-                      position: _contentSlide,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
+                        /// ✅ NAME + SECTION ALWAYS VISIBLE
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
                           children: [
-                            // ================= STATS =================
-                            Row(
-                              children: [
-                                _StatCard(
-                                  title: "Attendance",
-                                  value: "${data.attendancePercentage}%",
-                                  icon: Icons.event_available,
-                                  gradient: const [
-                                    Color(0xFF43CEA2),
-                                    Color(0xFF185A9D),
-                                  ],
-                                ),
-                                const SizedBox(width: 12),
-                                _StatCard(
-                                  title: "Fees Due",
-                                  value: "₹${data.feesDue}",
-                                  icon:
-                                      Icons.account_balance_wallet_rounded,
-                                  gradient: const [
-                                    Color(0xFFFF5F6D),
-                                    Color(0xFFFFC371),
-                                  ],
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 28),
-
-                            // ================= GRID =================
-                            GridView.count(
-                              crossAxisCount: 3,
-                              shrinkWrap: true,
-                              physics:
-                                  const NeverScrollableScrollPhysics(),
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              children: [
-                                _MenuTile(
-                                  icon: Icons.calendar_today,
-                                  label: "Attendance",
-                                  onTap: () {
-                                    autoCollapseHeader();
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const AttendanceScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                _MenuTile(
-                                  icon: Icons.currency_rupee,
-                                  label: "Fees",
-                                  onTap: () {
-                                    autoCollapseHeader();
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const FeesScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                _MenuTile(
-                                  icon: Icons.assignment,
-                                  label: "Results",
-                                  onTap: () {
-                                    autoCollapseHeader();
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const ResultsScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                _MenuTile(
-                                  icon: Icons.chat,
-                                  label: "Chat",
-                                  onTap: () {
-                                    autoCollapseHeader();
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const TeacherListScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                                _MenuTile(
-                                  icon: Icons.support_agent,
-                                  label: "Ask Doubt",
-                                  onTap: () {
-                                    autoCollapseHeader();
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const TeacherListScreen(),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // ================= MOTIVATION =================
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF6A11CB),
-                                    Color(0xFF2575FC),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(18),
-                              ),
+                            AnimatedOpacity(
+                              opacity: minimized ? 0 : 1,
+                              duration:
+                                  const Duration(milliseconds: 300),
                               child: const Text(
-                                "🚀 Believe in yourself!\nEvery day is a chance to learn & grow 📚✨",
-                                textAlign: TextAlign.center,
+                                "Welcome 👋",
                                 style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white70,
                                 ),
+                              ),
+                            ),
+                            Text(
+                              data.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              "Class ${data.className}-${data.section}",
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
                               ),
                             ),
                           ],
                         ),
-                      ),
+                      ],
                     ),
                   ),
                 ),
@@ -335,14 +266,14 @@ class _StudentDashboardState extends State<StudentDashboard>
 class _StatCard extends StatelessWidget {
   final String title;
   final String value;
-  final IconData icon;
   final List<Color> gradient;
+  final IconData icon;
 
   const _StatCard({
     required this.title,
     required this.value,
-    required this.icon,
     required this.gradient,
+    required this.icon,
   });
 
   @override
