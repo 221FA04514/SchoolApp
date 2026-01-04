@@ -1,9 +1,28 @@
 const pool = require("../../config/db");
 
 /**
- * Teacher: get students list for attendance
+ * Teacher: get students list
+ * - If sectionId provided → section wise
+ * - Else → all students (BACKWARD COMPATIBLE)
  */
-exports.getStudentsForTeacher = async () => {
+exports.getStudentsForTeacher = async (sectionId = null) => {
+  if (sectionId) {
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        u.id AS student_id,
+        s.name,
+        s.roll_number
+      FROM students s
+      JOIN users u ON u.id = s.user_id
+      WHERE s.section_id = ?
+      ORDER BY s.roll_number
+      `,
+      [sectionId]
+    );
+    return rows;
+  }
+
   const [rows] = await pool.query(`
     SELECT 
       u.id AS student_id,
@@ -18,7 +37,7 @@ exports.getStudentsForTeacher = async () => {
 };
 
 /**
- * Insert or update attendance (used by teacher)
+ * Insert or update attendance
  */
 exports.upsertAttendance = async ({
   student_id,
@@ -39,7 +58,7 @@ exports.upsertAttendance = async ({
 };
 
 /**
- * Teacher marks attendance for single student (existing API support)
+ * Single student attendance (teacher)
  */
 exports.markAttendance = async ({
   student_id,
@@ -56,7 +75,7 @@ exports.markAttendance = async ({
 };
 
 /**
- * Student fetches attendance (month-wise)
+ * Student: fetch attendance
  */
 exports.getStudentAttendance = async (student_id, month, year) => {
   const [rows] = await pool.query(
@@ -70,12 +89,11 @@ exports.getStudentAttendance = async (student_id, month, year) => {
     `,
     [student_id, month, year]
   );
-
   return rows;
 };
 
 /**
- * Student attendance summary
+ * Student: attendance summary
  */
 exports.getAttendanceSummary = async (student_id, month, year) => {
   const [rows] = await pool.query(
@@ -93,25 +111,24 @@ exports.getAttendanceSummary = async (student_id, month, year) => {
     [student_id, month, year]
   );
 
-  const summary = rows[0];
-
-  const workingDays = summary.total - summary.holiday;
+  const s = rows[0];
+  const workingDays = s.total - s.holiday;
   const percentage =
     workingDays > 0
-      ? Math.round((summary.present / workingDays) * 100)
+      ? Math.round((s.present / workingDays) * 100)
       : 0;
 
   return {
-    present: Number(summary.present),
-    absent: Number(summary.absent),
-    holiday: Number(summary.holiday),
-    total: Number(summary.total),
+    present: Number(s.present),
+    absent: Number(s.absent),
+    holiday: Number(s.holiday),
+    total: Number(s.total),
     percentage,
   };
 };
 
 /**
- * Attendance calendar mapping (student)
+ * Student: calendar mapping
  */
 exports.getAttendanceCalendarMap = async (student_id, month, year) => {
   const [rows] = await pool.query(
@@ -125,12 +142,10 @@ exports.getAttendanceCalendarMap = async (student_id, month, year) => {
     [student_id, month, year]
   );
 
-  const calendarMap = {};
-
-  rows.forEach((row) => {
-    const dateKey = row.date.toISOString().split("T")[0];
-    calendarMap[dateKey] = row.status;
+  const map = {};
+  rows.forEach((r) => {
+    map[r.date.toISOString().split("T")[0]] = r.status;
   });
 
-  return calendarMap;
+  return map;
 };

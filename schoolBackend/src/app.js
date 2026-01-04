@@ -33,6 +33,8 @@ app.use(
   "/api/v1/results",
   require("./modules/results/results.routes")
 );
+app.use("/api/v1/sections", require("./modules/sections/sections.routes"));
+
 
 
 /* ---------- ROUTES ---------- */

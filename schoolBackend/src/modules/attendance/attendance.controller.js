@@ -9,7 +9,25 @@ const {
 } = require("./attendance.service");
 
 /**
- * Teacher marks attendance (single student)
+ * Teacher: get students (section optional)
+ */
+exports.getStudentsForAttendance = async (req, res, next) => {
+  try {
+    if (req.user.role !== "teacher") {
+      return error(res, "Access denied", 403);
+    }
+
+    const { section_id } = req.query;
+
+    const students = await getStudentsForTeacher(section_id || null);
+    return success(res, students, "Students fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Teacher: mark attendance (single student)
  */
 exports.markStudentAttendance = async (req, res, next) => {
   try {
@@ -24,6 +42,11 @@ exports.markStudentAttendance = async (req, res, next) => {
       return error(res, "All fields are required", 400);
     }
 
+    const today = new Date().toISOString().split("T")[0];
+    if (date > today) {
+      return error(res, "Cannot mark attendance for future dates", 400);
+    }
+
     await markAttendance({
       student_id,
       date,
@@ -31,30 +54,14 @@ exports.markStudentAttendance = async (req, res, next) => {
       marked_by: userId,
     });
 
-    return success(res, null, "Attendance marked successfully");
+    return success(res, null, "Attendance marked");
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * Teacher: get students list for attendance
- */
-exports.getStudentsForAttendance = async (req, res, next) => {
-  try {
-    if (req.user.role !== "teacher") {
-      return error(res, "Access denied", 403);
-    }
-
-    const students = await getStudentsForTeacher();
-    return success(res, students, "Students fetched");
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * Teacher: submit attendance (bulk) — FIXED TIMEOUT
+ * Teacher: submit attendance (bulk)
  */
 exports.submitAttendance = async (req, res, next) => {
   try {
@@ -69,6 +76,11 @@ exports.submitAttendance = async (req, res, next) => {
       return error(res, "Invalid data", 400);
     }
 
+    const today = new Date().toISOString().split("T")[0];
+    if (date > today) {
+      return error(res, "Cannot mark attendance for future dates", 400);
+    }
+
     await Promise.all(
       attendance.map((item) =>
         upsertAttendance({
@@ -80,73 +92,41 @@ exports.submitAttendance = async (req, res, next) => {
       )
     );
 
-    return success(res, null, "Attendance submitted successfully");
+    return success(res, null, "Attendance submitted");
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * Student: view attendance
+ * Student: attendance APIs (UNCHANGED)
  */
 exports.getMyAttendance = async (req, res, next) => {
-  try {
-    const { role, userId } = req.user;
-    const { month, year } = req.query;
+  const { role, userId } = req.user;
+  const { month, year } = req.query;
 
-    if (role !== "student") {
-      return error(res, "Access denied", 403);
-    }
+  if (role !== "student") return error(res, "Access denied", 403);
 
-    const attendance = await getStudentAttendance(userId, month, year);
-    return success(res, attendance, "Attendance fetched");
-  } catch (err) {
-    next(err);
-  }
+  const data = await getStudentAttendance(userId, month, year);
+  return success(res, data, "Attendance fetched");
 };
 
-/**
- * Student: attendance calendar
- */
-exports.getMyAttendanceCalendar = async (req, res, next) => {
-  try {
-    const { role, userId } = req.user;
-    const { month, year } = req.query;
-
-    if (role !== "student") {
-      return error(res, "Access denied", 403);
-    }
-
-    if (!month || !year) {
-      return error(res, "Month and year are required", 400);
-    }
-
-    const calendar = await getAttendanceCalendarMap(userId, month, year);
-    return success(res, calendar, "Attendance calendar fetched");
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * Student: attendance summary
- */
 exports.getMyAttendanceSummary = async (req, res, next) => {
-  try {
-    const { role, userId } = req.user;
-    const { month, year } = req.query;
+  const { role, userId } = req.user;
+  const { month, year } = req.query;
 
-    if (role !== "student") {
-      return error(res, "Access denied", 403);
-    }
+  if (role !== "student") return error(res, "Access denied", 403);
 
-    if (!month || !year) {
-      return error(res, "Month and year are required", 400);
-    }
+  const data = await getAttendanceSummary(userId, month, year);
+  return success(res, data, "Summary fetched");
+};
 
-    const summary = await getAttendanceSummary(userId, month, year);
-    return success(res, summary, "Attendance summary fetched");
-  } catch (err) {
-    next(err);
-  }
+exports.getMyAttendanceCalendar = async (req, res, next) => {
+  const { role, userId } = req.user;
+  const { month, year } = req.query;
+
+  if (role !== "student") return error(res, "Access denied", 403);
+
+  const data = await getAttendanceCalendarMap(userId, month, year);
+  return success(res, data, "Calendar fetched");
 };
