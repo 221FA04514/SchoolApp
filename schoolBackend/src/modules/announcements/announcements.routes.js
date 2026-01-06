@@ -4,11 +4,15 @@ const {
   listAnnouncements,
   getAnnouncement,
   createAnnouncement,
+  getTeacherAnnouncements,
 } = require("./announcements.controller");
 
-router.get("/", authMiddleware, listAnnouncements);
-router.get("/:id", authMiddleware, getAnnouncement);
-router.post("/", authMiddleware, createAnnouncement);
+/* TEACHER — MUST COME FIRST */
+router.get("/teacher", authMiddleware, getTeacherAnnouncements);
 
+/* STUDENT / COMMON */
+router.get("/:id", authMiddleware, getAnnouncement);
+router.get("/", authMiddleware, listAnnouncements);
+router.post("/", authMiddleware, createAnnouncement);
 
 module.exports = router;

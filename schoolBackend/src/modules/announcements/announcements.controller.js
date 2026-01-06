@@ -2,7 +2,28 @@ const { success, error } = require("../../utils/response");
 const {
   getAllAnnouncements,
   getAnnouncementById,
+  createAnnouncement,
+  getTeacherAnnouncements,
 } = require("./announcements.service");
+
+
+
+/**
+ * Teacher: view own announcements
+ */
+exports.getTeacherAnnouncements = async (req, res, next) => {
+  try {
+    if (req.user.role !== "teacher") {
+      return error(res, "Access denied", 403);
+    }
+
+    const data = await getTeacherAnnouncements(req.user.userId);
+    return success(res, data, "Announcements fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+
 
 /**
  * GET /announcements
@@ -41,8 +62,6 @@ exports.getAnnouncement = async (req, res, next) => {
     next(err);
   }
 };
-
-const { createAnnouncement } = require("./announcements.service");
 
 /**
  * POST /announcements

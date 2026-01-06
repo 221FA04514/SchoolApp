@@ -4,6 +4,7 @@ import '../../models/teacher_dashboard_model.dart';
 import 'dashboard_button.dart';
 import '../messages/teacher_student_list_screen.dart';
 import '../attendance/teacher_attendance_screen.dart';
+import '../announcements/teacher_announcements_screen.dart';
 
 
 class TeacherDashboard extends StatefulWidget {
@@ -153,13 +154,15 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                   title: "Announcements",
                   icon: Icons.announcement,
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Announcements module coming next"),
-                      ),
+                    Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TeacherAnnouncementsScreen(),
+                    ),
                     );
                   },
                 ),
+
 
                 DashboardButton(
                   title: "Fees Overview",

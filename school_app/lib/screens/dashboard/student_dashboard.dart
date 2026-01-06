@@ -8,6 +8,7 @@ import '../attendance/attendance_screen.dart';
 import '../fees/fees_screen.dart';
 import '../results/results_screen.dart';
 import '../messages/teacher_list_screen.dart';
+import '../announcements/student_announcements_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -18,7 +19,6 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   late Future<StudentDashboardModel> dashboardFuture;
-
   bool minimized = false;
 
   @override
@@ -26,11 +26,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
     super.initState();
     dashboardFuture = DashboardService().fetchStudentDashboard();
 
-    /// AUTO MINIMIZE AFTER LOAD
+    /// Auto-minimize header after load
     Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) {
-        setState(() => minimized = true);
-      }
+      if (mounted) setState(() => minimized = true);
     });
   }
 
@@ -38,7 +36,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    /// ✅ HEIGHTS (FIXED)
     final double expandedHeight = size.height * 0.40;
     final double minimizedHeight = size.height * 0.20;
 
@@ -55,7 +52,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
           return Stack(
             children: [
-              // ================= DASHBOARD BODY =================
+              // ================= BODY =================
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 800),
                 curve: Curves.easeInOutCubic,
@@ -67,6 +64,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
+                      /// ===== STATS =====
                       Row(
                         children: [
                           _StatCard(
@@ -90,8 +88,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           ),
                         ],
                       ),
+
                       const SizedBox(height: 30),
 
+                      /// ===== QUICK MENU =====
                       GridView.count(
                         crossAxisCount: 3,
                         shrinkWrap: true,
@@ -102,51 +102,38 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           _MenuTile(
                             icon: Icons.calendar_today,
                             label: "Attendance",
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    const AttendanceScreen(),
-                              ),
-                            ),
+                            onTap: () => _go(context, const AttendanceScreen()),
                           ),
                           _MenuTile(
                             icon: Icons.currency_rupee,
                             label: "Fees",
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const FeesScreen(),
-                              ),
-                            ),
+                            onTap: () => _go(context, const FeesScreen()),
                           ),
                           _MenuTile(
                             icon: Icons.assignment,
                             label: "Results",
-                            onTap: () => Navigator.push(
+                            onTap: () => _go(context, const ResultsScreen()),
+                          ),
+                          _MenuTile(
+                            icon: Icons.campaign,
+                            label: "Announcements",
+                            onTap: () => _go(
                               context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    const ResultsScreen(),
-                              ),
+                              const StudentAnnouncementsScreen(),
                             ),
                           ),
                           _MenuTile(
                             icon: Icons.chat,
                             label: "Chat",
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    const TeacherListScreen(),
-                              ),
-                            ),
+                            onTap: () =>
+                                _go(context, const TeacherListScreen()),
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 24),
 
+                      /// ===== MOTIVATION CARD =====
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -172,15 +159,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 ),
               ),
 
-              // ================= PROFILE HEADER =================
+              // ================= HEADER =================
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 800),
                 curve: Curves.easeInOutCubic,
                 top: 0,
                 left: 0,
                 right: 0,
-                height:
-                    minimized ? minimizedHeight : expandedHeight,
+                height: minimized ? minimizedHeight : expandedHeight,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   decoration: const BoxDecoration(
@@ -200,8 +186,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       children: [
                         AnimatedScale(
                           scale: minimized ? 0.85 : 1.2,
-                          duration:
-                              const Duration(milliseconds: 700),
+                          duration: const Duration(milliseconds: 700),
                           curve: Curves.easeOutBack,
                           child: CircleAvatar(
                             radius: minimized ? 26 : 44,
@@ -215,21 +200,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         ),
                         const SizedBox(width: 14),
 
-                        /// ✅ NAME + SECTION ALWAYS VISIBLE
+                        /// NAME & CLASS
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             AnimatedOpacity(
                               opacity: minimized ? 0 : 1,
-                              duration:
-                                  const Duration(milliseconds: 300),
+                              duration: const Duration(milliseconds: 300),
                               child: const Text(
                                 "Welcome 👋",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                ),
+                                style: TextStyle(color: Colors.white70),
                               ),
                             ),
                             Text(
@@ -258,6 +239,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
           );
         },
       ),
+    );
+  }
+
+  void _go(BuildContext context, Widget screen) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 }
