@@ -35,6 +35,7 @@ app.use(
 );
 app.use("/api/v1/sections", require("./modules/sections/sections.routes"));
 
+app.use("/api/v1/homework", require("./modules/homework/homework.routes"));
 
 
 /* ---------- ROUTES ---------- */

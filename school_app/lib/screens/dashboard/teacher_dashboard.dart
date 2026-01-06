@@ -5,6 +5,8 @@ import 'dashboard_button.dart';
 import '../messages/teacher_student_list_screen.dart';
 import '../attendance/teacher_attendance_screen.dart';
 import '../announcements/teacher_announcements_screen.dart';
+import '../homework/teacher_homework_screen.dart'; // 🔥 ADD
+
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -202,6 +204,17 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                               ),
                             );
                           },
+                        ),                      // 🔥 NEW HOMEWORK BUTTON
+                        DashboardButton(
+                          title: "📚 Homework",
+                          icon: Icons.menu_book,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const TeacherHomeworkScreen(),
+                            ),
+                          ),
                         ),
                         DashboardButton(
                           title: "📊 Results",

@@ -9,6 +9,7 @@ import '../fees/fees_screen.dart';
 import '../results/results_screen.dart';
 import '../messages/teacher_list_screen.dart';
 import '../announcements/student_announcements_screen.dart';
+import '../homework/student_homework_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -103,6 +104,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             icon: Icons.calendar_today,
                             label: "Attendance",
                             onTap: () => _go(context, const AttendanceScreen()),
+                          ),
+                          _MenuTile(
+                            icon: Icons.book,
+                            label: "Homework",
+                            onTap: () => _go(context, const StudentHomeworkScreen()),
                           ),
                           _MenuTile(
                             icon: Icons.currency_rupee,
