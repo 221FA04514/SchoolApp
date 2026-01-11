@@ -10,6 +10,9 @@ import '../results/results_screen.dart';
 import '../messages/teacher_list_screen.dart';
 import '../announcements/student_announcements_screen.dart';
 import '../homework/student_homework_screen.dart';
+import '../timetable/student_timetable_screen.dart';
+import '../auth/login_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -31,6 +34,66 @@ class _StudentDashboardState extends State<StudentDashboard> {
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => minimized = true);
     });
+  }
+
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
+  void _showProfileDialog(StudentDashboardModel data) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        contentPadding: const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircleAvatar(
+              radius: 40,
+              backgroundColor: Color(0xFF1A4DFF),
+              child: Icon(Icons.school_rounded, size: 50, color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              data.name,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              "Class ${data.className}-${data.section}",
+              style: const TextStyle(color: Colors.grey),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _logout();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade50,
+                  foregroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.logout),
+                label: const Text("Logout"),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -106,9 +169,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             onTap: () => _go(context, const AttendanceScreen()),
                           ),
                           _MenuTile(
+                            icon: Icons.schedule,
+                            label: "Timetable",
+                            onTap: () =>
+                                _go(context, const StudentTimetableScreen()),
+                          ),
+                          _MenuTile(
                             icon: Icons.book,
                             label: "Homework",
-                            onTap: () => _go(context, const StudentHomeworkScreen()),
+                            onTap: () =>
+                                _go(context, const StudentHomeworkScreen()),
                           ),
                           _MenuTile(
                             icon: Icons.currency_rupee,
@@ -144,10 +214,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF6A11CB),
-                              Color(0xFF2575FC),
-                            ],
+                            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
                           ),
                           borderRadius: BorderRadius.circular(18),
                         ),
@@ -194,13 +261,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           scale: minimized ? 0.85 : 1.2,
                           duration: const Duration(milliseconds: 700),
                           curve: Curves.easeOutBack,
-                          child: CircleAvatar(
-                            radius: minimized ? 26 : 44,
-                            backgroundColor: Colors.white,
-                            child: const Icon(
-                              Icons.school_rounded,
-                              size: 38,
-                              color: Color(0xFF1A4DFF),
+                          child: GestureDetector(
+                            onTap: () => _showProfileDialog(data),
+                            child: CircleAvatar(
+                              radius: minimized ? 26 : 44,
+                              backgroundColor: Colors.white,
+                              child: const Icon(
+                                Icons.school_rounded,
+                                size: 38,
+                                color: Color(0xFF1A4DFF),
+                              ),
                             ),
                           ),
                         ),
@@ -249,10 +319,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   void _go(BuildContext context, Widget screen) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => screen),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 }
 
@@ -283,8 +350,7 @@ class _StatCard extends StatelessWidget {
           children: [
             Icon(icon, color: Colors.white),
             const SizedBox(height: 8),
-            Text(title,
-                style: const TextStyle(color: Colors.white70)),
+            Text(title, style: const TextStyle(color: Colors.white70)),
             const SizedBox(height: 4),
             Text(
               value,

@@ -51,16 +51,34 @@ exports.getTeacherHomework = async (teacherId) => {
 /**
  * Student: view homework (section-wise)
  */
-exports.getStudentHomework = async (sectionId) => {
+exports.getStudentHomework = async (sectionId, studentId) => {
   const [rows] = await pool.query(
     `
-    SELECT title, description, subject, due_date, created_at
-    FROM homework
-    WHERE section_id = ?
-    ORDER BY due_date
+    SELECT h.id, h.title, h.description, h.subject, h.due_date, h.created_at,
+           COALESCE(shs.is_completed, 0) as is_completed
+    FROM homework h
+    LEFT JOIN student_homework_status shs 
+           ON shs.homework_id = h.id AND shs.student_id = ?
+    WHERE h.section_id = ?
+    ORDER BY h.due_date
     `,
-    [sectionId]
+    [studentId, sectionId]
   );
 
   return rows;
+};
+
+/**
+ * Student: update homework status
+ */
+exports.updateHomeworkStatus = async (studentId, homeworkId, isCompleted) => {
+  await pool.query(
+    `
+    INSERT INTO student_homework_status (student_id, homework_id, is_completed)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE is_completed = VALUES(is_completed)
+    `,
+    [studentId, homeworkId, isCompleted]
+  );
+  return { success: true };
 };

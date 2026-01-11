@@ -72,8 +72,57 @@ exports.getHomeworkForStudent = async (req, res, next) => {
       return error(res, "Student not found", 404);
     }
 
-    const homework = await getStudentHomework(rows[0].section_id);
+    // Pass student's userId (which is req.user.userId from token) 
+    // Wait, students table has 'id' which is studentId. 'user_id' is from users table.
+    // We need studentId. 
+    // The query above fetches section_id. Let's fetch the student ID as well.
+    const [studentRows] = await pool.query(
+      `SELECT id, section_id FROM students WHERE user_id = ?`,
+      [req.user.userId]
+    );
+    if (!studentRows.length) {
+      return error(res, "Student not found", 404);
+    }
+
+    const studentId = studentRows[0].id;
+    const sectionId = studentRows[0].section_id;
+
+    const homework = await getStudentHomework(sectionId, studentId);
     return success(res, homework, "Homework fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Student: mark homework status
+ */
+exports.markHomeworkStatus = async (req, res, next) => {
+  try {
+    if (req.user.role !== "student") {
+      return error(res, "Access denied", 403);
+    }
+
+    const { homework_id, is_completed } = req.body;
+
+    // Get student ID
+    const [rows] = await pool.query(
+      `SELECT id FROM students WHERE user_id = ?`,
+      [req.user.userId]
+    );
+
+    if (!rows.length) {
+      return error(res, "Student not found", 404);
+    }
+    const studentId = rows[0].id;
+
+    await require("./homework.service").updateHomeworkStatus(
+      studentId,
+      homework_id,
+      is_completed
+    );
+
+    return success(res, null, "Status updated");
   } catch (err) {
     next(err);
   }

@@ -23,7 +23,6 @@ class _AttendanceScreenState extends State<AttendanceScreen>
   late AnimationController _calendarController;
 
   late Animation<double> _fade;
-  late Animation<Offset> _slide;
 
   bool isLoadingMonth = false;
 
@@ -34,7 +33,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     'Wed',
     'Thu',
     'Fri',
-    'Sat'
+    'Sat',
   ];
 
   @override
@@ -52,17 +51,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       duration: const Duration(milliseconds: 600),
     );
 
-    _fade = CurvedAnimation(
-      parent: _pageController,
-      curve: Curves.easeOut,
-    );
-
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _pageController, curve: Curves.easeOut),
-    );
+    _fade = CurvedAnimation(parent: _pageController, curve: Curves.easeOut);
 
     _pageController.forward();
     _calendarController.forward();
@@ -81,11 +70,13 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     final month = focusedDay.month;
     final year = focusedDay.year;
 
-    final calendarRes =
-        await api.get("/api/v1/attendance/calendar?month=$month&year=$year");
+    final calendarRes = await api.get(
+      "/api/v1/attendance/calendar?month=$month&year=$year",
+    );
 
-    final summaryRes =
-        await api.get("/api/v1/attendance/summary?month=$month&year=$year");
+    final summaryRes = await api.get(
+      "/api/v1/attendance/summary?month=$month&year=$year",
+    );
 
     setState(() {
       attendanceMap = Map<String, String>.from(calendarRes["data"]);
@@ -109,207 +100,262 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
-      body: Column(
+      backgroundColor: const Color(0xFFF6F8FB),
+      body: Stack(
         children: [
           // ================= HEADER =================
-          SlideTransition(
-            position: _slide,
-            child: FadeTransition(
-              opacity: _fade,
-              child: Container(
-                height: size.height * 0.22,
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF1A4DFF),
-                      Color(0xFF3A6BFF),
-                      Color(0xFF6A11CB),
-                    ],
-                  ),
-                  borderRadius:
-                      BorderRadius.vertical(bottom: Radius.circular(28)),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 280, // Increased height for better centered overlap
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF1fa2ff),
+                    Color(0xFF12d8fa),
+                    Color(0xFFa6ffcb),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: SafeArea(
-                  child: Row(
-                    children: const [
-                      BackButton(color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        "Attendance",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
               ),
             ),
           ),
 
           // ================= CONTENT =================
-          Expanded(
-            child: FadeTransition(
-              opacity: _fade,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    // ================= SUMMARY =================
-                    if (summary.isNotEmpty)
-                      AnimatedSlide(
-                        offset: Offset(0, _fade.value == 1 ? 0 : 0.1),
-                        duration: const Duration(milliseconds: 500),
-                        child: AttendanceSummaryCard(
-                          present: summary["present"],
-                          absent: summary["absent"],
-                          holiday: summary["holiday"],
-                          percentage: summary["percentage"],
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const BackButton(color: Colors.white),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        "My Attendance",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22, // Slightly smaller title
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
+                    ],
+                  ),
+                ),
 
-                    const SizedBox(height: 24),
-
-                    // ================= CALENDAR =================
-                    AnimatedOpacity(
-                      opacity: isLoadingMonth ? 0.5 : 1,
-                      duration: const Duration(milliseconds: 300),
-                      child: ScaleTransition(
-                        scale: CurvedAnimation(
-                          parent: _calendarController,
-                          curve: Curves.easeOutBack,
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 14,
-                                offset: const Offset(0, 8),
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min, // Hug content
+                        children: [
+                          // ✨ UNIFIED DASHBOARD CARD ✨
+                          AnimatedSlide(
+                            offset: Offset(0, _fade.value == 1 ? 0 : 0.05),
+                            duration: const Duration(milliseconds: 600),
+                            curve: Curves.easeOutBack,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: TableCalendar(
-                            firstDay: DateTime.utc(2020),
-                            lastDay: DateTime.utc(2030),
-                            focusedDay: focusedDay,
+                              child: Column(
+                                children: [
+                                  // 1. SUMMARY SECTION (COMPACT)
+                                  if (summary.isNotEmpty)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: AttendanceSummaryCard(
+                                        present: summary["present"],
+                                        absent: summary["absent"],
+                                        holiday: summary["holiday"],
+                                        percentage: summary["percentage"],
+                                      ),
+                                    ),
 
-                            // ✅ FIX + SPACE FOR WEEKDAY ROW
-                            daysOfWeekHeight: 32,
+                                  // 2. DIVIDER
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                    ),
+                                    child: Divider(
+                                      color: Colors.grey.withOpacity(0.1),
+                                      thickness: 1,
+                                    ),
+                                  ),
 
-                            headerStyle: const HeaderStyle(
-                              formatButtonVisible: false,
-                              titleCentered: true,
-                              titleTextStyle: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-
-                            calendarStyle: const CalendarStyle(
-                              outsideDaysVisible: false,
-                              cellMargin: EdgeInsets.all(6),
-                            ),
-
-                            daysOfWeekStyle: const DaysOfWeekStyle(
-                              weekdayStyle: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                height: 1.4,
-                              ),
-                              weekendStyle: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                height: 1.4,
-                              ),
-                            ),
-
-                            onPageChanged: (day) {
-                              focusedDay = day;
-                              fetchAttendance();
-                            },
-
-                            calendarBuilders: CalendarBuilders(
-                              // 🎬 WEEKDAY ANIMATION
-                              dowBuilder: (context, day) {
-                                final label =
-                                    _weekdays[day.weekday % 7];
-
-                                return AnimatedBuilder(
-                                  animation: _calendarController,
-                                  builder: (context, child) {
-                                    return Opacity(
-                                      opacity:
-                                          _calendarController.value,
-                                      child: Transform.translate(
-                                        offset: Offset(
-                                          0,
-                                          12 *
-                                              (1 -
-                                                  _calendarController
-                                                      .value),
+                                  // 3. CALENDAR SECTION
+                                  AnimatedOpacity(
+                                    opacity: isLoadingMonth ? 0.6 : 1,
+                                    duration: const Duration(milliseconds: 300),
+                                    child: TableCalendar(
+                                      firstDay: DateTime.utc(2020),
+                                      lastDay: DateTime.utc(2030),
+                                      focusedDay: focusedDay,
+                                      daysOfWeekHeight: 32, // Compact
+                                      rowHeight: 42, // Compact
+                                      headerStyle: const HeaderStyle(
+                                        formatButtonVisible: false,
+                                        titleCentered: true,
+                                        titleTextStyle: TextStyle(
+                                          fontSize: 16, // Smaller header
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
                                         ),
-                                        child: child,
+                                        leftChevronIcon: Icon(
+                                          Icons.chevron_left_rounded,
+                                          size: 20,
+                                        ),
+                                        rightChevronIcon: Icon(
+                                          Icons.chevron_right_rounded,
+                                          size: 20,
+                                        ),
                                       ),
-                                    );
-                                  },
-                                  child: Center(
-                                    child: Text(
-                                      label,
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: day.weekday ==
-                                                DateTime.sunday
-                                            ? Colors.black54
-                                            : Colors.black87,
+                                      calendarStyle: const CalendarStyle(
+                                        outsideDaysVisible: false,
+                                        cellMargin: EdgeInsets.all(
+                                          2,
+                                        ), // Tighter cells
+                                        isTodayHighlighted: true,
+                                        todayDecoration: BoxDecoration(
+                                          color: Color(0xFF1fa2ff),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        defaultTextStyle: TextStyle(
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      daysOfWeekStyle: const DaysOfWeekStyle(
+                                        weekdayStyle: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.grey,
+                                        ),
+                                        weekendStyle: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
+                                      onPageChanged: (day) {
+                                        focusedDay = day;
+                                        fetchAttendance();
+                                      },
+                                      calendarBuilders: CalendarBuilders(
+                                        dowBuilder: (context, day) {
+                                          final label =
+                                              _weekdays[day.weekday % 7];
+                                          final isSunday =
+                                              day.weekday == DateTime.sunday;
+                                          return Center(
+                                            child: Text(
+                                              label.toUpperCase(),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: isSunday
+                                                    ? Colors.redAccent
+                                                    : Colors.grey.shade600,
+                                                letterSpacing: 0.5,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        defaultBuilder: (context, day, _) {
+                                          final color = _getDayColor(day);
+                                          final isSunday =
+                                              day.weekday == DateTime.sunday;
+
+                                          if (color == null && isSunday) {
+                                            return Container(
+                                              alignment: Alignment.center,
+                                              margin: const EdgeInsets.all(4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red.withOpacity(
+                                                  0.04,
+                                                ),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Text(
+                                                day.day.toString(),
+                                                style: const TextStyle(
+                                                  color: Colors.red,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            );
+                                          }
+
+                                          if (color == null) return null;
+
+                                          return Container(
+                                            margin: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: color,
+                                              shape: BoxShape.circle,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: color.withOpacity(0.3),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ],
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Text(
+                                              day.day.toString(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
                                   ),
-                                );
-                              },
-
-                              // 📅 DAY CELLS
-                              defaultBuilder: (context, day, _) {
-                                final color = _getDayColor(day);
-                                if (color == null) return null;
-
-                                return AnimatedContainer(
-                                  duration:
-                                      const Duration(milliseconds: 300),
-                                  margin: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: color,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    day.day.toString(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                );
-                              },
+                                  const SizedBox(height: 12),
+                                ],
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

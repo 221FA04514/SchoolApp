@@ -144,7 +144,11 @@ exports.getAttendanceCalendarMap = async (student_id, month, year) => {
 
   const map = {};
   rows.forEach((r) => {
-    map[r.date.toISOString().split("T")[0]] = r.status;
+    const d = new Date(r.date);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    map[`${y}-${m}-${day}`] = r.status;
   });
 
   return map;

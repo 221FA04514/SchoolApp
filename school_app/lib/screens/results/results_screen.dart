@@ -9,15 +9,19 @@ class ResultsScreen extends StatefulWidget {
 }
 
 class _ResultsScreenState extends State<ResultsScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final ApiService api = ApiService();
 
   bool loading = true;
-  List results = [];
+  Map<String, List<dynamic>> groupedResults = {};
+
+  // Stats
+  int totalSubjects = 0;
+  int highestMark = 0;
+  double averageMark = 0.0;
 
   late AnimationController _pageController;
   late Animation<double> _fade;
-  late Animation<Offset> _slide;
 
   @override
   void initState() {
@@ -29,17 +33,7 @@ class _ResultsScreenState extends State<ResultsScreen>
       duration: const Duration(milliseconds: 800),
     );
 
-    _fade = CurvedAnimation(
-      parent: _pageController,
-      curve: Curves.easeOut,
-    );
-
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _pageController, curve: Curves.easeOut),
-    );
+    _fade = CurvedAnimation(parent: _pageController, curve: Curves.easeOut);
   }
 
   @override
@@ -49,263 +43,357 @@ class _ResultsScreenState extends State<ResultsScreen>
   }
 
   Future<void> fetchResults() async {
-    final res = await api.get("/api/v1/results/my");
+    try {
+      final res = await api.get("/api/v1/results/my");
+      final List results = res["data"] ?? [];
 
-    setState(() {
-      results = res["data"];
-      loading = false;
-    });
+      if (results.isNotEmpty) {
+        // Grouping logic
+        Map<String, List<dynamic>> groups = {};
+        int max = 0;
+        int total = 0;
+        int count = 0;
 
+        for (var r in results) {
+          final examName = r["exam"] ?? "Other";
+          if (!groups.containsKey(examName)) {
+            groups[examName] = [];
+          }
+          groups[examName]!.add(r);
+
+          final marks = r["marks"] as int;
+          if (marks > max) max = marks;
+          total += marks;
+          count++;
+        }
+
+        setState(() {
+          groupedResults = groups;
+          highestMark = max;
+          totalSubjects = count;
+          averageMark = count > 0 ? total / count : 0.0;
+          loading = false;
+        });
+      } else {
+        setState(() => loading = false);
+      }
+    } catch (e) {
+      setState(() => loading = false);
+    }
     _pageController.forward();
   }
 
-  // 🎨 SUBJECT COLOR (UI ONLY)
-  Color _subjectColor(String subject) {
-    final s = subject.toLowerCase();
-    if (s.contains("math")) return Colors.blue;
-    if (s.contains("science")) return Colors.green;
-    if (s.contains("english")) return Colors.purple;
-    if (s.contains("social")) return Colors.orange;
-    return Colors.grey;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    if (results.isEmpty && !loading) {
-      return const Scaffold(
-        body: Center(child: Text("📭 No results available")),
-      );
-    }
-
-    // 📊 SUMMARY CALCULATION (UI ONLY)
-    final marksList =
-        results.map((r) => r["marks"] as int).toList();
-    final highest = marksList.reduce((a, b) => a > b ? a : b);
-    final average =
-        (marksList.reduce((a, b) => a + b) / marksList.length)
-            .toStringAsFixed(1);
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
+      backgroundColor: const Color(0xFFF6F8FB),
+      body: Stack(
+        children: [
+          // ================= HEADER =================
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 240,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF1fa2ff),
+                    Color(0xFF12d8fa),
+                    Color(0xFFa6ffcb),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+            ),
+          ),
+
+          // ================= CONTENT =================
+          SafeArea(
+            child: Column(
               children: [
-                // ================= HEADER =================
-                SlideTransition(
-                  position: _slide,
-                  child: FadeTransition(
-                    opacity: _fade,
-                    child: Container(
-                      height: size.height * 0.22,
-                      padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF1A4DFF),
-                            Color(0xFF3A6BFF),
-                            Color(0xFF6A11CB),
-                          ],
+                // APP BAR
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        borderRadius: BorderRadius.vertical(
-                          bottom: Radius.circular(28),
+                        child: const BackButton(color: Colors.white),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        "My Results",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      child: SafeArea(
-                        child: Row(
-                          children: const [
-                            BackButton(color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              "🏆 Results",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    ],
                   ),
                 ),
 
-                // ================= CONTENT =================
                 Expanded(
-                  child: FadeTransition(
-                    opacity: _fade,
-                    child: SlideTransition(
-                      position: _slide,
-                      child: ListView(
-                        padding: const EdgeInsets.all(16),
-                        children: [
-                          // ================= SUMMARY CARD =================
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFF43CEA2),
-                                  Color(0xFF185A9D),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.15),
-                                  blurRadius: 14,
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceAround,
+                  child: loading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                      : groupedResults.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "📭 No results available",
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        )
+                      : FadeTransition(
+                          opacity: _fade,
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+                            child: Column(
                               children: [
-                                _SummaryItem(
-                                  label: "Subjects",
-                                  value: results.length.toString(),
-                                  emoji: "📚",
-                                ),
-                                _SummaryItem(
-                                  label: "Highest",
-                                  value: "$highest",
-                                  emoji: "🏆",
-                                ),
-                                _SummaryItem(
-                                  label: "Average",
-                                  value: average,
-                                  emoji: "📈",
-                                ),
+                                // ✨ SUMMARY CARD
+                                _buildSummaryCard(),
+                                const SizedBox(height: 24),
+
+                                // 📋 EXAM CARDS
+                                ...groupedResults.entries.map((entry) {
+                                  return _buildExamCard(entry.key, entry.value);
+                                }).toList(),
                               ],
                             ),
                           ),
-
-                          const SizedBox(height: 24),
-
-                          // ================= RESULT LIST =================
-                          ...List.generate(results.length, (index) {
-                            final r = results[index];
-                            final isTop = r["marks"] == highest;
-                            final color =
-                                _subjectColor(r["subject"]);
-
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0, end: 1),
-                              duration: Duration(
-                                  milliseconds: 500 + index * 120),
-                              builder: (context, value, child) {
-                                return Opacity(
-                                  opacity: value,
-                                  child: Transform.translate(
-                                    offset:
-                                        Offset(0, 30 * (1 - value)),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                margin:
-                                    const EdgeInsets.only(bottom: 14),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius:
-                                      BorderRadius.circular(18),
-                                  border: isTop
-                                      ? Border.all(
-                                          color: Colors.amber,
-                                          width: 2,
-                                        )
-                                      : null,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: color.withOpacity(0.2),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: ListTile(
-                                  leading: Text(
-                                    "📘",
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      color: color,
-                                    ),
-                                  ),
-                                  title: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          "${r["subject"]} — ${r["marks"]} marks",
-                                          style: const TextStyle(
-                                            fontWeight:
-                                                FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                      if (isTop)
-                                        const Text("🏆"),
-                                    ],
-                                  ),
-                                  subtitle: Text(
-                                    "📝 ${r["exam"]}\n🗓️ ${r["exam_date"].toString().split('T')[0]}",
-                                  ),
-                                  isThreeLine: true,
-                                ),
-                              ),
-                            );
-                          }),
-                        ],
-                      ),
-                    ),
-                  ),
+                        ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
-}
 
-// ================= SUMMARY ITEM =================
-class _SummaryItem extends StatelessWidget {
-  final String label;
-  final String value;
-  final String emoji;
+  Widget _buildSummaryCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _summaryStat("Total", totalSubjects.toString(), "📚", Colors.blue),
+          _divider(),
+          _summaryStat("Highest", highestMark.toString(), "🏆", Colors.amber),
+          _divider(),
+          _summaryStat(
+            "Average",
+            averageMark.toStringAsFixed(1),
+            "📈",
+            Colors.green,
+          ),
+        ],
+      ),
+    );
+  }
 
-  const _SummaryItem({
-    required this.label,
-    required this.value,
-    required this.emoji,
-  });
+  Widget _divider() {
+    return Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.2));
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _summaryStat(String label, String value, String emoji, Color color) {
     return Column(
       children: [
-        Text(
-          emoji,
-          style: const TextStyle(fontSize: 20),
-        ),
-        const SizedBox(height: 6),
+        Text(emoji, style: const TextStyle(fontSize: 22)),
+        const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
+            color: color,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white70,
+          style: TextStyle(
             fontSize: 12,
+            color: Colors.grey.shade600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
+  }
+
+  Widget _buildExamCard(String examName, List<dynamic> subjects) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Exam Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1fa2ff).withOpacity(0.05),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.assignment_turned_in_rounded,
+                  color: Color(0xFF1fa2ff),
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  examName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  "${subjects.length} Subjects",
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+
+          // Subject List
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: subjects.map((s) {
+                final double score = (s["marks"] as int).toDouble();
+                final isHighest = s["marks"] == highestMark;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: _getScoreColor(score).withOpacity(0.1),
+                        child: Text(
+                          s["subject"][0].toUpperCase(),
+                          style: TextStyle(
+                            color: _getScoreColor(score),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              s["subject"],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            if (isHighest)
+                              const Text(
+                                "Top Scorer 🏆",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.amber,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "${s["marks"]}",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: _getScoreColor(score),
+                            ),
+                          ),
+                          const Text(
+                            "Marks",
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          // Footer / Date
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12, right: 20),
+            child: Text(
+              "Date: ${subjects[0]["exam_date"].toString().split('T')[0]}",
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade400,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _getScoreColor(double score) {
+    if (score >= 80) return const Color(0xFF43CEA2); // High
+    if (score >= 40) return const Color(0xFF1fa2ff); // Average
+    return const Color(0xFFFF5F6D); // Low
   }
 }

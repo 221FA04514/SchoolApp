@@ -12,5 +12,6 @@ router.get("/teacher", authMiddleware, getMyHomework);
 
 /* ---------- STUDENT ---------- */
 router.get("/student", authMiddleware, getHomeworkForStudent);
+router.post("/status", authMiddleware, require("./homework.controller").markHomeworkStatus);
 
 module.exports = router;
