@@ -6,105 +6,111 @@ class TeacherTimetableScreen extends StatefulWidget {
   const TeacherTimetableScreen({super.key});
 
   @override
-  State<TeacherTimetableScreen> createState() =>
-      _TeacherTimetableScreenState();
+  State<TeacherTimetableScreen> createState() => _TeacherTimetableScreenState();
 }
 
 class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
   final ApiService _api = ApiService();
+  List sections = [];
+  int? selectedSectionId;
+  List timetable = [];
+  bool isLoadingSections = true;
+  bool isLoadingTimetable = false;
 
-  final List<String> days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday"
-  ];
+  @override
+  void initState() {
+    super.initState();
+    fetchSections();
+  }
 
-  String selectedDay = "Monday";
-  int selectedSectionId = 1; // later make dynamic if needed
+  Future<void> fetchSections() async {
+    try {
+      final res = await _api.get("/api/v1/sections");
+      setState(() {
+        sections = res["data"] ?? [];
+        isLoadingSections = false;
+        if (sections.isNotEmpty) {
+          selectedSectionId = sections[0]["id"];
+          fetchTimetable(selectedSectionId!);
+        }
+      });
+    } catch (e) {
+      setState(() => isLoadingSections = false);
+    }
+  }
 
-  final TextEditingController subjectCtrl = TextEditingController();
-  final TextEditingController teacherCtrl = TextEditingController();
-  final TextEditingController startCtrl = TextEditingController();
-  final TextEditingController endCtrl = TextEditingController();
-  final TextEditingController periodCtrl = TextEditingController();
-
-  Future<void> saveTimetable() async {
-    await _api.post("/api/v1/timetable", {
-      "section_id": selectedSectionId,
-      "day": selectedDay,
-      "period": int.parse(periodCtrl.text),
-      "subject": subjectCtrl.text,
-      "teacher_name": teacherCtrl.text,
-      "start_time": startCtrl.text,
-      "end_time": endCtrl.text,
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Timetable saved")),
-    );
-
-    subjectCtrl.clear();
-    teacherCtrl.clear();
-    startCtrl.clear();
-    endCtrl.clear();
-    periodCtrl.clear();
+  Future<void> fetchTimetable(int sectionId) async {
+    setState(() => isLoadingTimetable = true);
+    try {
+      final res = await _api.get(
+        "/api/v1/timetable/section?section_id=$sectionId",
+      );
+      setState(() {
+        timetable = res["data"] ?? [];
+        isLoadingTimetable = false;
+      });
+    } catch (e) {
+      setState(() => isLoadingTimetable = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Teacher Timetable")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            DropdownButtonFormField<String>(
-              value: selectedDay,
-              items: days
-                  .map(
-                    (d) => DropdownMenuItem(value: d, child: Text(d)),
-                  )
-                  .toList(),
-              onChanged: (val) => setState(() => selectedDay = val!),
-              decoration: const InputDecoration(labelText: "Select Day"),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: periodCtrl,
-              decoration: const InputDecoration(labelText: "Period"),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: subjectCtrl,
-              decoration: const InputDecoration(labelText: "Subject"),
-            ),
-            TextField(
-              controller: teacherCtrl,
-              decoration: const InputDecoration(labelText: "Teacher Name"),
-            ),
-            TextField(
-              controller: startCtrl,
-              decoration: const InputDecoration(labelText: "Start Time (HH:MM)"),
-            ),
-            TextField(
-              controller: endCtrl,
-              decoration: const InputDecoration(labelText: "End Time (HH:MM)"),
-            ),
-
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: saveTimetable,
-                child: const Text("Save Timetable"),
+      appBar: AppBar(title: const Text("My Timetable")),
+      body: Column(
+        children: [
+          if (isLoadingSections)
+            const LinearProgressIndicator()
+          else if (sections.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Text("No sections assigned to you."),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: DropdownButtonFormField<int>(
+                value: selectedSectionId,
+                items: sections.map<DropdownMenuItem<int>>((s) {
+                  return DropdownMenuItem(
+                    value: s["id"],
+                    child: Text(s["name"]),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() => selectedSectionId = val);
+                  if (val != null) fetchTimetable(val);
+                },
+                decoration: const InputDecoration(labelText: "Select Section"),
               ),
             ),
-          ],
-        ),
+          Expanded(
+            child: isLoadingTimetable
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: timetable.length,
+                    itemBuilder: (context, index) {
+                      final t = timetable[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 4,
+                        ),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            child: Text(t["period"].toString()),
+                          ),
+                          title: Text("${t["subject"]} (${t["day"]})"),
+                          subtitle: Text(
+                            "${t["start_time"]} - ${t["end_time"]}",
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

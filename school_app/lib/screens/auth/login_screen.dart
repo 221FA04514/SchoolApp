@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../dashboard/student_dashboard.dart';
 import '../dashboard/teacher_dashboard.dart';
+import '../dashboard/admin_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,9 +45,7 @@ class _LoginScreenState extends State<LoginScreen>
     _imageScale = Tween<double>(
       begin: 0.85,
       end: 1.0,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _imageFade = CurvedAnimation(
       parent: _controller,
@@ -56,9 +55,7 @@ class _LoginScreenState extends State<LoginScreen>
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _fade = CurvedAnimation(
       parent: _controller,
@@ -90,9 +87,9 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() => _isLoading = false);
 
     if (!success || !mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login failed")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Login failed")));
       return;
     }
 
@@ -105,6 +102,11 @@ class _LoginScreenState extends State<LoginScreen>
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const TeacherDashboard()),
+      );
+    } else if (auth.role == 'admin') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminDashboard()),
       );
     }
   }

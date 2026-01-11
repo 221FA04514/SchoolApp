@@ -1,6 +1,28 @@
 const pool = require("../../config/db");
 
 /**
+ * Check if a teacher is already busy at a specific time
+ */
+exports.checkTeacherConflict = async (teacherName, day, period, excludeSectionId = null) => {
+  const [rows] = await pool.query(
+    "SELECT section_id FROM timetable WHERE teacher_name = ? AND day = ? AND period = ? AND section_id != ?",
+    [teacherName, day, period, excludeSectionId ?? -1]
+  );
+  return rows.length > 0;
+};
+
+/**
+ * Check if a section already has a slot at a specific time
+ */
+exports.checkSectionConflict = async (sectionId, day, period) => {
+  const [rows] = await pool.query(
+    "SELECT id FROM timetable WHERE section_id = ? AND day = ? AND period = ?",
+    [sectionId, day, period]
+  );
+  return rows.length > 0;
+};
+
+/**
  * Teacher: create or update timetable slot
  */
 exports.upsertTimetable = async ({
@@ -12,16 +34,27 @@ exports.upsertTimetable = async ({
   start_time,
   end_time,
 }) => {
+  // 1. Check for section conflict (if it exists, we prevent update as per user request)
+  const hasSectionConflict = await exports.checkSectionConflict(section_id, day, period);
+  if (hasSectionConflict) {
+    const err = new Error(`This section already has a slot assigned for ${day}, Period ${period}`);
+    err.status = 409;
+    throw err;
+  }
+
+  // 2. Check for teacher conflict in ANY section
+  const hasTeacherConflict = await exports.checkTeacherConflict(teacher_name, day, period);
+  if (hasTeacherConflict) {
+    const err = new Error(`Teacher '${teacher_name}' is already assigned to a class for ${day}, Period ${period}`);
+    err.status = 409;
+    throw err;
+  }
+
   await pool.query(
     `
     INSERT INTO timetable
       (section_id, day, period, subject, teacher_name, start_time, end_time)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE
-      subject = VALUES(subject),
-      teacher_name = VALUES(teacher_name),
-      start_time = VALUES(start_time),
-      end_time = VALUES(end_time)
     `,
     [
       section_id,
@@ -41,7 +74,7 @@ exports.upsertTimetable = async ({
 exports.getTimetableBySection = async (sectionId) => {
   const [rows] = await pool.query(
     `
-    SELECT day, period, subject, teacher_name, start_time, end_time
+    SELECT id, day, period, subject, teacher_name, start_time, end_time
     FROM timetable
     WHERE section_id = ?
     ORDER BY FIELD(day,
@@ -60,7 +93,7 @@ exports.getTimetableBySection = async (sectionId) => {
 exports.getStudentTimetable = async (sectionId) => {
   const [rows] = await pool.query(
     `
-    SELECT day, period, subject, teacher_name, start_time, end_time
+    SELECT id, day, period, subject, teacher_name, start_time, end_time
     FROM timetable
     WHERE section_id = ?
     ORDER BY FIELD(day,
@@ -71,4 +104,10 @@ exports.getStudentTimetable = async (sectionId) => {
   );
 
   return rows;
+};
+/**
+ * Delete a timetable slot
+ */
+exports.deleteTimetableSlot = async (id) => {
+  await pool.query("DELETE FROM timetable WHERE id = ?", [id]);
 };

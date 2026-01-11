@@ -3,6 +3,7 @@ const {
   upsertTimetable,
   getTimetableBySection,
   getStudentTimetable,
+  deleteTimetableSlot,
 } = require("./timetable.service");
 
 /**
@@ -21,7 +22,7 @@ exports.saveTimetable = async (req, res, next) => {
       end_time,
     } = req.body;
 
-    if (role !== "teacher") {
+    if (role !== "teacher" && role !== "admin") {
       return error(res, "Access denied", 403);
     }
 
@@ -58,7 +59,7 @@ exports.saveTimetable = async (req, res, next) => {
  */
 exports.getSectionTimetable = async (req, res, next) => {
   try {
-    if (req.user.role !== "teacher") {
+    if (req.user.role !== "teacher" && req.user.role !== "admin") {
       return error(res, "Access denied", 403);
     }
 
@@ -87,6 +88,23 @@ exports.getMyTimetable = async (req, res, next) => {
     const data = await getStudentTimetable(section_id);
 
     return success(res, data, "Timetable fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Admin: delete timetable slot
+ */
+exports.removeSlot = async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") {
+      return error(res, "Access denied", 403);
+    }
+
+    const { id } = req.params;
+    await deleteTimetableSlot(id);
+    return success(res, null, "Slot deleted");
   } catch (err) {
     next(err);
   }

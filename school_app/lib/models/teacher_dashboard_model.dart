@@ -13,10 +13,10 @@ class TeacherDashboardModel {
 
   factory TeacherDashboardModel.fromJson(Map<String, dynamic> json) {
     return TeacherDashboardModel(
-      name: json["teacher"]["name"],
-      subject: json["teacher"]["subject"],
-      totalStudents: json["stats"]["total_students"],
-      pendingDoubts: json["stats"]["pending_doubts"],
+      name: json["teacher"]?["name"] ?? "Anonymous",
+      subject: json["teacher"]?["subject"] ?? "General",
+      totalStudents: json["stats"]?["total_students"] ?? 0,
+      pendingDoubts: json["stats"]?["pending_doubts"] ?? 0,
     );
   }
 }

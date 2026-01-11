@@ -1,0 +1,5 @@
+--- Schema for 'sections' table ---
+id: int (Null: NO, Key: PRI, Default: null)
+class: varchar(10) (Null: NO, Key: MUL, Default: null)
+section: varchar(5) (Null: NO, Key: , Default: null)
+name: varchar(20) (Null: NO, Key: , Default: null)
