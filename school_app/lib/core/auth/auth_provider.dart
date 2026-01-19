@@ -8,16 +8,38 @@ class AuthProvider extends ChangeNotifier {
   String? _role;
   String? get role => _role;
 
-  Future<bool> login(String email, String password) async {
+  Future<Map?> login(String email, String password) async {
     try {
-      // ✅ FIXED ENDPOINT (THIS WAS THE BUG)
-      final response = await _api.post(
-        "/api/v1/auth/login",
-        {
-          "email": email,
-          "password": password,
-        },
-      );
+      final response = await _api.post("/api/v1/auth/login", {
+        "email": email,
+        "password": password,
+      });
+
+      if (response["success"] == true) {
+        if (response["data"]["requiresOtp"] == true) {
+          return response["data"]; // Return {requiresOtp, userId, phone}
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("token", response["data"]["token"]);
+
+        _role = response["data"]["role"];
+        notifyListeners();
+        return response["data"];
+      }
+
+      throw Exception(response["message"] ?? "Login failed");
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> verifyOtp(int userId, String code) async {
+    try {
+      final response = await _api.post("/api/v1/auth/verify-otp", {
+        "userId": userId,
+        "code": code,
+      });
 
       if (response["success"] == true) {
         final prefs = await SharedPreferences.getInstance();
@@ -25,13 +47,11 @@ class AuthProvider extends ChangeNotifier {
 
         _role = response["data"]["role"];
         notifyListeners();
-        return true;
+      } else {
+        throw Exception(response["message"] ?? "OTP verification failed");
       }
-
-      return false;
     } catch (e) {
-      print("LOGIN ERROR: $e");
-      return false;
+      rethrow;
     }
   }
 

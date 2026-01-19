@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/auth/auth_provider.dart';
 import 'package:provider/provider.dart';
-import '../auth/login_screen.dart';
+import '../auth/login_selection_screen.dart';
 import '../admin/manage_teachers.dart';
 import '../admin/manage_students.dart';
 import '../admin/manage_timetable.dart';
@@ -27,7 +27,7 @@ class AdminDashboard extends StatelessWidget {
               context.read<AuthProvider>().logout();
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                MaterialPageRoute(builder: (_) => const LoginSelectionScreen()),
                 (route) => false,
               );
             },

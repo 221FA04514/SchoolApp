@@ -1,19 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../core/auth/auth_provider.dart';
+import '../dashboard/teacher_dashboard.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/auth/auth_provider.dart';
-import '../dashboard/student_dashboard.dart';
-import '../dashboard/teacher_dashboard.dart';
-import '../dashboard/admin_dashboard.dart';
-
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class TeacherLoginScreen extends StatefulWidget {
+  const TeacherLoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<TeacherLoginScreen> createState() => _TeacherLoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
+class _TeacherLoginScreenState extends State<TeacherLoginScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
@@ -26,12 +23,11 @@ class _LoginScreenState extends State<LoginScreen>
   late Animation<Offset> _headerSlide;
 
   bool _obscurePassword = true;
-  bool _isLoading = false; // ✅ LOCAL loading state (FIX)
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -76,38 +72,25 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
-
-    final auth = context.read<AuthProvider>();
-
-    final res = await auth.login(
-      emailController.text.trim(),
-      passwordController.text.trim(),
-    );
-
-    setState(() => _isLoading = false);
-
-    if (res == null || !mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Login failed")));
-      return;
-    }
-
-    if (auth.role == 'student') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const StudentDashboard()),
+    try {
+      final res = await context.read<AuthProvider>().login(
+        emailController.text.trim(),
+        passwordController.text.trim(),
       );
-    } else if (auth.role == 'teacher') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const TeacherDashboard()),
-      );
-    } else if (auth.role == 'admin') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AdminDashboard()),
-      );
+      setState(() => _isLoading = false);
+      if (res != null && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const TeacherDashboard()),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
 
@@ -117,10 +100,16 @@ class _LoginScreenState extends State<LoginScreen>
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: SingleChildScrollView(
         child: Stack(
           children: [
-            /// 🔵 CURVED BLUE HEADER (EXACT SAME)
+            /// 🔵 WAVE HEADER
             SlideTransition(
               position: _headerSlide,
               child: ClipPath(
@@ -140,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen>
                       children: const [
                         SizedBox(height: 12),
                         Text(
-                          'Log In',
+                          'Teacher Login',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 32,
@@ -149,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Experience a better learning\nenvironment',
+                          'Access your teacher account',
                           style: TextStyle(color: Colors.white70),
                         ),
                       ],
@@ -159,9 +148,9 @@ class _LoginScreenState extends State<LoginScreen>
               ),
             ),
 
-            /// 🖼 CENTER ILLUSTRATION (EXACT SAME)
+            /// 🖼 CENTER ILLUSTRATION
             Positioned(
-              top: size.height * 0.16,
+              top: size.height * 0.24,
               left: 0,
               right: 0,
               child: FadeTransition(
@@ -169,20 +158,21 @@ class _LoginScreenState extends State<LoginScreen>
                 child: ScaleTransition(
                   scale: _imageScale,
                   child: Image.asset(
-                    'assets/images/login_illustration.png',
-                    height: 300,
+                    'assets/images/class.png',
+                    height: 180,
                     fit: BoxFit.contain,
                   ),
                 ),
               ),
             ),
 
-            /// ⚪ LOGIN CARD (EXACT SAME)
+            /// ⚪ LOGIN CARD
             Container(
               margin: EdgeInsets.only(
                 top: size.height * 0.48,
                 left: 16,
                 right: 16,
+                bottom: 24,
               ),
               child: SlideTransition(
                 position: _slide,
@@ -203,10 +193,16 @@ class _LoginScreenState extends State<LoginScreen>
                     ),
                     child: Column(
                       children: [
+                        const Icon(
+                          Icons.record_voice_over,
+                          size: 50,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(height: 20),
                         _InputField(
                           controller: emailController,
-                          hint: 'Email address',
-                          icon: Icons.email,
+                          hint: 'Employee Email',
+                          icon: Icons.badge,
                         ),
                         const SizedBox(height: 18),
                         _InputField(
@@ -225,15 +221,13 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 18),
-
-                        /// 🔑 LOGIN BUTTON
+                        const SizedBox(height: 20),
                         SizedBox(
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1A4DFF),
+                              backgroundColor: Colors.orange,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
@@ -266,28 +260,6 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-/// 🌊 WAVE CLIPPER (UNCHANGED)
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 60);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height + 40,
-      size.width,
-      size.height - 60,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
-}
-
-/// 🔹 INPUT FIELD (UNCHANGED + EYE SUPPORT)
 class _InputField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
@@ -321,4 +293,24 @@ class _InputField extends StatelessWidget {
       ),
     );
   }
+}
+
+class WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 60);
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height + 40,
+      size.width,
+      size.height - 60,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

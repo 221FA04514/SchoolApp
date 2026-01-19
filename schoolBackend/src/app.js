@@ -12,6 +12,12 @@ app.use(cors());
 // Parse incoming JSON requests
 app.use(express.json());
 
+// Request logger for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(
   "/api/v1/announcements",
   require("./modules/announcements/announcements.routes")

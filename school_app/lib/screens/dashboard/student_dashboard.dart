@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/auth/auth_provider.dart';
 
 import '../../core/api/dashboard_service.dart';
 import '../../models/student_dashboard_model.dart';
@@ -11,8 +13,7 @@ import '../messages/teacher_list_screen.dart';
 import '../announcements/student_announcements_screen.dart';
 import '../homework/student_homework_screen.dart';
 import '../timetable/student_timetable_screen.dart';
-import '../auth/login_screen.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../auth/login_selection_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -37,12 +38,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    await context.read<AuthProvider>().logout();
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      MaterialPageRoute(builder: (_) => const LoginSelectionScreen()),
       (route) => false,
     );
   }
