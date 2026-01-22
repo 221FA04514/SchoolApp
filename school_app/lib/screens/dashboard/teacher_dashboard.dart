@@ -341,29 +341,49 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                           curve: Curves.easeOutBack,
                           child: GestureDetector(
                             onTap: () => _showProfileDialog(data),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.white,
-                                  width: 2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 10,
+                            child: Stack(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              child: const CircleAvatar(
-                                radius: 36,
-                                backgroundColor: Colors.white,
-                                child: Icon(
-                                  Icons.person_rounded,
-                                  size: 40,
-                                  color: Color(0xFF1A4DFF),
+                                  child: const CircleAvatar(
+                                    radius: 36,
+                                    backgroundColor: Colors.white,
+                                    child: Icon(
+                                      Icons.person_rounded,
+                                      size: 40,
+                                      color: Color(0xFF1A4DFF),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.logout,
+                                      size: 15,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),

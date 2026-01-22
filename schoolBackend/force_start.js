@@ -1,9 +1,11 @@
-require('dotenv').config();
+require("dotenv").config();
+const http = require("http");
 const pool = require('./src/config/db');
 const app = require('./src/app');
+const { initSocket } = require('./src/config/socket');
 
 async function startProject() {
-    console.log("=== PROJECT STARTUP DIAGNOSTICS ===");
+    console.log("=== PROJECT STARTUP DIAGNOSTICS (SOCKET.IO ENABLED) ===");
 
     // 1. Check Database
     try {
@@ -22,12 +24,18 @@ async function startProject() {
     console.log(`2. Attempting to start server on port ${PORT}...`);
 
     try {
-        app.listen(PORT, "0.0.0.0", () => {
+        const server = http.createServer(app);
+
+        // Initialize Socket.io
+        const io = initSocket(server);
+        console.log("✅ Socket.io initialized and READY.");
+
+        server.listen(PORT, "0.0.0.0", () => {
             console.log(`✅ SUCCESS! Server is now running on http://0.0.0.0:${PORT}`);
-            console.log("\n=== AUTHENTICATION FLOW VERIFIED ===");
+            console.log("\n=== AUTHENTICATION & REAL-TIME FLOW READY ===");
             console.log("- POST /api/v1/auth/login     -> READY");
-            console.log("- Admin OTP Verification      -> READY");
-            console.log("- Role-based Dashboard Access -> READY");
+            console.log("- WebSocket (Socket.io)       -> READY");
+            console.log("- AI Doubt escalation flow    -> READY");
             console.log("\nYou can now login from your Flutter app.");
         });
     } catch (err) {

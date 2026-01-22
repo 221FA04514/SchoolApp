@@ -9,8 +9,12 @@ const app = express();
 // Allow cross-origin requests (Flutter app, Postman, etc.)
 app.use(cors());
 
-// Parse incoming JSON requests
-app.use(express.json());
+// Parse incoming JSON requests (Increased limit for AI images)
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Serve uploaded files
+app.use("/uploads", express.static("uploads"));
 
 // Request logger for debugging
 app.use((req, res, next) => {
@@ -51,7 +55,11 @@ app.use("/api/v1/admin", require("./modules/admin/admin.routes"));
 // Authentication routes (login, profile, etc.)
 app.use("/api/v1/auth", require("./modules/auth/auth.routes"));
 app.use("/api/v1/dashboard", require("./modules/dashboard/dashboard.routes"));
-
+app.use("/api/v1/notifications", require("./modules/notifications/notifications.routes"));
+app.use("/api/v1/ai", require("./modules/ai/ai.routes"));
+app.use("/api/v1/resources", require("./modules/resources/resources.routes"));
+app.use("/api/v1/quizzes", require("./modules/quizzes/quizzes.routes"));
+app.use("/api/v1/leaves", require("./modules/leaves/leaves.routes"));
 
 // Health check (already created in Phase 0)
 app.use("/api/v1/health", require("./modules/health/health.routes"));

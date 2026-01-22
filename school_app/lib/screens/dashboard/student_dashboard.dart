@@ -14,6 +14,11 @@ import '../announcements/student_announcements_screen.dart';
 import '../homework/student_homework_screen.dart';
 import '../timetable/student_timetable_screen.dart';
 import '../auth/login_selection_screen.dart';
+import '../ai/ai_hub_screen.dart';
+import '../resources/resource_library_screen.dart';
+import '../quizzes/quiz_list_screen.dart';
+import '../leaves/leave_management_screen.dart';
+import '../../core/socket/socket_service.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -155,28 +160,27 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
                       const SizedBox(height: 30),
 
-                      /// ===== QUICK MENU =====
                       GridView.count(
-                        crossAxisCount: 3,
+                        crossAxisCount: 4,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
                         children: [
                           _MenuTile(
                             icon: Icons.calendar_today,
-                            label: "Attendance",
+                            label: "Attnd",
                             onTap: () => _go(context, const AttendanceScreen()),
                           ),
                           _MenuTile(
                             icon: Icons.schedule,
-                            label: "Timetable",
+                            label: "TimeT",
                             onTap: () =>
                                 _go(context, const StudentTimetableScreen()),
                           ),
                           _MenuTile(
                             icon: Icons.book,
-                            label: "Homework",
+                            label: "HW",
                             onTap: () =>
                                 _go(context, const StudentHomeworkScreen()),
                           ),
@@ -192,11 +196,28 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           ),
                           _MenuTile(
                             icon: Icons.campaign,
-                            label: "Announcements",
+                            label: "Announce",
                             onTap: () => _go(
                               context,
                               const StudentAnnouncementsScreen(),
                             ),
+                          ),
+                          _MenuTile(
+                            icon: Icons.library_books,
+                            label: "Library",
+                            onTap: () =>
+                                _go(context, const ResourceLibraryScreen()),
+                          ),
+                          _MenuTile(
+                            icon: Icons.quiz,
+                            label: "Quizzes",
+                            onTap: () => _go(context, const QuizListScreen()),
+                          ),
+                          _MenuTile(
+                            icon: Icons.sick,
+                            label: "Leaves",
+                            onTap: () =>
+                                _go(context, const LeaveManagementScreen()),
                           ),
                           _MenuTile(
                             icon: Icons.chat,
@@ -205,6 +226,69 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                 _go(context, const TeacherListScreen()),
                           ),
                         ],
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      /// ===== SMART AI HUB CARD =====
+                      InkWell(
+                        onTap: () => _go(context, const AiHubScreen()),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blue.withOpacity(0.3),
+                                blurRadius: 15,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 25,
+                                backgroundColor: Colors.white,
+                                child: Icon(
+                                  Icons.auto_awesome,
+                                  color: Color(0xFF6A11CB),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: const [
+                                    Text(
+                                      "Smart AI Learning Hub",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      "Homework Help • Doubt Solver • Planner",
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
 
                       const SizedBox(height: 24),
@@ -263,20 +347,39 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           curve: Curves.easeOutBack,
                           child: GestureDetector(
                             onTap: () => _showProfileDialog(data),
-                            child: CircleAvatar(
-                              radius: minimized ? 26 : 44,
-                              backgroundColor: Colors.white,
-                              child: const Icon(
-                                Icons.school_rounded,
-                                size: 38,
-                                color: Color(0xFF1A4DFF),
-                              ),
+                            child: Stack(
+                              children: [
+                                CircleAvatar(
+                                  radius: minimized ? 26 : 44,
+                                  backgroundColor: Colors.white,
+                                  child: const Icon(
+                                    Icons.school_rounded,
+                                    size: 38,
+                                    color: Color(0xFF1A4DFF),
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.logout,
+                                      size: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
                         const SizedBox(width: 14),
 
-                        /// NAME & CLASS
                         Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -305,6 +408,35 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               ),
                             ),
                           ],
+                        ),
+                        const Spacer(),
+                        Consumer<SocketService>(
+                          builder: (context, socket, child) => Stack(
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.notifications_none,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  // Show notification notification history
+                                },
+                              ),
+                              if (socket.isConnected)
+                                Positioned(
+                                  right: 8,
+                                  top: 8,
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
