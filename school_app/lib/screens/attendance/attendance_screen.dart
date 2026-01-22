@@ -94,6 +94,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
 
     if (status == "present") return const Color(0xFF43CEA2);
     if (status == "absent") return const Color(0xFFFF5F6D);
+    if (status == "late") return const Color(0xFFFFA726);
     if (status == "holiday") return const Color(0xFF3A6BFF);
     return null;
   }

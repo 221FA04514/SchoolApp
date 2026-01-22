@@ -10,6 +10,9 @@ import '../announcements/teacher_announcements_screen.dart';
 import '../homework/teacher_homework_screen.dart';
 import '../timetable/teacher_timetable_screen.dart';
 import '../auth/login_selection_screen.dart';
+import '../ai/teacher_ai_portal.dart';
+import './teacher_insight_detail.dart';
+import '../results/teacher_results_screen.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -175,6 +178,72 @@ class _TeacherDashboardState extends State<TeacherDashboard>
 
                           const SizedBox(height: 24),
 
+                          // ================= SMART INSIGHTS =================
+                          const Text(
+                            "🎯 Smart Insights",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                _insightRow(
+                                  "Attendance Alert",
+                                  "3 students below 75%",
+                                  Colors.red,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const TeacherInsightDetailScreen(
+                                              type: "low_attendance",
+                                              title: "Attendance Alerts",
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  icon: Icons.warning_amber_rounded,
+                                ),
+                                const Divider(height: 24),
+                                _insightRow(
+                                  "Grading Queue",
+                                  "5 homework pending",
+                                  Colors.orange,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            const TeacherInsightDetailScreen(
+                                              type: "ungraded_homework",
+                                              title: "Grading Queue",
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  icon: Icons.assignment_rounded,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
                           // ================= ACTION GRID =================
                           GridView(
                             shrinkWrap: true,
@@ -242,11 +311,11 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                                 title: "📊 Results",
                                 icon: Icons.bar_chart,
                                 onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "📊 Results module coming next",
-                                      ),
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const TeacherResultsScreen(),
                                     ),
                                   );
                                 },
@@ -265,14 +334,27 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                                 },
                               ),
                               DashboardButton(
-                                title: "💰 Fees",
-                                icon: Icons.account_balance_wallet,
+                                title: "🤖 AI Assistant",
+                                icon: Icons.auto_awesome,
                                 onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "💰 Fees overview coming next",
-                                      ),
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const TeacherAiAssistantPortal(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              DashboardButton(
+                                title: "📏 Daily Monitor",
+                                icon: Icons.fact_check_outlined,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const TeacherResultsScreen(),
                                     ),
                                   );
                                 },
@@ -469,6 +551,50 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                 color: valueColor,
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _insightRow(
+    String title,
+    String subtitle,
+    Color color, {
+    required VoidCallback onTap,
+    IconData icon = Icons.info_outline,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey.shade400),
           ],
         ),
       ),

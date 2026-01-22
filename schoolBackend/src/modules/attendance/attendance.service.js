@@ -45,7 +45,13 @@ exports.upsertAttendance = async ({
   status,
   marked_by,
 }) => {
-  await pool.query(
+  // Get old status if exists
+  const [existing] = await pool.query(
+    "SELECT id, status FROM attendance WHERE student_id = ? AND date = ?",
+    [student_id, date]
+  );
+
+  const [result] = await pool.query(
     `
     INSERT INTO attendance (student_id, date, status, marked_by)
     VALUES (?, ?, ?, ?)
@@ -55,6 +61,32 @@ exports.upsertAttendance = async ({
     `,
     [student_id, date, status, marked_by]
   );
+
+  // Audit trail
+  if (existing.length > 0 && existing[0].status !== status) {
+    await pool.query(
+      "INSERT INTO attendance_audit (attendance_id, old_status, new_status, changed_by) VALUES (?, ?, ?, ?)",
+      [existing[0].id, existing[0].status, status, marked_by]
+    );
+  }
+};
+
+/**
+ * Get attendance audit history
+ */
+exports.getAttendanceHistory = async (student_id, date) => {
+  const [rows] = await pool.query(
+    `
+    SELECT a.old_status, a.new_status, a.changed_at, u.name as changed_by_name
+    FROM attendance_audit a
+    JOIN attendance att ON a.attendance_id = att.id
+    JOIN users u ON a.changed_by = u.id
+    WHERE att.student_id = ? AND att.date = ?
+    ORDER BY a.changed_at DESC
+    `,
+    [student_id, date]
+  );
+  return rows;
 };
 
 /**

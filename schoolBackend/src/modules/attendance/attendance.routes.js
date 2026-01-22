@@ -8,6 +8,7 @@ const {
   getMyAttendance,
   getMyAttendanceSummary,
   getMyAttendanceCalendar,
+  getHistory,
 } = require("./attendance.controller");
 
 router.get("/ping", (req, res) => {
@@ -18,6 +19,7 @@ router.get("/ping", (req, res) => {
 router.get("/students", authMiddleware, getStudentsForAttendance);
 router.post("/submit", authMiddleware, submitAttendance);
 router.post("/mark", authMiddleware, markStudentAttendance);
+router.get("/history", authMiddleware, getHistory);
 
 /* STUDENT */
 router.get("/my", authMiddleware, getMyAttendance);

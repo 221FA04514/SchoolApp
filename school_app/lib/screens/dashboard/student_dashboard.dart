@@ -18,6 +18,7 @@ import '../ai/ai_hub_screen.dart';
 import '../resources/resource_library_screen.dart';
 import '../quizzes/quiz_list_screen.dart';
 import '../leaves/leave_management_screen.dart';
+import '../ai/student_online_exam_list.dart';
 import '../../core/socket/socket_service.dart';
 
 class StudentDashboard extends StatefulWidget {
@@ -212,6 +213,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
                             icon: Icons.quiz,
                             label: "Quizzes",
                             onTap: () => _go(context, const QuizListScreen()),
+                          ),
+                          _MenuTile(
+                            icon: Icons.history_edu,
+                            label: "Online Exams",
+                            onTap: () => _go(
+                              context,
+                              const StudentOnlineExamListScreen(),
+                            ),
                           ),
                           _MenuTile(
                             icon: Icons.sick,

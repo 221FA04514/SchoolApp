@@ -37,7 +37,11 @@ exports.listAnnouncements = async (req, res, next) => {
       return error(res, "Access denied", 403);
     }
 
-    const announcements = await getAllAnnouncements();
+    // Get student's section_id
+    const [student] = await pool.query("SELECT section_id FROM students WHERE user_id = ?", [req.user.userId]);
+    const section_id = student[0]?.section_id;
+
+    const announcements = await getAllAnnouncements(section_id);
     return success(res, announcements, "Announcements fetched");
   } catch (err) {
     next(err);
@@ -70,7 +74,7 @@ exports.getAnnouncement = async (req, res, next) => {
 exports.createAnnouncement = async (req, res, next) => {
   try {
     const { role, userId } = req.user;
-    const { title, description } = req.body;
+    const { title, description, section_id, scheduled_at, attachment_url } = req.body;
 
     if (role !== "teacher" && role !== "admin") {
       return error(res, "Access denied", 403);
@@ -85,6 +89,9 @@ exports.createAnnouncement = async (req, res, next) => {
       description,
       created_by: userId,
       role,
+      section_id,
+      scheduled_at,
+      attachment_url,
     });
 
     return success(res, announcement, "Announcement created successfully");

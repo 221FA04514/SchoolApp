@@ -8,13 +8,16 @@ exports.createAnnouncement = async ({
   description,
   created_by,
   role,
+  section_id = null,
+  scheduled_at = null,
+  attachment_url = null,
 }) => {
   const [result] = await pool.query(
     `
-    INSERT INTO announcements (title, description, created_by, role)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO announcements (title, description, created_by, role, section_id, scheduled_at, attachment_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    [title, description, created_by, role]
+    [title, description, created_by, role, section_id, scheduled_at, attachment_url]
   );
 
   return {
@@ -43,17 +46,30 @@ exports.getTeacherAnnouncements = async (teacherId) => {
 /**
  * Student: get all announcements
  */
-exports.getAllAnnouncements = async () => {
-  const [rows] = await pool.query(`
+exports.getAllAnnouncements = async (section_id = null) => {
+  let query = `
     SELECT 
       id,
       title,
       description,
+      scheduled_at,
+      attachment_url,
       created_at
     FROM announcements
-    ORDER BY created_at DESC
-  `);
+    WHERE (scheduled_at IS NULL OR scheduled_at <= NOW())
+  `;
+  const params = [];
 
+  if (section_id) {
+    query += " AND (section_id IS NULL OR section_id = ?)";
+    params.push(section_id);
+  } else {
+    query += " AND section_id IS NULL";
+  }
+
+  query += " ORDER BY created_at DESC";
+
+  const [rows] = await pool.query(query, params);
   return rows;
 };
 

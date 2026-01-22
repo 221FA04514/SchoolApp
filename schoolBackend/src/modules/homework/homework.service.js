@@ -10,14 +10,15 @@ exports.createHomework = async ({
   section_id,
   due_date,
   created_by,
+  is_offline = false,
 }) => {
   const [result] = await pool.query(
     `
     INSERT INTO homework
-      (title, description, subject, section_id, due_date, created_by)
-    VALUES (?, ?, ?, ?, ?, ?)
+      (title, description, subject, section_id, due_date, created_by, is_offline)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    [title, description, subject, section_id, due_date, created_by]
+    [title, description, subject, section_id, due_date, created_by, is_offline]
   );
 
   return {
@@ -81,4 +82,46 @@ exports.updateHomeworkStatus = async (studentId, homeworkId, isCompleted) => {
     [studentId, homeworkId, isCompleted]
   );
   return { success: true };
+};
+
+/**
+ * Student: submit homework
+ */
+exports.submitHomework = async ({ homework_id, student_id, content, file_url }) => {
+  const [result] = await pool.query(
+    `
+    INSERT INTO homework_submissions (homework_id, student_id, content, file_url, status)
+    VALUES (?, ?, ?, ?, 'pending')
+    `,
+    [homework_id, student_id, content, file_url]
+  );
+  return result.insertId;
+};
+
+/**
+ * Teacher: get submission stats
+ */
+exports.getSubmissionStats = async (homework_id) => {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      hs.*, 
+      u.name as student_name
+    FROM homework_submissions hs
+    JOIN users u ON hs.student_id = u.id
+    WHERE hs.homework_id = ?
+    `,
+    [homework_id]
+  );
+  return rows;
+};
+
+/**
+ * Grade a submission
+ */
+exports.gradeSubmission = async (submissionId, { marks, feedback, status = 'graded' }) => {
+  await pool.query(
+    `UPDATE homework_submissions SET marks = ?, feedback = ?, status = ? WHERE id = ?`,
+    [marks, feedback, status, submissionId]
+  );
 };

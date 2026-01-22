@@ -3,6 +3,9 @@ const {
   createHomework,
   getTeacherHomework,
   getStudentHomework,
+  submitHomework,
+  getSubmissionStats,
+  gradeSubmission,
 } = require("./homework.service");
 const pool = require("../../config/db");
 
@@ -12,7 +15,7 @@ const pool = require("../../config/db");
 exports.createHomework = async (req, res, next) => {
   try {
     const { role, userId } = req.user;
-    const { title, description, subject, section_id, due_date } = req.body;
+    const { title, description, subject, section_id, due_date, is_offline } = req.body;
 
     if (role !== "teacher") {
       return error(res, "Access denied", 403);
@@ -29,6 +32,7 @@ exports.createHomework = async (req, res, next) => {
       section_id,
       due_date,
       created_by: userId,
+      is_offline: is_offline || false,
     });
 
     return success(res, homework, "Homework created");
@@ -123,6 +127,67 @@ exports.markHomeworkStatus = async (req, res, next) => {
     );
 
     return success(res, null, "Status updated");
+  } catch (err) {
+    next(err);
+  }
+};
+/**
+ * Student: submit homework
+ */
+exports.submitHomework = async (req, res, next) => {
+  try {
+    if (req.user.role !== "student") return error(res, "Access denied", 403);
+    const { homework_id, content, file_url } = req.body;
+
+    // Resolve studentId
+    const [rows] = await pool.query(
+      `SELECT id FROM students WHERE user_id = ?`,
+      [req.user.userId]
+    );
+
+    if (!rows.length) {
+      return error(res, "Student not found", 404);
+    }
+    const studentId = rows[0].id;
+
+    await submitHomework({
+      homework_id,
+      student_id: studentId,
+      content,
+      file_url
+    });
+
+    return success(res, null, "Homework submitted successfully");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Teacher: get submissions
+ */
+exports.getSubmissions = async (req, res, next) => {
+  try {
+    if (req.user.role !== "teacher") return error(res, "Access denied", 403);
+    const { homework_id } = req.params;
+
+    const submissions = await getSubmissionStats(homework_id);
+    return success(res, submissions, "Submissions fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Teacher: grade homework
+ */
+exports.gradeHomework = async (req, res, next) => {
+  try {
+    if (req.user.role !== "teacher") return error(res, "Access denied", 403);
+    const { submission_id, marks, feedback, status } = req.body;
+
+    await gradeSubmission(submission_id, { marks, feedback, status });
+    return success(res, null, "Homework graded");
   } catch (err) {
     next(err);
   }

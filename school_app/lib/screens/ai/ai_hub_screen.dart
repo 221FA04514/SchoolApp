@@ -13,6 +13,71 @@ class AiHubScreen extends StatefulWidget {
 class _AiHubScreenState extends State<AiHubScreen> {
   final ApiService _api = ApiService();
   final ImagePicker _picker = ImagePicker();
+  List<dynamic> _history = [];
+  bool _loadingHistory = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    try {
+      final res = await _api.get("/api/v1/ai/history");
+      setState(() {
+        _history = res["data"]["history"] ?? [];
+        _loadingHistory = false;
+      });
+    } catch (e) {
+      debugPrint("Error fetching AI history: $e");
+      setState(() => _loadingHistory = false);
+    }
+  }
+
+  void _showHistoryDetail(Map<String, dynamic> item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _HistoryDetailSheet(item: item),
+    );
+  }
+
+  Future<void> _deleteHistoryItem(int id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete History?"),
+        content: const Text("This interaction will be permanently removed."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _api.delete("/api/v1/ai/history/$id");
+        _fetchHistory();
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("History item deleted")));
+        }
+      } catch (e) {
+        debugPrint("Error deleting history: $e");
+      }
+    }
+  }
 
   Future<void> _showHomeworkHelper() async {
     showModalBottomSheet(
@@ -21,7 +86,11 @@ class _AiHubScreenState extends State<AiHubScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => _HomeworkHelperSheet(api: _api, picker: _picker),
+      builder: (context) => _HomeworkHelperSheet(
+        api: _api,
+        picker: _picker,
+        onComplete: _fetchHistory,
+      ),
     );
   }
 
@@ -32,7 +101,8 @@ class _AiHubScreenState extends State<AiHubScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => _DoubtSolverSheet(api: _api),
+      builder: (context) =>
+          _DoubtSolverSheet(api: _api, onComplete: _fetchHistory),
     );
   }
 
@@ -149,23 +219,68 @@ class _AiHubScreenState extends State<AiHubScreen> {
                   color: const Color(0xFFEC4899),
                   onTap: _showDoubtSolver,
                 ),
-                const SizedBox(height: 16),
-                _StudentAiCard(
-                  title: "Study Planner",
-                  desc: "Create a perfect schedule for your exams.",
-                  icon: Icons.calendar_today_rounded,
-                  color: const Color(0xFF0EA5E9),
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Planning your success... Coming soon!"),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Color(0xFF1E293B),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Recent Activity",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
                       ),
-                    );
-                  },
+                    ),
+                    if (_history.isNotEmpty)
+                      TextButton(
+                        onPressed: _fetchHistory,
+                        child: const Text("Refresh"),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 60),
+                const SizedBox(height: 16),
+                if (_loadingHistory)
+                  const Center(child: CircularProgressIndicator())
+                else if (_history.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: const Color(0xFFF1F5F9)),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.history_rounded,
+                          size: 48,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          "No history yet. Start learning!",
+                          style: TextStyle(color: Colors.grey.shade500),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _history.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = _history[index];
+                      return _HistoryTile(
+                        item: item,
+                        onTap: () => _showHistoryDetail(item),
+                        onDelete: () => _deleteHistoryItem(item['id']),
+                      );
+                    },
+                  ),
+                const SizedBox(height: 48),
                 Center(
                   child: Column(
                     children: [
@@ -179,7 +294,7 @@ class _AiHubScreenState extends State<AiHubScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Text(
-                          "Powered by Neuraltrix AI",
+                          "Powered by NeuralTrix AI",
                           style: TextStyle(
                             color: Color(0xFF64748B),
                             fontSize: 12,
@@ -284,7 +399,12 @@ class _StudentAiCard extends StatelessWidget {
 class _HomeworkHelperSheet extends StatefulWidget {
   final ApiService api;
   final ImagePicker picker;
-  const _HomeworkHelperSheet({required this.api, required this.picker});
+  final VoidCallback? onComplete;
+  const _HomeworkHelperSheet({
+    required this.api,
+    required this.picker,
+    this.onComplete,
+  });
 
   @override
   State<_HomeworkHelperSheet> createState() => _HomeworkHelperSheetState();
@@ -292,6 +412,7 @@ class _HomeworkHelperSheet extends StatefulWidget {
 
 class _HomeworkHelperSheetState extends State<_HomeworkHelperSheet> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   XFile? _image;
   bool _loading = false;
   String? _result;
@@ -310,6 +431,7 @@ class _HomeworkHelperSheetState extends State<_HomeworkHelperSheet> {
         MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: SingleChildScrollView(
+        controller: _scrollController,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -416,31 +538,61 @@ class _HomeworkHelperSheetState extends State<_HomeworkHelperSheet> {
             ),
             if (_result != null) ...[
               const SizedBox(height: 32),
-              const Text(
-                "Solution Analysis:",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Text(
-                  _result!,
-                  style: const TextStyle(
-                    color: Color(0xFF1E293B),
-                    fontSize: 15,
-                    height: 1.6,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF4F46E5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.psychology_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(20),
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "AI Tutor",
+                            style: TextStyle(
+                              color: Color(0xFF4F46E5),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _result!,
+                            style: const TextStyle(
+                              color: Color(0xFF1E293B),
+                              fontSize: 15,
+                              height: 1.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
             const SizedBox(height: 10),
@@ -466,6 +618,18 @@ class _HomeworkHelperSheetState extends State<_HomeworkHelperSheet> {
         "image": base64Img,
       });
       setState(() => _result = res["data"]["analysis"]);
+      widget.onComplete?.call();
+
+      // Auto-scroll to result
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     } catch (e) {
       setState(() => _result = "Error: $e");
     } finally {
@@ -476,7 +640,8 @@ class _HomeworkHelperSheetState extends State<_HomeworkHelperSheet> {
 
 class _DoubtSolverSheet extends StatefulWidget {
   final ApiService api;
-  const _DoubtSolverSheet({required this.api});
+  final VoidCallback? onComplete;
+  const _DoubtSolverSheet({required this.api, this.onComplete});
 
   @override
   State<_DoubtSolverSheet> createState() => _DoubtSolverSheetState();
@@ -484,6 +649,7 @@ class _DoubtSolverSheet extends StatefulWidget {
 
 class _DoubtSolverSheetState extends State<_DoubtSolverSheet> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   bool _loading = false;
   String? _result;
 
@@ -501,6 +667,7 @@ class _DoubtSolverSheetState extends State<_DoubtSolverSheet> {
         MediaQuery.of(context).viewInsets.bottom + 24,
       ),
       child: SingleChildScrollView(
+        controller: _scrollController,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,38 +746,61 @@ class _DoubtSolverSheetState extends State<_DoubtSolverSheet> {
             ),
             if (_result != null) ...[
               const SizedBox(height: 32),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFFEC4899).withOpacity(0.1),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFEC4899),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.auto_awesome_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "AI EXPLANATION",
-                      style: TextStyle(
-                        color: Color(0xFFEC4899),
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFDF2F8),
+                        borderRadius: const BorderRadius.only(
+                          topRight: Radius.circular(20),
+                          bottomLeft: Radius.circular(20),
+                          bottomRight: Radius.circular(20),
+                        ),
+                        border: Border.all(color: const Color(0xFFFCE7F3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Neuraltrix AI",
+                            style: TextStyle(
+                              color: Color(0xFFEC4899),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 11,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            _result!,
+                            style: const TextStyle(
+                              color: Color(0xFF1E293B),
+                              fontSize: 15,
+                              height: 1.6,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _result!,
-                      style: const TextStyle(
-                        color: Color(0xFF1E293B),
-                        fontSize: 15,
-                        height: 1.6,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
               Center(
@@ -642,11 +832,289 @@ class _DoubtSolverSheetState extends State<_DoubtSolverSheet> {
         "subject": "General",
       });
       setState(() => _result = res["data"]["response"]);
+      widget.onComplete?.call();
+
+      // Auto-scroll to result
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     } catch (e) {
       setState(() => _result = "Error: $e");
     } finally {
       setState(() => _loading = false);
     }
+  }
+}
+
+class _HistoryTile extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _HistoryTile({
+    required this.item,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isHomework = item['type'] == 'homework';
+    final date = DateTime.parse(item['created_at']);
+    final timeStr =
+        "${date.day}/${date.month} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+    final color = isHomework
+        ? const Color(0xFF4F46E5)
+        : const Color(0xFFEC4899);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.1)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isHomework
+                        ? Icons.camera_alt_rounded
+                        : Icons.psychology_rounded,
+                    color: color,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item['prompt'],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: onDelete,
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.red.withOpacity(0.5),
+                    size: 20,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryDetailSheet extends StatelessWidget {
+  final Map<String, dynamic> item;
+  const _HistoryDetailSheet({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final isHomework = item['type'] == 'homework';
+    final color = isHomework
+        ? const Color(0xFF4F46E5)
+        : const Color(0xFFEC4899);
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.8,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          isHomework
+                              ? Icons.menu_book_rounded
+                              : Icons.lightbulb_rounded,
+                          color: color,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        isHomework ? "Solution Review" : "Concept Review",
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    "QUESTION",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: Colors.grey.shade400,
+                      fontSize: 11,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    item['prompt'],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF1E293B),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.only(top: 4),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isHomework
+                              ? Icons.psychology_rounded
+                              : Icons.auto_awesome_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.05),
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(20),
+                              bottomLeft: Radius.circular(20),
+                              bottomRight: Radius.circular(20),
+                            ),
+                            border: Border.all(color: color.withOpacity(0.1)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isHomework ? "AI Tutor" : "Neuraltrix AI",
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 11,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                item['response'],
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  height: 1.7,
+                                  color: Color(0xFF334155),
+                                  fontFamily: 'Roboto',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                backgroundColor: const Color(0xFFF1F5F9),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: const Text(
+                "Close",
+                style: TextStyle(color: Color(0xFF1E293B)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

@@ -59,6 +59,7 @@ app.use("/api/v1/notifications", require("./modules/notifications/notifications.
 app.use("/api/v1/ai", require("./modules/ai/ai.routes"));
 app.use("/api/v1/resources", require("./modules/resources/resources.routes"));
 app.use("/api/v1/quizzes", require("./modules/quizzes/quizzes.routes"));
+app.use("/api/v1/online-exams", require("./modules/online_exams/online_exams.routes"));
 app.use("/api/v1/leaves", require("./modules/leaves/leaves.routes"));
 
 // Health check (already created in Phase 0)
