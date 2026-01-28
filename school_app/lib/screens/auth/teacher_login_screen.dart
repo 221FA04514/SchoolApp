@@ -79,9 +79,10 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen>
       );
       setState(() => _isLoading = false);
       if (res != null && mounted) {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const TeacherDashboard()),
+          (route) => false,
         );
       }
     } catch (e) {

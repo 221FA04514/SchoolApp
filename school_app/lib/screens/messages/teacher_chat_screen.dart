@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/socket/socket_service.dart';
 import '../../core/api/api_service.dart';
 
 class TeacherChatScreen extends StatefulWidget {
@@ -20,6 +23,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
   final ApiService _api = ApiService();
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  StreamSubscription? _socketSub;
 
   List messages = [];
   bool loading = true;
@@ -37,10 +41,18 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
       duration: const Duration(milliseconds: 500),
     );
 
-    _fade = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOut,
-    );
+    _fade = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+
+    // 🔹 Listen for Real-time messages
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final socket = Provider.of<SocketService>(context, listen: false);
+      _socketSub = socket.messageStream.listen((data) {
+        print("[TEACHER CHAT] Socket Event Received: $data");
+        if (data["type"] == "chat" && data["sender"] == "student") {
+          fetchMessages();
+        }
+      });
+    });
   }
 
   @override
@@ -48,6 +60,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
     _controller.dispose();
     _fadeController.dispose();
     _scrollController.dispose();
+    _socketSub?.cancel();
     super.dispose();
   }
 
@@ -65,9 +78,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
 
     Future.delayed(const Duration(milliseconds: 200), () {
       if (_scrollController.hasClients) {
-        _scrollController.jumpTo(
-          _scrollController.position.maxScrollExtent,
-        );
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
       }
     });
   }
@@ -78,13 +89,10 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
     final text = _controller.text.trim();
     _controller.clear();
 
-    await _api.post(
-      "/api/v1/messages/teacher",
-      {
-        "student_id": widget.studentId,
-        "message": text,
-      },
-    );
+    await _api.post("/api/v1/messages/teacher", {
+      "student_id": widget.studentId,
+      "message": text,
+    });
 
     fetchMessages();
   }
@@ -102,11 +110,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF1A4DFF),
-                Color(0xFF3A6BFF),
-                Color(0xFF6A11CB),
-              ],
+              colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF), Color(0xFF6A11CB)],
             ),
           ),
         ),
@@ -137,13 +141,11 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
                       itemCount: messages.length,
                       itemBuilder: (_, index) {
                         final msg = messages[index];
-                        final isTeacher =
-                            msg["sender"] == "teacher";
+                        final isTeacher = msg["sender"] == "teacher";
 
                         return TweenAnimationBuilder<double>(
                           tween: Tween(begin: 0, end: 1),
-                          duration:
-                              Duration(milliseconds: 300 + index * 50),
+                          duration: Duration(milliseconds: 300 + index * 50),
                           builder: (context, value, child) {
                             return Opacity(
                               opacity: value,
@@ -158,12 +160,14 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
                                 ? Alignment.centerRight
                                 : Alignment.centerLeft,
                             child: Container(
-                              margin:
-                                  const EdgeInsets.symmetric(vertical: 6),
+                              margin: const EdgeInsets.symmetric(vertical: 6),
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 10),
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
                               constraints: BoxConstraints(
-                                  maxWidth: size.width * 0.75),
+                                maxWidth: size.width * 0.75,
+                              ),
                               decoration: BoxDecoration(
                                 gradient: isTeacher
                                     ? const LinearGradient(
@@ -173,16 +177,16 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
                                         ],
                                       )
                                     : null,
-                                color: isTeacher
-                                    ? null
-                                    : Colors.grey.shade300,
+                                color: isTeacher ? null : Colors.grey.shade300,
                                 borderRadius: BorderRadius.only(
                                   topLeft: const Radius.circular(16),
                                   topRight: const Radius.circular(16),
                                   bottomLeft: Radius.circular(
-                                      isTeacher ? 16 : 0),
+                                    isTeacher ? 16 : 0,
+                                  ),
                                   bottomRight: Radius.circular(
-                                      isTeacher ? 0 : 16),
+                                    isTeacher ? 0 : 16,
+                                  ),
                                 ),
                               ),
                               child: Text(
@@ -206,8 +210,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
           SafeArea(
             top: false,
             child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               child: Row(
                 children: [
                   Expanded(
@@ -221,9 +224,10 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
                           borderRadius: BorderRadius.circular(24),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding:
-                            const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -235,10 +239,7 @@ class _TeacherChatScreenState extends State<TeacherChatScreen>
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [
-                            Color(0xFF1A4DFF),
-                            Color(0xFF3A6BFF),
-                          ],
+                          colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
                         ),
                       ),
                       child: const Icon(

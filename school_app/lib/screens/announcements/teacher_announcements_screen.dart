@@ -10,7 +10,6 @@ class TeacherAnnouncementsScreen extends StatefulWidget {
   State<TeacherAnnouncementsScreen> createState() =>
       _TeacherAnnouncementsScreenState();
 }
-
 class _TeacherAnnouncementsScreenState
     extends State<TeacherAnnouncementsScreen>
     with SingleTickerProviderStateMixin {

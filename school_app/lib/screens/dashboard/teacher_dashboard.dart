@@ -13,6 +13,11 @@ import '../auth/login_selection_screen.dart';
 import '../ai/teacher_ai_portal.dart';
 import './teacher_insight_detail.dart';
 import '../results/teacher_results_screen.dart';
+import '../notifications/notification_inbox_screen.dart';
+import '../../core/api/api_service.dart';
+import '../../core/socket/socket_service.dart';
+import '../resources/teacher_resource_library_screen.dart';
+import '../leaves/leave_management_screen.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -29,12 +34,14 @@ class _TeacherDashboardState extends State<TeacherDashboard>
   late Animation<double> _fade;
   late Animation<Offset> _slide;
   bool minimized = false;
+  int unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
 
     dashboardFuture = TeacherDashboardService().fetchTeacherDashboard();
+    _fetchUnreadCount();
 
     _pageController = AnimationController(
       vsync: this,
@@ -48,10 +55,27 @@ class _TeacherDashboardState extends State<TeacherDashboard>
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _pageController, curve: Curves.easeOut));
 
-    /// Auto-minimize header after load
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => minimized = true);
     });
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    try {
+      final res = await ApiService().get("/api/v2/admin/notifications/my");
+      final list = res["data"] as List;
+      if (mounted) {
+        setState(() {
+          unreadNotifications = list
+              .where(
+                (n) =>
+                    n["receipt_status"] == 'pending' ||
+                    n["receipt_status"] == 'delivered',
+              )
+              .length;
+        });
+      }
+    } catch (e) {}
   }
 
   Future<void> _logout() async {
@@ -347,7 +371,7 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                                 },
                               ),
                               DashboardButton(
-                                title: "📏 Daily Monitor",
+                                title: "📏 Monitor",
                                 icon: Icons.fact_check_outlined,
                                 onTap: () {
                                   Navigator.push(
@@ -355,6 +379,32 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                                     MaterialPageRoute(
                                       builder: (_) =>
                                           const TeacherResultsScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              DashboardButton(
+                                title: "📖 Library",
+                                icon: Icons.library_books,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const TeacherResourceLibraryScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              DashboardButton(
+                                title: "🤒 Leaves",
+                                icon: Icons.sick_outlined,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const LeaveManagementScreen(),
                                     ),
                                   );
                                 },
@@ -470,51 +520,64 @@ class _TeacherDashboardState extends State<TeacherDashboard>
                           ),
                         ),
                         const SizedBox(width: 16),
-
-                        /// NAME & SUBJECT
-                        Expanded(
-                          child: SingleChildScrollView(
-                            physics: const NeverScrollableScrollPhysics(),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Collapsible "Welcome Back"
-                                AnimatedContainer(
-                                  duration: const Duration(milliseconds: 300),
-                                  height: minimized ? 0 : 20,
-                                  curve: Curves.easeInOut,
-                                  child: AnimatedOpacity(
-                                    opacity: minimized ? 0 : 1,
-                                    duration: const Duration(milliseconds: 300),
-                                    child: const Text(
-                                      "Welcome Back 👋",
-                                      style: TextStyle(color: Colors.white70),
+                        Consumer<SocketService>(
+                          builder: (context, socket, child) => Stack(
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.notifications_none,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const NotificationInboxScreen(),
+                                    ),
+                                  );
+                                  _fetchUnreadCount();
+                                },
+                              ),
+                              if (unreadNotifications > 0)
+                                Positioned(
+                                  right: 8,
+                                  top: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 14,
+                                      minHeight: 14,
+                                    ),
+                                    child: Text(
+                                      unreadNotifications.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                )
+                              else if (socket.isConnected)
+                                Positioned(
+                                  right: 8,
+                                  top: 8,
+                                  child: Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: minimized ? 0 : 4),
-
-                                Text(
-                                  data.name,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                Text(
-                                  "Subject: ${data.subject}",
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            ],
                           ),
                         ),
                       ],

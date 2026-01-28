@@ -234,6 +234,20 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
                           else
                             TextField(
                               maxLines: 5,
+                              controller:
+                                  TextEditingController(
+                                      text:
+                                          _userAnswers[_questions[_currentIndex]["id"]] ??
+                                          "",
+                                    )
+                                    ..selection = TextSelection.fromPosition(
+                                      TextPosition(
+                                        offset:
+                                            (_userAnswers[_questions[_currentIndex]["id"]] ??
+                                                    "")
+                                                .length,
+                                      ),
+                                    ),
                               decoration: const InputDecoration(
                                 hintText: "Type your answer here...",
                                 border: OutlineInputBorder(),

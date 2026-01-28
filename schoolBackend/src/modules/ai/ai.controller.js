@@ -179,7 +179,7 @@ exports.getStudentInsights = async (req, res) => {
             [studentId]
         );
         const [marks] = await pool.query(
-            "SELECT subject, marks FROM marks WHERE student_id = ? ORDER BY created_at DESC LIMIT 10",
+            "SELECT subject, marks FROM results WHERE student_id = ? ORDER BY created_at DESC LIMIT 10",
             [studentId]
         );
         const [student] = await pool.query("SELECT name FROM students WHERE user_id = ?", [studentId]);
@@ -208,7 +208,7 @@ exports.getInsightDetails = async (req, res) => {
         if (type === "low_attendance") {
             // Find students with attendance < 75% in the last 30 days
             const [students] = await pool.query(`
-                SELECT s.user_id as id, s.name, s.roll_no, 
+                SELECT s.user_id as id, s.name, s.roll_number, 
                 ROUND((COUNT(CASE WHEN a.status = 'present' THEN 1 END) * 100.0 / COUNT(a.id)), 1) as percentage
                 FROM students s
                 JOIN attendance a ON s.user_id = a.student_id
@@ -227,7 +227,7 @@ exports.getInsightDetails = async (req, res) => {
                 COUNT(hs.id) as submission_count
                 FROM homework h
                 JOIN homework_submissions hs ON h.id = hs.homework_id
-                WHERE h.teacher_id = ? AND hs.status = 'submitted'
+                WHERE h.created_by = ? AND hs.status = 'submitted'
                 GROUP BY h.id
                 HAVING submission_count > 0
             `, [teacherId]);

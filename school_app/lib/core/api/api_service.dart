@@ -1,7 +1,17 @@
 import 'dart:convert';
+import 'package:dio/dio.dart' as dio_lib;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
+
+class ApiException implements Exception {
+  final String message;
+  final int statusCode;
+  final dynamic data;
+  ApiException(this.message, this.statusCode, this.data);
+  @override
+  String toString() => message;
+}
 
 class ApiService {
   // ================= TOKEN =================
@@ -33,7 +43,11 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return data;
       } else {
-        throw Exception(data["message"] ?? "API error");
+        throw ApiException(
+          data["message"] ?? "API error",
+          response.statusCode,
+          data,
+        );
       }
     } catch (e) {
       print("POST API ERROR [$endpoint]: $e");
@@ -54,7 +68,11 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return data;
       } else {
-        throw Exception(data["message"] ?? "API error");
+        throw ApiException(
+          data["message"] ?? "API error",
+          response.statusCode,
+          data,
+        );
       }
     } catch (e) {
       print("GET API ERROR [$endpoint]: $e");
@@ -75,7 +93,11 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return data;
       } else {
-        throw Exception(data["message"] ?? "API error");
+        throw ApiException(
+          data["message"] ?? "API error",
+          response.statusCode,
+          data,
+        );
       }
     } catch (e) {
       print("DELETE API ERROR [$endpoint]: $e");
@@ -97,10 +119,60 @@ class ApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return data;
       } else {
-        throw Exception(data["message"] ?? "API error");
+        throw ApiException(
+          data["message"] ?? "API error",
+          response.statusCode,
+          data,
+        );
       }
     } catch (e) {
       print("PUT API ERROR [$endpoint]: $e");
+      rethrow;
+    }
+  }
+
+  // ================= MULTIPART (Upload) =================
+  Future<dynamic> postMultipart(
+    String endpoint,
+    dio_lib.FormData formData,
+  ) async {
+    try {
+      final token = await _getToken();
+      final dio = dio_lib.Dio();
+
+      final fullUrl = "${AppConstants.baseUrl}$endpoint";
+      print("[API] POST MULTIPART: $fullUrl");
+      print(
+        "[API] Headers: {Authorization: Bearer ${token?.substring(0, 10)}...}",
+      );
+      print(
+        "[API] Fields: ${formData.fields.map((f) => "${f.key}: ${f.value}")}",
+      );
+
+      final response = await dio.post(
+        fullUrl,
+        data: formData,
+        options: dio_lib.Options(
+          sendTimeout: const Duration(seconds: 300),
+          receiveTimeout: const Duration(seconds: 300),
+          headers: {
+            if (token != null && token.isNotEmpty)
+              "Authorization": "Bearer $token",
+          },
+        ),
+      );
+
+      if (response.statusCode! >= 200 && response.statusCode! < 300) {
+        return response.data;
+      } else {
+        throw ApiException(
+          response.data["message"] ?? "Upload error",
+          response.statusCode!,
+          response.data,
+        );
+      }
+    } catch (e) {
+      print("MULTIPART API ERROR [$endpoint]: $e");
       rethrow;
     }
   }

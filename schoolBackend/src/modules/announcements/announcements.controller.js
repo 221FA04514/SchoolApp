@@ -1,3 +1,4 @@
+const pool = require("../../config/db");
 const { success, error } = require("../../utils/response");
 const {
   getAllAnnouncements,
@@ -89,9 +90,9 @@ exports.createAnnouncement = async (req, res, next) => {
       description,
       created_by: userId,
       role,
-      section_id,
-      scheduled_at,
-      attachment_url,
+      section_id: section_id || null,
+      scheduled_at: scheduled_at || null,
+      attachment_url: attachment_url || null,
     });
 
     return success(res, announcement, "Announcement created successfully");

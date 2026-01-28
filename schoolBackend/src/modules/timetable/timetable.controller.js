@@ -20,6 +20,7 @@ exports.saveTimetable = async (req, res, next) => {
       teacher_name,
       start_time,
       end_time,
+      force = false,
     } = req.body;
 
     if (role !== "teacher" && role !== "admin") {
@@ -38,17 +39,24 @@ exports.saveTimetable = async (req, res, next) => {
       return error(res, "All fields are required", 400);
     }
 
-    await upsertTimetable({
-      section_id,
-      day,
-      period,
-      subject,
-      teacher_name,
-      start_time,
-      end_time,
-    });
-
-    return success(res, null, "Timetable saved");
+    try {
+      await upsertTimetable({
+        section_id,
+        day,
+        period,
+        subject,
+        teacher_name,
+        start_time,
+        end_time,
+        force,
+      });
+      return success(res, null, "Timetable saved");
+    } catch (err) {
+      if (err.status === 409) {
+        return error(res, err.message, 409, { suggestions: err.suggestions });
+      }
+      throw err;
+    }
   } catch (err) {
     next(err);
   }
@@ -88,6 +96,25 @@ exports.getMyTimetable = async (req, res, next) => {
     const data = await getStudentTimetable(section_id);
 
     return success(res, data, "Timetable fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Teacher: view own (personal) timetable
+ */
+exports.getMyPersonalTimetable = async (req, res, next) => {
+  try {
+    const { userId, role } = req.user;
+    if (role !== "teacher") {
+      return error(res, "Access denied", 403);
+    }
+
+    const { getTeacherPersonalTimetable } = require("./timetable.service");
+    const data = await getTeacherPersonalTimetable(userId);
+
+    return success(res, data, "Personal timetable fetched");
   } catch (err) {
     next(err);
   }

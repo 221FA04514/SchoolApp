@@ -22,4 +22,9 @@ router.get("/list", authMiddleware, (req, res, next) => {
 });
 router.get("/my", authMiddleware, getMyResults);
 
+router.get("/exam-marks/:examId/:sectionId", authMiddleware, (req, res, next) => {
+  const { getExamMarks } = require("./results.controller");
+  getExamMarks(req, res, next);
+});
+
 module.exports = router;

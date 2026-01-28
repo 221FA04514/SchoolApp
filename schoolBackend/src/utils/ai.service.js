@@ -13,10 +13,30 @@ const genAI = process.env.GEMINI_API_KEY
     : null;
 
 if (groq) {
-    console.log("🚀 Groq AI CORE initialized. Using llama-3.1 & llama-3.2-vision.");
+    console.log("🚀 Groq AI CORE initialized. Using llama-3.3-70b & llama-3.2-11b-vision.");
 } else {
     console.warn("⚠️ GROQ_API_KEY missing. AI features will be limited.");
 }
+
+/**
+ * Generic AI Response Generator
+ */
+exports.generateResponse = async (prompt) => {
+    try {
+        if (!groq) throw new Error("Groq API key missing");
+
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.2
+        });
+
+        return cleanAiResponse(chatCompletion.choices[0]?.message?.content);
+    } catch (err) {
+        console.error("AI Generation Error:", err.message);
+        return `AI ERROR: ${err.message}. Please try again later.`;
+    }
+};
 
 /**
  * Strips LaTeX and math formatting to ensure a student-friendly output.
@@ -97,11 +117,11 @@ exports.analyzeHomework = async (prompt, imageBase64 = null) => {
             });
         }
 
-        console.log(`→ Homework Helper: Using Groq Llama 4 Scout Vision`);
+        console.log(`→ Homework Helper: Using Groq Llama 3.2 Vision`);
 
         const chatCompletion = await groq.chat.completions.create({
             messages,
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            model: "llama-3.2-11b-vision-preview",
             temperature: 0.1,
         });
 
@@ -195,17 +215,32 @@ exports.generateSmartHomework = async ({ subject, topic, difficulty, count = 5 }
     try {
         if (!groq) throw new Error("Groq API key missing");
 
-        const prompt = `Generate ${count} school homework questions for:
+        const prompt = `Generate ${count} school exam questions for:
         Subject: ${subject}
         Topic: ${topic}
         Difficulty: ${difficulty}
         
         RULES:
-        1. Return as a JSON array of objects: [{ "question": "...", "answer": "..." }]
-        2. Use plain text only. No LaTeX.
-        3. Make it appropriate for school students.`;
+        1. Return as a JSON array of objects: 
+           [
+             { 
+               "question": "...", 
+               "answer": "...", 
+               "type": "mcq", 
+               "options": ["opt1", "opt2", "opt3", "opt4"] 
+             },
+             { 
+               "question": "...", 
+               "answer": "...", 
+               "type": "fib" 
+             }
+           ]
+        2. Provide a mix of multiple choice (mcq) and fill-in-the-blank (fib) questions.
+        3. For 'fib' (Fill in the Blank), the question should have a blank represented by underscores (e.g., "The capital of France is ______").
+        4. Use plain text only. No LaTeX.
+        5. Make it appropriate for school students.`;
 
-        console.log(`→ Homework Generator: ${subject} - ${topic} (${difficulty})`);
+        console.log(`→ Exam Generator: ${subject} - ${topic} (${difficulty})`);
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
@@ -213,9 +248,10 @@ exports.generateSmartHomework = async ({ subject, topic, difficulty, count = 5 }
             response_format: { type: "json_object" }
         });
 
-        return chatCompletion.choices[0]?.message?.content;
+        const content = chatCompletion.choices[0]?.message?.content;
+        return content;
     } catch (err) {
-        console.error("Homework Generator Error:", err.message);
+        console.error("Exam Generator Error:", err.message);
         return "[]";
     }
 };
@@ -233,7 +269,8 @@ exports.refineAnnouncement = async (draft) => {
         RULES:
         1. Keep it concise.
         2. Use a professional yet friendly tone.
-        3. Return ONLY the refined text.`;
+        3. Include subtle professional emojis (like 📢, 🗓️, 📝) where appropriate.
+        4. Return ONLY the refined text.`;
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],

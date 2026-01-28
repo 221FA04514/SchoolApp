@@ -1,3 +1,4 @@
+const pool = require("../../config/db");
 const { success, error } = require("../../utils/response");
 const {
   createExam,
@@ -72,19 +73,11 @@ exports.getMyResults = async (req, res, next) => {
       return error(res, "Access denied", 403);
     }
 
-    // Resolve studentId
-    const pool = require("../../config/db");
-    const [rows] = await pool.query(
-      `SELECT id FROM students WHERE user_id = ?`,
-      [userId]
-    );
+    // Must fetch student_id from users.id
+    const [student] = await pool.query("SELECT id FROM students WHERE user_id = ?", [userId]);
+    if (!student[0]) return error(res, "Student record not found", 404);
 
-    if (!rows.length) {
-      return error(res, "Student not found", 404);
-    }
-    const studentId = rows[0].id;
-
-    const results = await getStudentResults(studentId);
+    const results = await getStudentResults(student[0].id);
     return success(res, results, "Results fetched");
   } catch (err) {
     next(err);
@@ -180,6 +173,22 @@ exports.listExams = async (req, res, next) => {
        ORDER BY e.exam_date DESC`
     );
     return success(res, exams, "Exams fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+/**
+ * Get all marks for a specific exam and section
+ */
+exports.getExamMarks = async (req, res, next) => {
+  try {
+    const { examId, sectionId } = req.params;
+    const { role } = req.user;
+    if (role !== "teacher") return error(res, "Access denied", 403);
+
+    const { getStudentsWithMarks } = require("./results.service");
+    const students = await getStudentsWithMarks(examId, sectionId);
+    return success(res, students, "Exam marks fetched");
   } catch (err) {
     next(err);
   }

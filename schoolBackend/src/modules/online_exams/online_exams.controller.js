@@ -21,15 +21,14 @@ exports.listAvailableExams = async (req, res, next) => {
         const { role, userId } = req.user;
         if (role !== "student") return error(res, "Access denied", 403);
 
-        // Fetch student's student_id and section_id
+        // Fetch student's section_id
         const pool = require("../../config/db");
-        const [std] = await pool.query("SELECT id, section_id FROM students WHERE user_id = ?", [userId]);
+        const [std] = await pool.query("SELECT section_id FROM students WHERE user_id = ?", [userId]);
         if (!std[0]) return error(res, "Student not found", 404);
 
-        const studentId = std[0].id;
         const sectionId = std[0].section_id;
 
-        const exams = await onlineExamsService.getAvailableExams(studentId, sectionId);
+        const exams = await onlineExamsService.getAvailableExams(userId, sectionId);
         return success(res, exams, "Exams fetched");
     } catch (err) {
         next(err);
@@ -51,12 +50,7 @@ exports.startAttempt = async (req, res, next) => {
         const { examId } = req.body;
         const { userId } = req.user;
 
-        // Resolve studentId
-        const pool = require("../../config/db");
-        const [std] = await pool.query("SELECT id FROM students WHERE user_id = ?", [userId]);
-        if (!std[0]) return error(res, "Student not found", 404);
-
-        const attemptId = await onlineExamsService.startAttempt(examId, std[0].id);
+        const attemptId = await onlineExamsService.startAttempt(examId, userId);
         return success(res, { attemptId }, "Attempt started");
     } catch (err) {
         if (err.code === 'ER_DUP_ENTRY') {

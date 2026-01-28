@@ -127,3 +127,26 @@ exports.getTeacherSections = async (teacherId) => {
   );
   return rows;
 };
+/**
+ * Get results for all students in a section for a specific exam
+ */
+exports.getStudentsWithMarks = async (examId, sectionId) => {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      s.id, 
+      s.name, 
+      s.roll_no,
+      r.marks,
+      r.grade,
+      r.remarks,
+      r.id as result_id
+    FROM students s
+    LEFT JOIN results r ON s.id = r.student_id AND r.exam_id = ?
+    WHERE s.section_id = ?
+    ORDER BY s.roll_no ASC
+    `,
+    [examId, sectionId]
+  );
+  return rows;
+};

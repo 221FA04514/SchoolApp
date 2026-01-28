@@ -32,13 +32,17 @@ exports.login = async (req, res, next) => {
     // Role-based custom logic
     if (user.role === "admin") {
       // 2. Start Twilio Verification
-      await sms.startVerification(user.admin_phone);
+      const verification = await sms.startVerification(user.admin_phone);
+
+      if (!verification.success) {
+        return error(res, `Verification failed: ${verification.error || 'Check Twilio setup'}`, 500);
+      }
 
       return success(res, {
         requiresOtp: true,
         userId: user.id,
         phone: user.admin_phone ? `******${user.admin_phone.slice(-4)}` : "unknown",
-      }, "Password verified. OTP sent.");
+      }, verification.simulated ? "Simulation Mode: Use 123456" : "Password verified. OTP sent.");
     }
 
     const token = generateToken({
@@ -105,9 +109,12 @@ exports.resendOtp = async (req, res, next) => {
     const phone = await authService.getAdminPhone(userId);
     if (!phone) return error(res, "Admin phone number not found", 404);
 
-    await sms.startVerification(phone);
+    const verification = await sms.startVerification(phone);
+    if (!verification.success) {
+      return error(res, `Failed to resend: ${verification.error}`, 500);
+    }
 
-    return success(res, null, "OTP resent successfully");
+    return success(res, null, verification.simulated ? "Simulation Mode: Use 123456" : "OTP resent successfully");
   } catch (err) {
     next(err);
   }

@@ -3,7 +3,7 @@ const http = require("http");
 const app = require("./src/app");
 const { initSocket } = require("./src/config/socket");
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 const server = http.createServer(app);
 
 // Initialize Socket.io

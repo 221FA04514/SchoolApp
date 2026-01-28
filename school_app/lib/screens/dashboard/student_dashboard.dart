@@ -20,6 +20,8 @@ import '../quizzes/quiz_list_screen.dart';
 import '../leaves/leave_management_screen.dart';
 import '../ai/student_online_exam_list.dart';
 import '../../core/socket/socket_service.dart';
+import '../notifications/notification_inbox_screen.dart';
+import '../../core/api/api_service.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -31,16 +33,35 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   late Future<StudentDashboardModel> dashboardFuture;
   bool minimized = false;
+  int unreadNotifications = 0;
 
   @override
   void initState() {
     super.initState();
     dashboardFuture = DashboardService().fetchStudentDashboard();
+    _fetchUnreadCount();
 
-    /// Auto-minimize header after load
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => minimized = true);
     });
+  }
+
+  Future<void> _fetchUnreadCount() async {
+    try {
+      final res = await ApiService().get("/api/v2/admin/notifications/my");
+      final list = res["data"] as List;
+      if (mounted) {
+        setState(() {
+          unreadNotifications = list
+              .where(
+                (n) =>
+                    n["receipt_status"] == 'pending' ||
+                    n["receipt_status"] == 'delivered',
+              )
+              .length;
+        });
+      }
+    } catch (e) {}
   }
 
   Future<void> _logout() async {
@@ -427,11 +448,43 @@ class _StudentDashboardState extends State<StudentDashboard> {
                                   Icons.notifications_none,
                                   color: Colors.white,
                                 ),
-                                onPressed: () {
-                                  // Show notification notification history
+                                onPressed: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const NotificationInboxScreen(),
+                                    ),
+                                  );
+                                  _fetchUnreadCount(); // Refresh badge count after returning
                                 },
                               ),
-                              if (socket.isConnected)
+                              if (unreadNotifications > 0)
+                                Positioned(
+                                  right: 8,
+                                  top: 8,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 14,
+                                      minHeight: 14,
+                                    ),
+                                    child: Text(
+                                      unreadNotifications.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                )
+                              else if (socket.isConnected)
                                 Positioned(
                                   right: 8,
                                   top: 8,
@@ -545,11 +598,18 @@ class _MenuTile extends StatelessWidget {
               child: Icon(icon, color: Colors.white),
             ),
             const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ],

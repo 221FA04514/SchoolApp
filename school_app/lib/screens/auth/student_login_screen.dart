@@ -79,9 +79,10 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
       );
       setState(() => _isLoading = false);
       if (res != null && mounted) {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const StudentDashboard()),
+          (route) => false,
         );
       }
     } catch (e) {

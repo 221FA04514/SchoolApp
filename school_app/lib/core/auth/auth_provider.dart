@@ -55,6 +55,20 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> resendOtp(int userId) async {
+    try {
+      final response = await _api.post("/api/v1/auth/resend-otp", {
+        "userId": userId,
+      });
+
+      if (response["success"] != true) {
+        throw Exception(response["message"] ?? "Failed to resend OTP");
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("token");

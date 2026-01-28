@@ -74,6 +74,120 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
   DateTime _startTime = DateTime.now().add(const Duration(hours: 1));
   DateTime _endTime = DateTime.now().add(const Duration(hours: 3));
 
+  void _editQuestion(int index) {
+    final q = _questions[index];
+    final questionController = TextEditingController(text: q["question"]);
+    final answerController = TextEditingController(text: q["answer"]);
+    String type = q["type"] ?? "mcq";
+    List<String> options = List<String>.from(q["options"] ?? []);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text("Edit Question"),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: type,
+                  decoration: const InputDecoration(labelText: "Type"),
+                  items: const [
+                    DropdownMenuItem(value: "mcq", child: Text("MCQ")),
+                    DropdownMenuItem(
+                      value: "fib",
+                      child: Text("Fill in Blank"),
+                    ),
+                  ],
+                  onChanged: (val) => setState(() => type = val!),
+                ),
+                TextField(
+                  controller: questionController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: "Question"),
+                ),
+                if (type == "mcq") ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Options:",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  ...options.asMap().entries.map((entry) {
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            onChanged: (val) => options[entry.key] = val,
+                            decoration: InputDecoration(
+                              labelText: "Option ${entry.key + 1}",
+                            ),
+                            controller: TextEditingController(text: entry.value)
+                              ..selection = TextSelection.fromPosition(
+                                TextPosition(offset: entry.value.length),
+                              ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: () =>
+                              setState(() => options.removeAt(entry.key)),
+                        ),
+                      ],
+                    );
+                  }).toList(),
+                  TextButton.icon(
+                    onPressed: () => setState(() => options.add("")),
+                    icon: const Icon(Icons.add),
+                    label: const Text("Add Option"),
+                  ),
+                ],
+                TextField(
+                  controller: answerController,
+                  decoration: const InputDecoration(
+                    labelText: "Correct Answer",
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                this.setState(() {
+                  _questions[index] = {
+                    "question": questionController.text,
+                    "answer": answerController.text,
+                    "type": type,
+                    "options": type == "mcq" ? options : null,
+                  };
+                });
+                Navigator.pop(context);
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addQuestion() {
+    setState(() {
+      _questions.add({
+        "question": "New Question",
+        "answer": "",
+        "type": "mcq",
+        "options": ["", "", "", ""],
+      });
+    });
+    _editQuestion(_questions.length - 1);
+  }
+
   void _saveHomework() async {
     if (_questions.isEmpty) return;
     if (_selectedSectionId == null) {
@@ -85,7 +199,6 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Create Online Exam instead of Homework
       await ApiService().post("/api/v1/online-exams/create", {
         "title": "${_subjectController.text}: ${_topicController.text}",
         "subject": _subjectController.text,
@@ -93,13 +206,13 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
         "start_time": _startTime.toIso8601String(),
         "end_time": _endTime.toIso8601String(),
         "duration_mins": int.tryParse(_durationController.text) ?? 30,
-        "total_marks": _questions.length, // 1 mark per question for now
+        "total_marks": _questions.length,
         "questions": _questions
             .map(
               (q) => {
                 "question_text": q["question"],
                 "answer_text": q["answer"],
-                "options_json": q["options"], // If the AI provided them
+                "options_json": q["options"],
                 "marks": 1,
               },
             )
@@ -108,7 +221,7 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
 
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Smart Exam posted for your students!")),
+        const SnackBar(content: Text("Exam posted successfully!")),
       );
       Navigator.pop(context);
     } catch (e) {
@@ -169,16 +282,20 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
 
   Widget _buildInputSection() {
     return Card(
+      elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
               controller: _subjectController,
               decoration: const InputDecoration(
                 labelText: "Subject",
                 hintText: "e.g. Mathematics",
+                prefixIcon: Icon(Icons.book_outlined),
               ),
             ),
             const SizedBox(height: 12),
@@ -187,39 +304,55 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
               decoration: const InputDecoration(
                 labelText: "Topic",
                 hintText: "e.g. Quadratic Equations",
+                prefixIcon: Icon(Icons.topic_outlined),
               ),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               value: _selectedSectionId,
-              decoration: const InputDecoration(labelText: "Select Section"),
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: "Select Section",
+                prefixIcon: Icon(Icons.class_outlined),
+              ),
               items: _sections.map((s) {
                 return DropdownMenuItem<String>(
                   value: s["id"].toString(),
-                  child: Text(s["name"] ?? "Section ${s['id']}"),
+                  child: Text(
+                    s["name"] ?? "Section ${s['id']}",
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 );
               }).toList(),
               onChanged: (val) => setState(() => _selectedSectionId = val),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: _durationController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: "Duration (Minutes)",
                 hintText: "e.g. 30",
+                prefixIcon: Icon(Icons.timer_outlined),
               ),
             ),
             const SizedBox(height: 16),
-            Row(
+            const Text(
+              "Difficulty",
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                const Text("Difficulty: "),
-                const SizedBox(width: 8),
                 _diffChip("easy"),
                 _diffChip("medium"),
                 _diffChip("hard"),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -229,10 +362,11 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6A11CB),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  elevation: 0,
                 ),
               ),
             ),
@@ -265,37 +399,69 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "Generated Preview",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Review Questions",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            IconButton(
+              onPressed: _addQuestion,
+              icon: const Icon(Icons.add_circle, color: Colors.blue),
+              tooltip: "Add Question",
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        ..._questions.map(
-          (q) => Card(
+        ..._questions.asMap().entries.map((entry) {
+          final index = entry.key;
+          final q = entry.value;
+          return Card(
             margin: const EdgeInsets.only(bottom: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(color: Colors.grey.shade200),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+            child: ListTile(
+              title: Text(
+                "${index + 1}. ${q['question']}",
+                style: const TextStyle(fontWeight: FontWeight.w500),
+              ),
+              subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const SizedBox(height: 4),
                   Text(
-                    "Q: ${q['question']}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    "Type: ${(q['type'] ?? 'mcq').toString().toUpperCase()}",
+                    style: const TextStyle(fontSize: 11, color: Colors.blue),
                   ),
-                  const Divider(height: 24),
                   Text(
                     "A: ${q['answer']}",
                     style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
                   ),
                 ],
               ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 20),
+                    onPressed: () => _editQuestion(index),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      size: 20,
+                      color: Colors.red,
+                    ),
+                    onPressed: () => setState(() => _questions.removeAt(index)),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:fl_chart/fl_chart.dart';
 
 class AttendanceSummaryCard extends StatefulWidget {
@@ -30,13 +29,11 @@ class _AttendanceSummaryCardState extends State<AttendanceSummaryCard>
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2), // Live rotation duration
+      duration: const Duration(seconds: 2),
     );
-
     _rotationAnim = Tween<double>(begin: 0, end: 360).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
-
     _animController.forward();
   }
 
@@ -57,102 +54,128 @@ class _AttendanceSummaryCardState extends State<AttendanceSummaryCard>
 
   @override
   Widget build(BuildContext context) {
-    // Avoid division by zero
     final total = widget.present + widget.absent + widget.holiday;
     final hasData = total > 0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      padding: const EdgeInsets.all(24),
+      child: Column(
         children: [
-          // 🍩 COMPACT DONUT CHART (LEFT)
-          SizedBox(
-            height: 120,
-            width: 120,
-            child: hasData
-                ? Stack(
-                    children: [
-                      AnimatedBuilder(
-                        animation: _rotationAnim,
-                        builder: (context, child) {
-                          return PieChart(
-                            PieChartData(
-                              sectionsSpace: 0,
-                              centerSpaceRadius: 40,
-                              startDegreeOffset: _rotationAnim.value - 90,
-                              sections: [
-                                _section(
-                                  widget.present,
-                                  const Color(0xFF43CEA2),
+          Row(
+            children: [
+              // 🍩 DONUT CHART
+              SizedBox(
+                height: 140,
+                width: 140,
+                child: hasData
+                    ? Stack(
+                        children: [
+                          AnimatedBuilder(
+                            animation: _rotationAnim,
+                            builder: (context, child) {
+                              return PieChart(
+                                PieChartData(
+                                  sectionsSpace: 0,
+                                  centerSpaceRadius: 45,
+                                  startDegreeOffset: _rotationAnim.value - 90,
+                                  sections: [
+                                    _section(
+                                      widget.present,
+                                      const Color(0xFF43CEA2),
+                                    ),
+                                    _section(
+                                      widget.absent,
+                                      const Color(0xFFFF5F6D),
+                                    ),
+                                    _section(
+                                      widget.holiday,
+                                      const Color(0xFFFBC02D),
+                                    ),
+                                  ],
                                 ),
-                                _section(
-                                  widget.absent,
-                                  const Color(0xFFFF5F6D),
+                              );
+                            },
+                          ),
+                          Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  "${widget.percentage}%",
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w900,
+                                    color: _getPercentageColor(
+                                      widget.percentage,
+                                    ),
+                                    letterSpacing: -1,
+                                  ),
                                 ),
-                                _section(
-                                  widget.holiday,
-                                  const Color(0xFF3A6BFF),
+                                const Text(
+                                  "SCORE",
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey,
+                                    letterSpacing: 1,
+                                  ),
                                 ),
                               ],
                             ),
-                          );
-                        },
-                      ),
-                      // 🎯 CENTER PERCENTAGE
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "${widget.percentage}%",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: _getPercentageColor(widget.percentage),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  )
-                : const Center(
-                    child: Text(
-                      "No Data",
-                      style: TextStyle(color: Colors.grey, fontSize: 10),
+                          ),
+                        ],
+                      )
+                    : _buildEmptyChart(),
+              ),
+              const SizedBox(width: 32),
+              // 📊 LEGEND
+              Expanded(
+                child: Column(
+                  children: [
+                    _legendItem(
+                      "Present ✅",
+                      widget.present,
+                      const Color(0xFF43CEA2),
                     ),
-                  ),
-          ),
-
-          const SizedBox(width: 24),
-
-          // 📊 STATS LIST (RIGHT)
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _compactLegendItem(
-                  "Present",
-                  widget.present,
-                  const Color(0xFF43CEA2),
+                    const SizedBox(height: 12),
+                    _legendItem(
+                      "Absent ❌",
+                      widget.absent,
+                      const Color(0xFFFF5F6D),
+                    ),
+                    const SizedBox(height: 12),
+                    _legendItem(
+                      "Holiday 🗓️",
+                      widget.holiday,
+                      const Color(0xFFFBC02D),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                _compactLegendItem(
-                  "Absent",
-                  widget.absent,
-                  const Color(0xFFFF5F6D),
-                ),
-                const SizedBox(height: 8),
-                _compactLegendItem(
-                  "Holiday",
-                  widget.holiday,
-                  const Color(0xFF3A6BFF),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyChart() {
+    return Container(
+      height: 140,
+      width: 140,
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.05),
+        shape: BoxShape.circle,
+      ),
+      child: const Center(
+        child: Text(
+          "NO DATA 📭",
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
     );
   }
@@ -162,39 +185,40 @@ class _AttendanceSummaryCardState extends State<AttendanceSummaryCard>
       color: color,
       value: value.toDouble(),
       title: "",
-      radius: 14,
+      radius: 18,
       showTitle: false,
     );
   }
 
-  Widget _compactLegendItem(String label, int value, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+  Widget _legendItem(String label, int value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF1E263E),
+              ),
             ),
           ),
-        ),
-        Text(
-          value.toString(),
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
+          Text(
+            value.toString(),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1E263E),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

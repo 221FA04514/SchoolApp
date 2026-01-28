@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/auth/auth_provider.dart';
+import '../../core/socket/socket_service.dart';
 import '../dashboard/student_dashboard.dart';
 import '../dashboard/teacher_dashboard.dart';
 import '../dashboard/admin_dashboard.dart';
@@ -92,6 +93,9 @@ class _LoginScreenState extends State<LoginScreen>
       ).showSnackBar(const SnackBar(content: Text("Login failed")));
       return;
     }
+
+    // 🚀 INIT SOCKET AFTER LOGIN
+    context.read<SocketService>().initSocket();
 
     if (auth.role == 'student') {
       Navigator.pushReplacement(

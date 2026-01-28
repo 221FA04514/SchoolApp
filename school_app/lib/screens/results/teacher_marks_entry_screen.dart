@@ -35,13 +35,17 @@ class _TeacherMarksEntryScreenState extends State<TeacherMarksEntryScreen> {
   Future<void> _loadStudents() async {
     try {
       final response = await _api.get(
-        "/api/v1/results/students/${widget.sectionId}",
+        "/api/v1/results/exam-marks/${widget.examId}/${widget.sectionId}",
       );
       setState(() {
         _students = response["data"] ?? [];
         for (var s in _students) {
-          _marksControllers[s["id"]] = TextEditingController();
-          _remarksControllers[s["id"]] = TextEditingController();
+          _marksControllers[s["id"]] = TextEditingController(
+            text: s["marks"]?.toString() ?? "",
+          );
+          _remarksControllers[s["id"]] = TextEditingController(
+            text: s["remarks"] ?? "",
+          );
         }
         _isLoading = false;
       });

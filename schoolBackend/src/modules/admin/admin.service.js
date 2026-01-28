@@ -5,7 +5,7 @@ const pool = require("../../config/db");
  */
 exports.getAllTeachers = async () => {
     const [rows] = await pool.query(`
-    SELECT u.id as user_id, u.email, t.name, t.subject, t.phone 
+    SELECT t.id, u.id as user_id, u.email, t.name, t.subject, t.phone 
     FROM users u 
     INNER JOIN teachers t ON u.id = t.user_id 
     WHERE u.role = 'teacher'

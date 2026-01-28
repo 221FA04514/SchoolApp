@@ -47,6 +47,14 @@ exports.studentSendMessage = async (req, res, next) => {
       message,
     });
 
+    // Notify Teacher Real-time
+    const { sendNotification } = require("../../config/socket");
+    sendNotification(teacher_id, {
+      type: "chat",
+      sender: "student",
+      message: message.length > 50 ? message.substring(0, 50) + "..." : message
+    });
+
     return success(res, null, "Message sent");
   } catch (err) {
     next(err);
@@ -92,6 +100,14 @@ exports.teacherSendMessage = async (req, res, next) => {
       student_id,
       teacher_id: userId,
       message,
+    });
+
+    // Notify Student Real-time
+    const { sendNotification } = require("../../config/socket");
+    sendNotification(student_id, {
+      type: "chat",
+      sender: "teacher",
+      message: message.length > 50 ? message.substring(0, 50) + "..." : message
     });
 
     return success(res, null, "Reply sent");

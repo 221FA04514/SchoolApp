@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/socket/socket_service.dart';
 import '../../core/api/api_service.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -19,6 +22,7 @@ class _ChatScreenState extends State<ChatScreen>
     with SingleTickerProviderStateMixin {
   final ApiService _api = ApiService();
   final TextEditingController _controller = TextEditingController();
+  StreamSubscription? _socketSub;
 
   List messages = [];
   bool loading = true;
@@ -36,16 +40,25 @@ class _ChatScreenState extends State<ChatScreen>
       duration: const Duration(milliseconds: 600),
     );
 
-    _fade = CurvedAnimation(
-      parent: _pageController,
-      curve: Curves.easeOut,
-    );
+    _fade = CurvedAnimation(parent: _pageController, curve: Curves.easeOut);
+
+    // 🔹 Listen for Real-time messages
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final socket = Provider.of<SocketService>(context, listen: false);
+      _socketSub = socket.messageStream.listen((data) {
+        print("[CHAT] Socket Event Received: $data");
+        if (data["type"] == "chat" && data["sender"] == "teacher") {
+          fetchMessages();
+        }
+      });
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _pageController.dispose();
+    _socketSub?.cancel();
     super.dispose();
   }
 
@@ -74,13 +87,10 @@ class _ChatScreenState extends State<ChatScreen>
     final text = _controller.text.trim();
     _controller.clear();
 
-    await _api.post(
-      "/api/v1/messages/student",
-      {
-        "teacher_id": widget.teacherId,
-        "message": text,
-      },
-    );
+    await _api.post("/api/v1/messages/student", {
+      "teacher_id": widget.teacherId,
+      "message": text,
+    });
 
     fetchMessages();
   }
@@ -98,11 +108,7 @@ class _ChatScreenState extends State<ChatScreen>
         flexibleSpace: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [
-                Color(0xFF1A4DFF),
-                Color(0xFF3A6BFF),
-                Color(0xFF6A11CB),
-              ],
+              colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF), Color(0xFF6A11CB)],
             ),
           ),
         ),
@@ -126,86 +132,82 @@ class _ChatScreenState extends State<ChatScreen>
             child: loading
                 ? const Center(child: CircularProgressIndicator())
                 : messages.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "💬 No messages yet",
-                          style: TextStyle(color: Colors.black54),
-                        ),
-                      )
-                    : FadeTransition(
-                        opacity: _fade,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.all(12),
-                          itemCount: messages.length,
-                          itemBuilder: (context, index) {
-                            final msg = messages[index];
-                            final isStudent =
-                                msg["sender"] == "student";
+                ? const Center(
+                    child: Text(
+                      "💬 No messages yet",
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                  )
+                : FadeTransition(
+                    opacity: _fade,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(12),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final msg = messages[index];
+                        final isStudent = msg["sender"] == "student";
 
-                            return TweenAnimationBuilder<double>(
-                              tween: Tween(begin: 0, end: 1),
-                              duration: Duration(
-                                  milliseconds: 300 + index * 60),
-                              builder: (context, value, child) {
-                                return Opacity(
-                                  opacity: value,
-                                  child: Transform.translate(
-                                    offset: Offset(
-                                        0, 12 * (1 - value)),
-                                    child: child,
-                                  ),
-                                );
-                              },
-                              child: Align(
-                                alignment: isStudent
-                                    ? Alignment.centerRight
-                                    : Alignment.centerLeft,
-                                child: Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 6),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 10),
-                                  constraints: BoxConstraints(
-                                      maxWidth:
-                                          size.width * 0.75),
-                                  decoration: BoxDecoration(
-                                    gradient: isStudent
-                                        ? const LinearGradient(
-                                            colors: [
-                                              Color(0xFF1A4DFF),
-                                              Color(0xFF3A6BFF),
-                                            ],
-                                          )
-                                        : null,
-                                    color: isStudent
-                                        ? null
-                                        : Colors.grey.shade300,
-                                    borderRadius: BorderRadius.only(
-                                      topLeft:
-                                          const Radius.circular(16),
-                                      topRight:
-                                          const Radius.circular(16),
-                                      bottomLeft: Radius.circular(
-                                          isStudent ? 16 : 0),
-                                      bottomRight: Radius.circular(
-                                          isStudent ? 0 : 16),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    msg["message"],
-                                    style: TextStyle(
-                                      color: isStudent
-                                          ? Colors.white
-                                          : Colors.black87,
-                                      fontSize: 14.5,
-                                    ),
-                                  ),
-                                ),
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: 1),
+                          duration: Duration(milliseconds: 300 + index * 60),
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 12 * (1 - value)),
+                                child: child,
                               ),
                             );
                           },
-                        ),
-                      ),
+                          child: Align(
+                            alignment: isStudent
+                                ? Alignment.centerRight
+                                : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              constraints: BoxConstraints(
+                                maxWidth: size.width * 0.75,
+                              ),
+                              decoration: BoxDecoration(
+                                gradient: isStudent
+                                    ? const LinearGradient(
+                                        colors: [
+                                          Color(0xFF1A4DFF),
+                                          Color(0xFF3A6BFF),
+                                        ],
+                                      )
+                                    : null,
+                                color: isStudent ? null : Colors.grey.shade300,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: const Radius.circular(16),
+                                  topRight: const Radius.circular(16),
+                                  bottomLeft: Radius.circular(
+                                    isStudent ? 16 : 0,
+                                  ),
+                                  bottomRight: Radius.circular(
+                                    isStudent ? 0 : 16,
+                                  ),
+                                ),
+                              ),
+                              child: Text(
+                                msg["message"],
+                                style: TextStyle(
+                                  color: isStudent
+                                      ? Colors.white
+                                      : Colors.black87,
+                                  fontSize: 14.5,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
           ),
 
           // 🔹 INPUT BOX (FIXED POSITION)
@@ -215,7 +217,9 @@ class _ChatScreenState extends State<ChatScreen>
               padding: const EdgeInsets.only(bottom: 8),
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -239,9 +243,10 @@ class _ChatScreenState extends State<ChatScreen>
                             borderRadius: BorderRadius.circular(24),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding:
-                              const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -253,10 +258,7 @@ class _ChatScreenState extends State<ChatScreen>
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
-                            colors: [
-                              Color(0xFF1A4DFF),
-                              Color(0xFF3A6BFF),
-                            ],
+                            colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
                           ),
                         ),
                         child: const Icon(

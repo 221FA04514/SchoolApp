@@ -76,22 +76,9 @@ exports.getHomeworkForStudent = async (req, res, next) => {
       return error(res, "Student not found", 404);
     }
 
-    // Pass student's userId (which is req.user.userId from token) 
-    // Wait, students table has 'id' which is studentId. 'user_id' is from users table.
-    // We need studentId. 
-    // The query above fetches section_id. Let's fetch the student ID as well.
-    const [studentRows] = await pool.query(
-      `SELECT id, section_id FROM students WHERE user_id = ?`,
-      [req.user.userId]
-    );
-    if (!studentRows.length) {
-      return error(res, "Student not found", 404);
-    }
+    const sectionId = rows[0].section_id;
 
-    const studentId = studentRows[0].id;
-    const sectionId = studentRows[0].section_id;
-
-    const homework = await getStudentHomework(sectionId, studentId);
+    const homework = await getStudentHomework(sectionId, req.user.userId);
     return success(res, homework, "Homework fetched");
   } catch (err) {
     next(err);
@@ -109,19 +96,8 @@ exports.markHomeworkStatus = async (req, res, next) => {
 
     const { homework_id, is_completed } = req.body;
 
-    // Get student ID
-    const [rows] = await pool.query(
-      `SELECT id FROM students WHERE user_id = ?`,
-      [req.user.userId]
-    );
-
-    if (!rows.length) {
-      return error(res, "Student not found", 404);
-    }
-    const studentId = rows[0].id;
-
     await require("./homework.service").updateHomeworkStatus(
-      studentId,
+      req.user.userId,
       homework_id,
       is_completed
     );
@@ -139,20 +115,9 @@ exports.submitHomework = async (req, res, next) => {
     if (req.user.role !== "student") return error(res, "Access denied", 403);
     const { homework_id, content, file_url } = req.body;
 
-    // Resolve studentId
-    const [rows] = await pool.query(
-      `SELECT id FROM students WHERE user_id = ?`,
-      [req.user.userId]
-    );
-
-    if (!rows.length) {
-      return error(res, "Student not found", 404);
-    }
-    const studentId = rows[0].id;
-
     await submitHomework({
       homework_id,
-      student_id: studentId,
+      student_id: req.user.userId,
       content,
       file_url
     });

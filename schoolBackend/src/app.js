@@ -62,6 +62,11 @@ app.use("/api/v1/quizzes", require("./modules/quizzes/quizzes.routes"));
 app.use("/api/v1/online-exams", require("./modules/online_exams/online_exams.routes"));
 app.use("/api/v1/leaves", require("./modules/leaves/leaves.routes"));
 
+/* ---------- V2 UPGRADE ROUTES ---------- */
+app.use("/api/v2/admin/mappings", require("./modules/mapping/mapping.routes"));
+app.use("/api/v2/admin/substitutions", require("./modules/substitutions/substitutions.routes"));
+app.use("/api/v2/admin/notifications", require("./modules/mass_notifications/mass_notifications.routes"));
+
 // Health check (already created in Phase 0)
 app.use("/api/v1/health", require("./modules/health/health.routes"));
 

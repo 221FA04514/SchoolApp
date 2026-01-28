@@ -108,16 +108,7 @@ exports.getMyAttendance = async (req, res, next) => {
 
   if (role !== "student") return error(res, "Access denied", 403);
 
-  // Resolve studentId
-  const pool = require("../../config/db");
-  const [rows] = await pool.query(
-    `SELECT id FROM students WHERE user_id = ?`,
-    [userId]
-  );
-  if (!rows.length) return error(res, "Student not found", 404);
-  const studentId = rows[0].id;
-
-  const data = await getStudentAttendance(studentId, month, year);
+  const data = await getStudentAttendance(userId, month, year);
   return success(res, data, "Attendance fetched");
 };
 
@@ -127,16 +118,7 @@ exports.getMyAttendanceSummary = async (req, res, next) => {
 
   if (role !== "student") return error(res, "Access denied", 403);
 
-  // Resolve studentId
-  const pool = require("../../config/db");
-  const [rows] = await pool.query(
-    `SELECT id FROM students WHERE user_id = ?`,
-    [userId]
-  );
-  if (!rows.length) return error(res, "Student not found", 404);
-  const studentId = rows[0].id;
-
-  const data = await getAttendanceSummary(studentId, month, year);
+  const data = await getAttendanceSummary(userId, month, year);
   return success(res, data, "Summary fetched");
 };
 
@@ -146,16 +128,7 @@ exports.getMyAttendanceCalendar = async (req, res, next) => {
 
   if (role !== "student") return error(res, "Access denied", 403);
 
-  // Resolve studentId
-  const pool = require("../../config/db");
-  const [rows] = await pool.query(
-    `SELECT id FROM students WHERE user_id = ?`,
-    [userId]
-  );
-  if (!rows.length) return error(res, "Student not found", 404);
-  const studentId = rows[0].id;
-
-  const data = await getAttendanceCalendarMap(studentId, month, year);
+  const data = await getAttendanceCalendarMap(userId, month, year);
   return success(res, data, "Calendar fetched");
 };
 /**

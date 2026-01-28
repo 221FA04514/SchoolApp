@@ -5,6 +5,7 @@ const {
   saveTimetable,
   getSectionTimetable,
   getMyTimetable,
+  getMyPersonalTimetable,
   removeSlot,
 } = require("./timetable.controller");
 
@@ -16,6 +17,7 @@ router.get("/ping", (req, res) => {
 /* TEACHER / ADMIN */
 router.post("/", authMiddleware, saveTimetable);
 router.get("/section", authMiddleware, getSectionTimetable);
+router.get("/personal", authMiddleware, getMyPersonalTimetable);
 router.delete("/:id", authMiddleware, removeSlot);
 
 /* STUDENT */

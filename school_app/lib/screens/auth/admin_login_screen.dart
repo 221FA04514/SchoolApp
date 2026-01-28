@@ -96,9 +96,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
         });
       } else if (res != null) {
         if (mounted) {
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            (route) => false,
           );
         }
       }
@@ -113,15 +114,22 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
 
   Future<void> _handleVerifyOtp() async {
     final code = otpController.text.trim();
-    if (code.isEmpty || _userId == null) return;
+    if (_userId == null) return;
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter the verification code")),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
     try {
       await context.read<AuthProvider>().verifyOtp(_userId!, code);
       if (mounted) {
-        Navigator.pushReplacement(
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const AdminDashboard()),
+          (route) => false,
         );
       }
     } catch (e) {
@@ -130,6 +138,27 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(e.toString())));
+    }
+  }
+
+  Future<void> _handleResendOtp() async {
+    if (_userId == null) return;
+    setState(() => _isLoading = true);
+    try {
+      await context.read<AuthProvider>().resendOtp(_userId!);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("OTP Resent Successfully")),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to resend: $e")));
+      }
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -151,36 +180,38 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
             /// 🔵 WAVE HEADER
             SlideTransition(
               position: _headerSlide,
-              child: ClipPath(
-                clipper: WaveClipper(),
-                child: Container(
-                  width: double.infinity,
-                  height: size.height * 0.36,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
+              child: RepaintBoundary(
+                child: ClipPath(
+                  clipper: WaveClipper(),
+                  child: Container(
+                    width: double.infinity,
+                    height: size.height * 0.36,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
+                      ),
                     ),
-                  ),
-                  child: SafeArea(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        SizedBox(height: 12),
-                        Text(
-                          'Admin Portal',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                    child: SafeArea(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          SizedBox(height: 12),
+                          Text(
+                            'Admin Portal',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Authorized access only',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      ],
+                          SizedBox(height: 8),
+                          Text(
+                            'Authorized access only',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -189,17 +220,19 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
 
             /// 🖼 CENTER ILLUSTRATION
             Positioned(
-              top: size.height * 0.16,
+              top: size.height * 0.22,
               left: 0,
               right: 0,
               child: FadeTransition(
                 opacity: _imageFade,
                 child: ScaleTransition(
                   scale: _imageScale,
-                  child: Image.asset(
-                    'assets/images/secure_admin_no_bg.png',
-                    height: 300,
-                    fit: BoxFit.contain,
+                  child: RepaintBoundary(
+                    child: Image.asset(
+                      'assets/images/secure_admin_no_bg.png',
+                      height: 200,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),
@@ -373,7 +406,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
             ),
           ),
           TextButton(
-            onPressed: () {},
+            onPressed: _isLoading ? null : _handleResendOtp,
             child: const Text(
               "Resend Code",
               style: TextStyle(color: Colors.red),
