@@ -5,6 +5,7 @@ import 'screens/auth/login_selection_screen.dart';
 import 'core/socket/socket_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   final socketService = SocketService();
 
   // Try to init socket on startup (if token exists)

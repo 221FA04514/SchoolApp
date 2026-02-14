@@ -9,11 +9,19 @@ import '../admin/manage_sections.dart';
 import '../admin/manage_period_settings.dart';
 import '../admin/manage_mappings.dart';
 import '../admin/manage_substitutions.dart';
+<<<<<<< HEAD
 import '../admin/notification_center.dart';
 import '../leaves/leave_management_screen.dart';
+=======
+import '../admin/manage_notifications.dart';
+import '../admin/manage_leaves.dart';
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
+
+  // Theme Color
+  final Color primaryColor = const Color(0xFF673AB7); // Solid Violet
 
   @override
   State<AdminDashboard> createState() => _AdminDashboardState();
@@ -46,6 +54,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final double minimizedHeight = size.height * 0.18;
 
     return Scaffold(
+<<<<<<< HEAD
       backgroundColor: const Color(0xFFF8FAFF),
       body: Stack(
         children: [
@@ -57,11 +66,82 @@ class _AdminDashboardState extends State<AdminDashboard> {
             left: 0,
             right: 0,
             bottom: 0,
+=======
+      backgroundColor: const Color(0xFFF5F6FA), // Light grey background
+      body: Column(
+        children: [
+          // Custom Header
+          Container(
+            padding: const EdgeInsets.only(
+              top: 50,
+              left: 20,
+              right: 20,
+              bottom: 30,
+            ),
+            decoration: BoxDecoration(
+              color: primaryColor, // Solid Violet
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.white,
+                        child: Icon(
+                          Icons.admin_panel_settings,
+                          color: primaryColor,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    const Text(
+                      "Administrator",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.logout, color: Colors.white),
+                  onPressed: () {
+                    context.read<AuthProvider>().logout();
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LoginSelectionScreen(),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+<<<<<<< HEAD
                   const Text(
                     "💎 Control Center",
                     style: TextStyle(
@@ -72,6 +152,23 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ),
                   ),
                   const SizedBox(height: 16),
+=======
+                  Row(
+                    children: [
+                      Icon(Icons.grid_view_rounded, color: primaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Control Center",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -80,6 +177,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     mainAxisSpacing: 16,
                     childAspectRatio: 1.1,
                     children: [
+<<<<<<< HEAD
                       _buildHubTile(
                         context,
                         "Teachers",
@@ -146,10 +244,69 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ],
                   ),
                   const SizedBox(height: 40),
+=======
+                      _buildModuleCard(
+                        context,
+                        "Teachers",
+                        Icons.people,
+                        const ManageTeachersScreen(),
+                      ),
+                      _buildModuleCard(
+                        context,
+                        "Students",
+                        Icons.school,
+                        const ManageStudentsScreen(),
+                      ),
+                      _buildModuleCard(
+                        context,
+                        "Timetable",
+                        Icons.calendar_today,
+                        const ManageTimetableScreen(),
+                      ),
+                      _buildModuleCard(
+                        context,
+                        "Sections",
+                        Icons.grid_view,
+                        const ManageSectionsScreen(),
+                      ),
+                      _buildModuleCard(
+                        context,
+                        "Time Mgmt",
+                        Icons.timer,
+                        const ManagePeriodSettingsScreen(),
+                      ),
+                      _buildModuleCard(
+                        context,
+                        "Mappings",
+                        Icons.link,
+                        const ManageMappingsScreen(),
+                      ),
+                      _buildModuleCard(
+                        context,
+                        "Substitution",
+                        Icons.sync_alt,
+                        const ManageSubstitutionsScreen(),
+                      ),
+                      _buildModuleCard(
+                        context,
+                        "Notify Hub",
+                        Icons.notifications_active,
+                        const ManageNotificationsScreen(),
+                      ),
+                      _buildModuleCard(
+                        context,
+                        "Leaves",
+                        Icons.exit_to_app,
+                        const ManageLeavesScreen(),
+                      ),
+                    ],
+                  ),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                 ],
               ),
             ),
           ),
+<<<<<<< HEAD
 
           // ================= HEADER =================
           AnimatedPositioned(
@@ -223,11 +380,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
           ),
+=======
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ],
       ),
     );
   }
 
+<<<<<<< HEAD
   Widget _buildHubTile(
     BuildContext context,
     String title,
@@ -272,6 +432,56 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
           ],
+=======
+  Widget _buildModuleCard(
+    BuildContext context,
+    String title,
+    IconData icon,
+    Widget target,
+  ) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.05),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => target));
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 32, color: primaryColor),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ),
       ),
     );

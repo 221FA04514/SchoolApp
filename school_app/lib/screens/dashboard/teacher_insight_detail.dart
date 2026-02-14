@@ -50,11 +50,7 @@ class _TeacherInsightDetailScreenState
       appBar: AppBar(
         title: Text(widget.title),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A4DFF), Color(0xFF6A11CB)],
-            ),
-          ),
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
         ),
       ),
       body: _isLoading

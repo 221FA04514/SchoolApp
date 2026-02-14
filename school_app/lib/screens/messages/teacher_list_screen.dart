@@ -29,17 +29,12 @@ class _TeacherListScreenState extends State<TeacherListScreen>
       duration: const Duration(milliseconds: 700),
     );
 
-    _fade = CurvedAnimation(
-      parent: _pageController,
-      curve: Curves.easeOut,
-    );
+    _fade = CurvedAnimation(parent: _pageController, curve: Curves.easeOut);
 
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.08),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _pageController, curve: Curves.easeOut),
-    );
+    ).animate(CurvedAnimation(parent: _pageController, curve: Curves.easeOut));
   }
 
   @override
@@ -71,155 +66,186 @@ class _TeacherListScreenState extends State<TeacherListScreen>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
-
-      // ================= HEADER =================
-      body: Column(
+      body: Stack(
         children: [
-          SlideTransition(
-            position: _slide,
-            child: FadeTransition(
-              opacity: _fade,
-              child: Container(
-                height: size.height * 0.22,
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF1A4DFF),
-                      Color(0xFF3A6BFF),
-                      Color(0xFF6A11CB),
-                    ],
-                  ),
-                  borderRadius:
-                      BorderRadius.vertical(bottom: Radius.circular(28)),
-                ),
-                child: SafeArea(
-                  child: Row(
-                    children: const [
-                      BackButton(color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        "👨‍🏫 Select Teacher",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+          // ================= HEADER =================
+          Container(
+            padding: const EdgeInsets.only(
+              top: 50,
+              left: 20,
+              right: 20,
+              bottom: 20,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF4A00E0),
+                  const Color(0xFF4A00E0).withOpacity(0.8),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4A00E0).withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back_ios,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      padding: EdgeInsets.zero,
+                      alignment: Alignment.centerLeft,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Select Teacher",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Search or descriptive text could go here
+                Text(
+                  "Choose a teacher to resolve doubts",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
 
           // ================= LIST =================
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.only(top: 130),
             child: loading
                 ? const Center(child: CircularProgressIndicator())
                 : teachers.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "😔 No teachers available",
-                          style: TextStyle(color: Colors.black54),
+                ? const Center(
+                    child: Text(
+                      "😔 No teachers available",
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                  )
+                : FadeTransition(
+                    opacity: _fade,
+                    child: SlideTransition(
+                      position: _slide,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 20,
                         ),
-                      )
-                    : FadeTransition(
-                        opacity: _fade,
-                        child: SlideTransition(
-                          position: _slide,
-                          child: ListView.builder(
-                            padding: const EdgeInsets.all(16),
-                            itemCount: teachers.length,
-                            itemBuilder: (context, index) {
-                              final t = teachers[index];
-                              final color =
-                                  _subjectColor(t["subject"]);
+                        itemCount: teachers.length,
+                        itemBuilder: (context, index) {
+                          final t = teachers[index];
+                          final color = _subjectColor(t["subject"]);
 
-                              return TweenAnimationBuilder<double>(
-                                tween: Tween(begin: 0, end: 1),
-                                duration: Duration(
-                                    milliseconds: 400 + index * 120),
-                                builder: (context, value, child) {
-                                  return Opacity(
-                                    opacity: value,
-                                    child: Transform.translate(
-                                      offset:
-                                          Offset(0, 20 * (1 - value)),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  margin:
-                                      const EdgeInsets.only(bottom: 14),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius:
-                                        BorderRadius.circular(18),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: color.withOpacity(0.2),
-                                        blurRadius: 14,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ListTile(
-                                    leading: const Text(
-                                      "👨‍🏫",
-                                      style: TextStyle(fontSize: 22),
-                                    ),
-                                    title: Text(
-                                      t["name"],
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      "📘 ${t["subject"]}",
-                                      style: TextStyle(color: color),
-                                    ),
-                                    trailing: Container(
-                                      padding:
-                                          const EdgeInsets.all(10),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            color,
-                                            color.withOpacity(0.7),
-                                          ],
-                                        ),
-                                      ),
-                                      child: const Icon(
-                                        Icons.chat_bubble_outline,
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                    ),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => ChatScreen(
-                                            teacherId: t["id"],
-                                            teacherName: t["name"],
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0, end: 1),
+                            duration: Duration(milliseconds: 400 + index * 120),
+                            builder: (context, value, child) {
+                              return Opacity(
+                                opacity: value,
+                                child: Transform.translate(
+                                  offset: Offset(0, 20 * (1 - value)),
+                                  child: child,
                                 ),
                               );
                             },
-                          ),
-                        ),
+                            child: Container(
+                              margin: const EdgeInsets.only(bottom: 15),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.all(16),
+                                leading: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: color.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    "👨‍🏫",
+                                    style: const TextStyle(fontSize: 24),
+                                  ),
+                                ),
+                                title: Text(
+                                  t["name"],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  "📘 ${t["subject"]}",
+                                  style: TextStyle(
+                                    color: color,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                trailing: Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF4F6FB),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Icon(
+                                    Icons.chat_bubble_outline,
+                                    color: Color(0xFF4A00E0),
+                                    size: 20,
+                                  ),
+                                ),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ChatScreen(
+                                        teacherId: t["id"],
+                                        teacherName: t["name"],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        },
                       ),
+                    ),
+                  ),
           ),
         ],
       ),

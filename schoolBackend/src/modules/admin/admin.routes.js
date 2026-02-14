@@ -10,7 +10,8 @@ const {
     updateUser,
     listPeriodSettings,
     savePeriodSetting,
-    removePeriodSetting
+    removePeriodSetting,
+    removeUser
 } = require("./admin.controller");
 
 const adminOnly = (req, res, next) => {
@@ -29,6 +30,7 @@ router.post("/sections", createSection);
 router.delete("/sections/:id", removeSection);
 router.post("/register", registerUser);
 router.put("/users/:id", updateUser);
+router.delete("/users/:id", removeUser);
 
 // Period Settings
 router.get("/period-settings", listPeriodSettings);

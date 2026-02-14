@@ -10,27 +10,41 @@ class ManageTimetableScreen extends StatefulWidget {
 
 class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
   final ApiService _api = ApiService();
+
+  // Data
   List sections = [];
   List teachers = [];
   List periodSettings = [];
-  int? selectedSectionId;
-  String? selectedTeacher;
   List timetable = [];
-  bool isLoadingSections = true;
-  bool isLoadingTeachers = true;
-  bool isLoadingSettings = true;
+
+  // Selections
+  int? selectedSectionId;
+
+  // Loading States
+  bool isLoadingInit = true;
   bool isLoadingTimetable = false;
+
+  final List<String> days = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+
+  // Theme Color
+  final Color primaryColor = const Color(0xFF673AB7); // Deep Purple (Violet)
 
   @override
   void initState() {
     super.initState();
-    fetchSections();
-    fetchTeachers();
-    fetchPeriodSettings();
+    _initData();
   }
 
-  Future<void> fetchSections() async {
+  Future<void> _initData() async {
     try {
+<<<<<<< HEAD
       final res = await _api.get("/api/v1/admin/sections");
       if (mounted) {
         setState(() {
@@ -72,12 +86,59 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => isLoadingSettings = false);
+=======
+      final sRes = await _api.get("/api/v1/admin/sections");
+      final tRes = await _api.get("/api/v1/admin/teachers");
+
+      // Try fetching settings, fallback if empty/error
+      List pData = [];
+      try {
+        final pRes = await _api.get("/api/v1/admin/period-settings");
+        pData = pRes["data"] ?? [];
+      } catch (e) {
+        print("Period settings not found, using defaults");
+      }
+
+      if (mounted) {
+        setState(() {
+          sections = sRes["data"] ?? [];
+          teachers = tRes["data"] ?? [];
+
+          if (pData.isNotEmpty) {
+            periodSettings = pData;
+            // Sort periods
+            periodSettings.sort(
+              (a, b) =>
+                  (a['period_number'] as int).compareTo(b['period_number']),
+            );
+          } else {
+            // Fallback default periods
+            periodSettings = List.generate(
+              8,
+              (i) => {
+                "period_number": i + 1,
+                "start_time": "09:00",
+                "end_time": "10:00",
+              },
+            );
+          }
+
+          isLoadingInit = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => isLoadingInit = false);
+      print("Error initializing data: $e");
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     }
   }
 
   Future<void> fetchTimetable(int sectionId) async {
     setState(() => isLoadingTimetable = true);
     try {
+      // Clear current timetable to avoid confusion
+      setState(() => timetable = []);
+
       final res = await _api.get(
         "/api/v1/timetable/section?section_id=$sectionId",
       );
@@ -89,6 +150,7 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => isLoadingTimetable = false);
+<<<<<<< HEAD
     }
   }
 
@@ -184,10 +246,205 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
                       onChanged: (val) {
                         if (val.isNotEmpty) {
                           final pNum = int.tryParse(val);
+=======
+      print("Error fetching timetable: $e");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Robustly get periods
+    final periods = periodSettings
+        .map((p) => p["period_number"] as int)
+        .toList();
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text("Timetable Studio"),
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+      ),
+      body: Column(
+        children: [
+          // Header / Filter
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  offset: const Offset(0, 4),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.folder_open, color: Colors.amber),
+                    SizedBox(width: 8),
+                    Text(
+                      "Classes",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                if (isLoadingInit)
+                  LinearProgressIndicator(color: primaryColor)
+                else if (sections.isEmpty)
+                  const Text(
+                    "No sections found. Create sections first.",
+                    style: TextStyle(color: Colors.red),
+                  )
+                else
+                  SizedBox(
+                    height: 50,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: sections.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, index) {
+                        final s = sections[index];
+                        final isSelected = s["id"] == selectedSectionId;
+                        return InkWell(
+                          onTap: () {
+                            setState(() => selectedSectionId = s["id"]);
+                            fetchTimetable(s["id"]);
+                          },
+                          borderRadius: BorderRadius.circular(15),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected ? primaryColor : Colors.white,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: isSelected
+                                    ? primaryColor
+                                    : Colors.grey.shade300,
+                              ),
+                              boxShadow: isSelected
+                                  ? [
+                                      BoxShadow(
+                                        color: primaryColor.withOpacity(0.4),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            child: Center(
+                              child: Text(
+                                s["name"],
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : Colors.grey.shade700,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: selectedSectionId == null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.touch_app_outlined,
+                          size: 64,
+                          color: Colors.grey.shade300,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          "Select a class to view/edit timetable",
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  )
+                : isLoadingTimetable
+                ? Center(child: CircularProgressIndicator(color: primaryColor))
+                : SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        headingRowColor: MaterialStateProperty.all(
+                          primaryColor, // Violet Header
+                        ),
+                        headingTextStyle: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        dataRowMinHeight: 100, // Taller rows for rich content
+                        dataRowMaxHeight: 110,
+                        columnSpacing: 25,
+                        horizontalMargin: 20,
+                        border: TableBorder(
+                          verticalInside: BorderSide(
+                            color: Colors.grey.shade200,
+                            width: 1,
+                          ),
+                          horizontalInside: BorderSide(
+                            color: Colors.grey.shade200,
+                            width: 1,
+                          ),
+                        ),
+                        columns: [
+                          const DataColumn(
+                            label: Row(
+                              children: [
+                                Text("Time Hub"),
+                                SizedBox(width: 5),
+                                Icon(
+                                  Icons.timer_outlined,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
+                          ),
+                          ...days.map(
+                            (d) => DataColumn(
+                              label: SizedBox(
+                                width: 120, // Fixed width for columns
+                                child: Text(d, textAlign: TextAlign.center),
+                              ),
+                            ),
+                          ),
+                        ],
+                        rows: periods.map<DataRow>((pNum) {
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                           final setting = periodSettings.firstWhere(
                             (s) => s["period_number"] == pNum,
                             orElse: () => null,
                           );
+<<<<<<< HEAD
                           if (setting != null) {
                             setDialogState(() {
                               startController.text = setting["start_time"];
@@ -351,10 +608,181 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
             ],
           ),
         ),
+=======
+                          final timeLabel = setting != null
+                              ? "${setting['start_time']}-${setting['end_time']}"
+                              : "";
+
+                          return DataRow(
+                            cells: [
+                              // Period Column
+                              DataCell(
+                                Container(
+                                  width: 80,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  color: const Color(
+                                    0xFFF8F9FA,
+                                  ), // Light grey bg for period col
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: primaryColor, // Violet Bubble
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: primaryColor.withOpacity(
+                                                0.3,
+                                              ),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          "$pNum",
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        timeLabel,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // Day Columns
+                              ...days.map((day) {
+                                final slot = getSlot(day, pNum);
+                                final isSlot = slot != null;
+                                return DataCell(
+                                  InkWell(
+                                    onTap: () => _showSlotDialog(
+                                      day: day,
+                                      periodNum: pNum,
+                                    ),
+                                    child: Container(
+                                      width: 120,
+                                      padding: const EdgeInsets.all(8),
+                                      child: isSlot
+                                          ? Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                // Subject Row
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      _getSubjectIcon(
+                                                        slot["subject"],
+                                                      ),
+                                                      size: 16,
+                                                      color: _getSubjectColor(
+                                                        slot["subject"],
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Text(
+                                                        slot["subject"],
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 13,
+                                                          color:
+                                                              _getSubjectColor(
+                                                                slot["subject"],
+                                                              ),
+                                                        ),
+                                                        maxLines: 2,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 6),
+                                                // Teacher Row
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.person_outline,
+                                                      size: 14,
+                                                      color:
+                                                          Colors.grey.shade600,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Expanded(
+                                                      child: Text(
+                                                        slot["teacher_name"],
+                                                        style: TextStyle(
+                                                          fontSize: 11,
+                                                          color: Colors
+                                                              .grey
+                                                              .shade700,
+                                                          fontWeight:
+                                                              FontWeight.w500,
+                                                        ),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            )
+                                          : Center(
+                                              child: Container(
+                                                width: 30,
+                                                height: 30,
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey.shade50,
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: Colors.grey.shade200,
+                                                  ),
+                                                ),
+                                                child: Icon(
+                                                  Icons.add,
+                                                  color: Colors.grey.shade400,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                            ),
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+          ),
+        ],
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
   }
 
+<<<<<<< HEAD
   Future<void> _saveSlot(
     BuildContext context, {
     required int? sectionId,
@@ -450,6 +878,292 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
             const Text(
               "You can either double-book or choose someone else.",
               style: TextStyle(fontSize: 12, color: Colors.grey),
+=======
+  // --- Helper Methods ---
+
+  Map<String, dynamic>? getSlot(String day, int periodNum) {
+    try {
+      final slot = timetable.firstWhere((t) {
+        // Robust comparison for period (int vs string)
+        final p = t["period"];
+        final pInt = (p is int) ? p : int.tryParse(p.toString()) ?? -1;
+        return t["day"] == day && pInt == periodNum;
+      }, orElse: () => null);
+
+      // Ensure result is castable to Map<String, dynamic> or return null
+      if (slot != null && slot is Map) {
+        return Map<String, dynamic>.from(slot);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+  // ... (rest of methods unchanged, skipping to color/icon Logic)
+
+  IconData _getSubjectIcon(String subject) {
+    final s = subject.toLowerCase();
+    if (s.contains("math")) return Icons.calculate_outlined;
+    if (s.contains("science") || s.contains("physics"))
+      return Icons.science_outlined;
+    if (s.contains("chem")) return Icons.science;
+    if (s.contains("bio")) return Icons.biotech;
+    if (s.contains("computer") ||
+        s.contains("prog") ||
+        s.contains("python") ||
+        s.contains("java") ||
+        s == "c" ||
+        s == "c++" ||
+        s == "cpp")
+      return Icons.computer;
+    if (s.contains("eng")) return Icons.menu_book;
+    if (s.contains("hist") || s.contains("geo")) return Icons.public;
+    if (s.contains("sport") || s.contains("game")) return Icons.sports_soccer;
+    if (s.contains("art") || s.contains("draw")) return Icons.palette_outlined;
+    return Icons.book_outlined;
+  }
+
+  Color _getSubjectColor(String subject) {
+    final s = subject.toLowerCase();
+    if (s.contains("math")) return Colors.amber.shade700;
+    if (s.contains("science")) return Colors.blue.shade600;
+    if (s.contains("computer") ||
+        s.contains("tech") ||
+        s == "c" ||
+        s == "c++" ||
+        s == "cpp")
+      return Colors.purple.shade600;
+    if (s.contains("eng")) return Colors.red.shade400;
+    if (s.contains("sport")) return Colors.green.shade600;
+    return const Color(0xFF2C3E50);
+  }
+
+  void _showSlotDialog({required String day, required int periodNum}) {
+    if (teachers.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("No teachers available. Please add teachers first."),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    final existingSlot = getSlot(day, periodNum);
+    final setting = periodSettings.firstWhere(
+      (p) => p["period_number"] == periodNum,
+      orElse: () => {},
+    );
+
+    final subjectController = TextEditingController(
+      text: existingSlot?["subject"] ?? "",
+    );
+
+    // Ensure selectedTeacher is a valid teacher name from our list, or null
+    String? selectedTeacher = existingSlot?["teacher_name"];
+    if (selectedTeacher != null &&
+        !teachers.any((t) => t["name"] == selectedTeacher)) {
+      selectedTeacher = null; // Reset if teacher no longer exists
+    }
+
+    final startController = TextEditingController(
+      text: existingSlot?["start_time"] ?? setting["start_time"] ?? "09:00",
+    );
+    final endController = TextEditingController(
+      text: existingSlot?["end_time"] ?? setting["end_time"] ?? "09:45",
+    );
+
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.edit_calendar, color: primaryColor),
+              const SizedBox(width: 10),
+              Text(
+                "$day - Period $periodNum",
+                style: TextStyle(
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: subjectController,
+                    decoration: InputDecoration(
+                      labelText: "Subject",
+                      labelStyle: TextStyle(color: primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      prefixIcon: Icon(Icons.book, color: primaryColor),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return "Subject is required";
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  DropdownButtonFormField<String>(
+                    value: selectedTeacher,
+                    hint: const Text("Select Teacher"),
+                    items: teachers.map<DropdownMenuItem<String>>((t) {
+                      return DropdownMenuItem(
+                        value: t["name"],
+                        child: Text(t["name"] ?? "Unnamed"),
+                      );
+                    }).toList(),
+                    onChanged: (val) => selectedTeacher = val,
+                    decoration: InputDecoration(
+                      labelText: "Teacher",
+                      labelStyle: TextStyle(color: primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      prefixIcon: Icon(Icons.person, color: primaryColor),
+                    ),
+                    validator: (value) {
+                      if (value == null) {
+                        return "Teacher is required";
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: startController,
+                          decoration: InputDecoration(
+                            labelText: "Start Time",
+                            labelStyle: TextStyle(color: primaryColor),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          validator: (v) => v!.isEmpty ? "Required" : null,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          controller: endController,
+                          decoration: InputDecoration(
+                            labelText: "End Time",
+                            labelStyle: TextStyle(color: primaryColor),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(
+                                color: primaryColor,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                          validator: (v) => v!.isEmpty ? "Required" : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            if (existingSlot != null)
+              TextButton.icon(
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text("Confirm Delete"),
+                      content: const Text("Delete this slot?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text("Cancel"),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text(
+                            "Delete",
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true) {
+                    await _deleteSlot(existingSlot["id"]);
+                    if (mounted) Navigator.pop(context);
+                  }
+                },
+                icon: const Icon(Icons.delete_outline),
+                label: const Text("Delete"),
+              ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () async {
+                if (formKey.currentState!.validate()) {
+                  final success = await _saveSlot(
+                    id: existingSlot?["id"], // Pass existing ID if any
+                    day: day,
+                    period: periodNum,
+                    subject: subjectController.text,
+                    teacherName: selectedTeacher!,
+                    startTime: startController.text,
+                    endTime: endController.text,
+                  );
+
+                  if (success && mounted) Navigator.pop(context);
+                }
+              },
+              child: const Text("Save", style: TextStyle(color: Colors.white)),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             ),
           ],
         ),
@@ -488,6 +1202,7 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
     );
   }
 
+<<<<<<< HEAD
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -517,6 +1232,195 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
         ),
       ),
     );
+=======
+  Future<bool> _saveSlot({
+    int? id,
+    required String day,
+    required int period,
+    required String subject,
+    required String teacherName,
+    required String startTime,
+    required String endTime,
+  }) async {
+    try {
+      // 1. Try to find ID from local list if not provided (Safety check)
+      if (id == null) {
+        final conflict = getSlot(day, period);
+        if (conflict != null) id = conflict['id'];
+      }
+
+      // 2. If we stand to overwrite (id != null), DELETE first
+      if (id != null) {
+        try {
+          await _api.delete("/api/v1/timetable/$id");
+        } catch (e) {
+          print("Delete failed (maybe already gone): $e");
+        }
+      }
+
+      // 3. Attempt Creation
+      await _attemptPost(day, period, subject, teacherName, startTime, endTime);
+      return true;
+    } catch (e) {
+      final errString = e.toString().toLowerCase();
+      // 4. Handle Duplicate/Constraint Error
+      if (errString.contains("duplicate") ||
+          errString.contains("already has a slot")) {
+        try {
+          print("Detected duplicate. Attempting auto-fix...");
+
+          // A. Refresh data to find the hidden conflict
+          // We can't await fetchTimetable here easily without messy state,
+          // but we can try to delete blind if we knew the ID, but we don't.
+          // So we MUST fetch.
+          final res = await _api.get(
+            "/api/v1/timetable/section?section_id=$selectedSectionId",
+          );
+          final freshList = res["data"] ?? [];
+          final conflict = freshList.firstWhere(
+            (t) => t["day"] == day && t["period"] == period,
+            orElse: () => null,
+          );
+
+          if (conflict != null) {
+            // B. Delete the conflict
+            await _api.delete("/api/v1/timetable/${conflict['id']}");
+
+            // C. Retry Post
+            await _attemptPost(
+              day,
+              period,
+              subject,
+              teacherName,
+              startTime,
+              endTime,
+            );
+
+            // Refresh UI
+            if (mounted) fetchTimetable(selectedSectionId!);
+            return true;
+          }
+        } catch (retryErr) {
+          if (mounted) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text("Retry failed: $retryErr")));
+          }
+        }
+      }
+
+      // 5. Handle Teacher Conflict (Busy elsewhere)
+      if (errString.contains("assigned elsewhere")) {
+        if (mounted) {
+          final shouldForce = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              title: const Row(
+                children: [
+                  Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Text("Teacher Busy"),
+                ],
+              ),
+              content: Text(
+                "Teacher '$teacherName' is already teaching in another class at this time.\n\nDo you want to assign them anyway?",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                  ),
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text(
+                    "Assign Anyway",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          if (shouldForce == true) {
+            try {
+              await _attemptPost(
+                day,
+                period,
+                subject,
+                teacherName,
+                startTime,
+                endTime,
+                force: true,
+              );
+              return true;
+            } catch (forceErr) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Force assign failed: $forceErr")),
+                );
+              }
+              return false;
+            }
+          } else {
+            return false;
+          }
+        }
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+      }
+      return false;
+    }
+  }
+
+  Future<void> _attemptPost(
+    String day,
+    int period,
+    String subject,
+    String teacherName,
+    String startTime,
+    String endTime, {
+    bool force = false,
+  }) async {
+    final res = await _api.post("/api/v1/timetable", {
+      "section_id": selectedSectionId,
+      "day": day,
+      "period": period,
+      "subject": subject,
+      "teacher_name": teacherName,
+      "start_time": startTime,
+      "end_time": endTime,
+      "force": force,
+    });
+
+    if (res["success"]) {
+      if (mounted) fetchTimetable(selectedSectionId!);
+    } else {
+      throw Exception(res["message"] ?? "Failed to save slot");
+    }
+  }
+
+  Future<void> _deleteSlot(int id) async {
+    try {
+      await _api.delete("/api/v1/timetable/$id");
+      if (mounted) fetchTimetable(selectedSectionId!);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error deleting: $e")));
+      }
+    }
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   }
 
   Widget _buildSliverAppBar() {

@@ -131,13 +131,7 @@ class _AiHubScreenState extends State<AiHubScreen> {
                 ),
               ),
               background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
-                  ),
-                ),
+                decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
@@ -650,205 +644,326 @@ class _DoubtSolverSheet extends StatefulWidget {
 class _DoubtSolverSheetState extends State<_DoubtSolverSheet> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  final List<Map<String, String>> _messages = [];
   bool _loading = false;
-  String? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initial greeting
+    _messages.add({
+      "role": "assistant",
+      "content": "Hi! I'm your AI study assistant. What are you stuck on?",
+    });
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() {
+      _messages.add({"role": "user", "content": text});
+      _loading = true;
+      _controller.clear();
+    });
+    _scrollToBottom();
+
+    try {
+      // Prepare history for API (exclude the very last user message we just added,
+      // or include it? The API expects 'history'.
+      // My backend implementation uses the history to build context,
+      // and the 'query' is the new user input.
+      // So I should pass PREVIOUS messages as history.
+
+      final history = _messages.sublist(
+        0,
+        _messages.length - 1,
+      ); // everything before current
+
+      final res = await widget.api.post("/api/v1/ai/solve-doubt", {
+        "query": text,
+        "subject": "General",
+        "history": history,
+      });
+
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            "role": "assistant",
+            "content": res["data"]["response"],
+          });
+          _loading = false;
+        });
+        widget.onComplete?.call();
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            "role": "assistant",
+            "content": "Sorry, I encountered an error: $e",
+          });
+          _loading = false;
+        });
+        _scrollToBottom();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
-      padding: EdgeInsets.fromLTRB(
-        24,
-        16,
-        24,
-        MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      child: SingleChildScrollView(
-        controller: _scrollController,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      child: Column(
+        children: [
+          // HANDLE
+          const SizedBox(height: 16),
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 24),
-            Row(
+          ),
+
+          // HEADER
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
               children: [
-                Icon(
-                  Icons.psychology_rounded,
-                  color: const Color(0xFFEC4899),
-                  size: 28,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEC4899).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFFEC4899),
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Text(
-                  "Ask a Doubt",
+                  "AI Doubt Solver",
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
                   ),
                 ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                  color: Colors.grey,
+                ),
               ],
             ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                hintText: "What are you confused about?",
-                hintStyle: TextStyle(color: Colors.grey.shade400),
-                filled: true,
-                fillColor: const Color(0xFFF8FAFC),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 20,
-                ),
-              ),
+          ),
+          const Divider(height: 1),
+
+          // CHAT AREA
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(20),
+              itemCount: _messages.length + (_loading ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _messages.length) {
+                  return _buildLoadingBubble();
+                }
+                return _buildMessageBubble(_messages[index]);
+              },
             ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _solve,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFEC4899),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  elevation: 0,
+          ),
+
+          // INPUT AREA
+          Container(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              MediaQuery.of(context).viewInsets.bottom + 16,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Colors.grey.shade100)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
                 ),
-                child: _loading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        "Get Explanation",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      hintText: "Type your question...",
+                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      filled: true,
+                      fillColor: const Color(0xFFF8FAFC),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
                       ),
-              ),
-            ),
-            if (_result != null) ...[
-              const SizedBox(height: 32),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    padding: const EdgeInsets.all(8),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 14,
+                      ),
+                    ),
+                    minLines: 1,
+                    maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _loading ? null : _sendMessage,
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
                     decoration: const BoxDecoration(
                       color: Color(0xFFEC4899),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.auto_awesome_rounded,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFDF2F8),
-                        borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(20),
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
-                        ),
-                        border: Border.all(color: const Color(0xFFFCE7F3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Neuraltrix AI",
-                            style: TextStyle(
-                              color: Color(0xFFEC4899),
-                              fontWeight: FontWeight.w900,
-                              fontSize: 11,
-                              letterSpacing: 0.5,
+                    child: _loading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
                             ),
+                          )
+                        : const Icon(
+                            Icons.send_rounded,
+                            color: Colors.white,
+                            size: 24,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _result!,
-                            style: const TextStyle(
-                              color: Color(0xFF1E293B),
-                              fontSize: 15,
-                              height: 1.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: TextButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
-                  label: const Text("Need more help? Ask a Teacher"),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.redAccent,
                   ),
                 ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(Map<String, String> msg) {
+    final isUser = msg['role'] == 'user';
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        decoration: BoxDecoration(
+          color: isUser ? const Color(0xFFEC4899) : const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(isUser ? 20 : 4),
+            bottomRight: Radius.circular(isUser ? 4 : 20),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (!isUser) ...[
+              const Text(
+                "Neuraltrix AI",
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF64748B),
+                ),
               ),
+              const SizedBox(height: 4),
             ],
-            const SizedBox(height: 10),
+            Text(
+              msg['content']!,
+              style: TextStyle(
+                color: isUser ? Colors.white : const Color(0xFF334155),
+                fontSize: 15,
+                height: 1.5,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _solve() async {
-    setState(() {
-      _loading = true;
-      _result = null;
-    });
-    try {
-      final res = await widget.api.post("/api/v1/ai/solve-doubt", {
-        "query": _controller.text,
-        "subject": "General",
-      });
-      setState(() => _result = res["data"]["response"]);
-      widget.onComplete?.call();
-
-      // Auto-scroll to result
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-    } catch (e) {
-      setState(() => _result = "Error: $e");
-    } finally {
-      setState(() => _loading = false);
-    }
+  Widget _buildLoadingBubble() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+            bottomLeft: Radius.circular(4),
+            bottomRight: Radius.circular(20),
+          ),
+        ),
+        child: const SizedBox(
+          width: 40,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 8,
+                height: 8,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 4),
+              SizedBox(
+                width: 8,
+                height: 8,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 4),
+              SizedBox(
+                width: 8,
+                height: 8,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -23,6 +23,25 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
     "Saturday",
   ];
 
+  String _getDayLabel(String day) {
+    switch (day) {
+      case "Monday":
+        return "Monday";
+      case "Tuesday":
+        return "Tuesday";
+      case "Wednesday":
+        return "Wednesday";
+      case "Thursday":
+        return "Thursday";
+      case "Friday":
+        return "Friday";
+      case "Saturday":
+        return "Saturday";
+      default:
+        return day;
+    }
+  }
+
   List<TimetableItem> timetable = [];
   bool loading = true;
 
@@ -34,6 +53,7 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
   }
 
   Future<void> fetchTimetable() async {
+<<<<<<< HEAD
     try {
       final res = await _api.get("/api/v1/timetable/my");
       if (mounted) {
@@ -47,11 +67,22 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
     } catch (e) {
       if (mounted) setState(() => loading = false);
     }
+=======
+    final res = await _api.get("/api/v1/timetable/my");
+
+    setState(() {
+      timetable = (res["data"] as List)
+          .map((e) => TimetableItem.fromJson(e))
+          .toList();
+      loading = false;
+    });
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
       backgroundColor: const Color(0xFFF8FAFF),
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) => [
@@ -145,6 +176,31 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
       ),
     );
   }
+=======
+      appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
+        ),
+        title: const Text(
+          "Timetable🗓️",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+          indicatorColor: Colors.white,
+          tabs: days.map((d) => Tab(text: _getDayLabel(d))).toList(),
+        ),
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : TabBarView(
+              controller: _tabController,
+              children: days.map((day) {
+                final dayItems = timetable.where((t) => t.day == day).toList();
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
   Widget _buildTimetableCard(TimetableItem t) {
     String emoji = "📚";
@@ -156,6 +212,7 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
     if (sub.contains("python") || sub.contains("computer")) emoji = "💻";
     if (sub.contains("english")) emoji = "📖";
 
+<<<<<<< HEAD
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -186,6 +243,104 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
                 fontWeight: FontWeight.w900,
                 fontSize: 16,
               ),
+=======
+                return ListView.builder(
+                  itemCount: dayItems.length,
+                  itemBuilder: (_, i) {
+                    final t = dayItems[i];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
+                      ),
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4A00E0).withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                "${t.period}",
+                                style: const TextStyle(
+                                  color: Color(0xFF4A00E0),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    t.subject,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.person,
+                                        size: 14,
+                                        color: Colors.grey,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        t.teacherName,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.access_time_rounded,
+                                        size: 14,
+                                        color: Colors.orange,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        "${t.startTime} - ${t.endTime}",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }).toList(),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             ),
           ),
         ),

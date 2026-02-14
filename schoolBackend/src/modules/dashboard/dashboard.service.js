@@ -49,6 +49,7 @@ exports.fetchTeacherDashboard = async (teacher_id) => {
 exports.getStudentInfo = async (userId) => {
   const [rows] = await pool.query(
     `SELECT 
+        id,
         name,
         class,
         section,

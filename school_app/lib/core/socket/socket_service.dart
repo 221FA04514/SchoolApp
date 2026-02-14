@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
@@ -12,6 +13,10 @@ class SocketService extends ChangeNotifier {
   Stream<dynamic> get messageStream => _messageController.stream;
 
   bool get isConnected => _isConnected;
+
+  // Stream for notifications
+  final _notificationController = StreamController<dynamic>.broadcast();
+  Stream<dynamic> get notificationStream => _notificationController.stream;
 
   void initSocket() async {
     final prefs = await SharedPreferences.getInstance();
@@ -30,7 +35,7 @@ class SocketService extends ChangeNotifier {
 
     _socket!.onConnect((_) {
       _isConnected = true;
-      print("[SOCKET] Connected to Backend");
+      debugPrint("[SOCKET] Connected to Backend");
       notifyListeners();
 
       // We could also send a 'join' event here if needed,
@@ -39,15 +44,20 @@ class SocketService extends ChangeNotifier {
 
     _socket!.onDisconnect((_) {
       _isConnected = false;
-      print("[SOCKET] Disconnected");
+      debugPrint("[SOCKET] Disconnected");
       notifyListeners();
     });
 
     // Listen for general notifications
     _socket!.on("notification", (data) {
+<<<<<<< HEAD
       print("[SOCKET] New Notification: $data");
       _messageController.add(data);
       notifyListeners();
+=======
+      debugPrint("[SOCKET] New Notification: $data");
+      _notificationController.add(data);
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     });
   }
 
@@ -55,6 +65,7 @@ class SocketService extends ChangeNotifier {
     _socket?.disconnect();
     _socket = null;
     _isConnected = false;
+    _notificationController.close();
   }
 
   void emit(String event, dynamic data) {

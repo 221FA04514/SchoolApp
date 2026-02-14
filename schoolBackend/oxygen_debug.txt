@@ -1,0 +1,47 @@
+--- Inspecting Oxygen Mismatch ---
+Attempt ID: 12, Student: 7
+
+QUESTION ID 94
+Student: "to reduce waste "
+DB     : "to reduce waste"
+Student Hex: U+0074 U+006F U+0020 U+0072 U+0065 U+0064 U+0075 U+0063 U+0065 U+0020 U+0077 U+0061 U+0073 U+0074 U+0065 U+0020 
+DB Hex     : U+0074 U+006F U+0020 U+0072 U+0065 U+0064 U+0075 U+0063 U+0065 U+0020 U+0077 U+0061 U+0073 U+0074 U+0065 
+Norm Student: 'toreducewaste'
+Norm DB     : 'toreducewaste'
+Equal? true
+
+QUESTION ID 95
+Student: "burning fossil fuels"
+DB     : "burning fossil fuels"
+Student Hex: U+0062 U+0075 U+0072 U+006E U+0069 U+006E U+0067 U+0020 U+0066 U+006F U+0073 U+0073 U+0069 U+006C U+0020 U+0066 U+0075 U+0065 U+006C U+0073 
+DB Hex     : U+0062 U+0075 U+0072 U+006E U+0069 U+006E U+0067 U+0020 U+0066 U+006F U+0073 U+0073 U+0069 U+006C U+0020 U+0066 U+0075 U+0065 U+006C U+0073 
+Norm Student: 'burningfossilfuels'
+Norm DB     : 'burningfossilfuels'
+Equal? true
+
+QUESTION ID 96
+Student: "photosynthesis "
+DB     : "photosynthesis"
+Student Hex: U+0070 U+0068 U+006F U+0074 U+006F U+0073 U+0079 U+006E U+0074 U+0068 U+0065 U+0073 U+0069 U+0073 U+0020 
+DB Hex     : U+0070 U+0068 U+006F U+0074 U+006F U+0073 U+0079 U+006E U+0074 U+0068 U+0065 U+0073 U+0069 U+0073 
+Norm Student: 'photosynthesis'
+Norm DB     : 'photosynthesis'
+Equal? true
+
+QUESTION ID 97
+Student: "ice caps and glaciers"
+DB     : "ice caps and glaciers"
+Student Hex: U+0069 U+0063 U+0065 U+0020 U+0063 U+0061 U+0070 U+0073 U+0020 U+0061 U+006E U+0064 U+0020 U+0067 U+006C U+0061 U+0063 U+0069 U+0065 U+0072 U+0073 
+DB Hex     : U+0069 U+0063 U+0065 U+0020 U+0063 U+0061 U+0070 U+0073 U+0020 U+0061 U+006E U+0064 U+0020 U+0067 U+006C U+0061 U+0063 U+0069 U+0065 U+0072 U+0073 
+Norm Student: 'icecapsandglaciers'
+Norm DB     : 'icecapsandglaciers'
+Equal? true
+
+QUESTION ID 98
+Student: "ozone "
+DB     : "ozone"
+Student Hex: U+006F U+007A U+006F U+006E U+0065 U+0020 
+DB Hex     : U+006F U+007A U+006F U+006E U+0065 
+Norm Student: 'ozone'
+Norm DB     : 'ozone'
+Equal? true

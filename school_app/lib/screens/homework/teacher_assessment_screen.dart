@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_service.dart';
+import '../../core/constants.dart';
 
 class TeacherHomeworkAssessmentScreen extends StatefulWidget {
   final int homeworkId;
@@ -34,7 +36,7 @@ class _TeacherHomeworkAssessmentScreenState
         "/api/v1/homework/submissions/${widget.homeworkId}",
       );
       setState(() {
-        _submissions = response["data"]["submissions"] ?? [];
+        _submissions = response["data"] ?? [];
         _isLoading = false;
       });
     } catch (e) {
@@ -81,11 +83,7 @@ class _TeacherHomeworkAssessmentScreenState
       appBar: AppBar(
         title: Text(widget.title),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A4DFF), Color(0xFF6A11CB)],
-            ),
-          ),
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
         ),
       ),
       body: _isLoading
@@ -146,9 +144,27 @@ class _TeacherHomeworkAssessmentScreenState
                         if (sub["file_url"] != null) ...[
                           const SizedBox(height: 8),
                           TextButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.attachment),
-                            label: const Text("View Attachment"),
+                            onPressed: () => _openAttachment(sub["file_url"]),
+                            icon: const Icon(Icons.attachment_rounded),
+                            label: Text(
+                              "View Attachment",
+                              style: TextStyle(
+                                color: Theme.of(context).primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: TextButton.styleFrom(
+                              backgroundColor: Theme.of(
+                                context,
+                              ).primaryColor.withOpacity(0.1),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
                           ),
                         ],
                         const Divider(),
@@ -271,5 +287,27 @@ class _TeacherHomeworkAssessmentScreenState
         ],
       ),
     );
+  }
+
+  Future<void> _openAttachment(String fileUrl) async {
+    // Normalize path just in case
+    final cleanPath = fileUrl.replaceAll('\\', '/');
+    final fullUrl = "${AppConstants.baseUrl}/$cleanPath";
+    final uri = Uri.parse(fullUrl);
+
+    try {
+      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        throw 'Could not launch $fullUrl';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Could not open file: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

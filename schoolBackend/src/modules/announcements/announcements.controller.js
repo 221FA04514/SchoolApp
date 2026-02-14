@@ -34,13 +34,17 @@ exports.listAnnouncements = async (req, res, next) => {
   try {
     const { role } = req.user;
 
-    if (role !== "student") {
+    if (role !== "student" && role !== "teacher") {
       return error(res, "Access denied", 403);
     }
 
-    // Get student's section_id
-    const [student] = await pool.query("SELECT section_id FROM students WHERE user_id = ?", [req.user.userId]);
-    const section_id = student[0]?.section_id;
+    let section_id = null;
+
+    // Get student's section_id if student
+    if (role === 'student') {
+      const [student] = await pool.query("SELECT section_id FROM students WHERE user_id = ?", [req.user.userId]);
+      section_id = student[0]?.section_id;
+    }
 
     const announcements = await getAllAnnouncements(section_id);
     return success(res, announcements, "Announcements fetched");

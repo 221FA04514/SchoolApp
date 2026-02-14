@@ -41,6 +41,7 @@ class _ChatScreenState extends State<ChatScreen>
     );
 
     _fade = CurvedAnimation(parent: _pageController, curve: Curves.easeOut);
+<<<<<<< HEAD
 
     // 🔹 Listen for Real-time messages
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -52,6 +53,8 @@ class _ChatScreenState extends State<ChatScreen>
         }
       });
     });
+=======
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   }
 
   @override
@@ -105,21 +108,63 @@ class _ChatScreenState extends State<ChatScreen>
       // ================= HEADER =================
       appBar: AppBar(
         elevation: 0,
+        toolbarHeight: 60,
+        backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
+<<<<<<< HEAD
               colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF), Color(0xFF6A11CB)],
+=======
+              colors: [
+                const Color(0xFF4A00E0),
+                const Color(0xFF4A00E0).withOpacity(0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(20),
+              bottomRight: Radius.circular(20),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             ),
           ),
         ),
         title: Row(
           children: [
-            const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Text("👨‍🏫"),
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const CircleAvatar(
+                radius: 18,
+                backgroundColor: Color(0xFFE0E7FF),
+                child: Text("👨‍🏫", style: TextStyle(fontSize: 20)),
+              ),
             ),
-            const SizedBox(width: 8),
-            Text(widget.teacherName),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.teacherName,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Text(
+                  "Online", // Or "Teacher"
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -173,6 +218,7 @@ class _ChatScreenState extends State<ChatScreen>
                                 maxWidth: size.width * 0.75,
                               ),
                               decoration: BoxDecoration(
+<<<<<<< HEAD
                                 gradient: isStudent
                                     ? const LinearGradient(
                                         colors: [
@@ -182,6 +228,11 @@ class _ChatScreenState extends State<ChatScreen>
                                       )
                                     : null,
                                 color: isStudent ? null : Colors.grey.shade300,
+=======
+                                color: isStudent
+                                    ? const Color(0xFF4A00E0)
+                                    : Colors.grey.shade300,
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                                 borderRadius: BorderRadius.only(
                                   topLeft: const Radius.circular(16),
                                   topRight: const Radius.circular(16),
@@ -257,9 +308,13 @@ class _ChatScreenState extends State<ChatScreen>
                         padding: const EdgeInsets.all(12),
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
+<<<<<<< HEAD
                           gradient: LinearGradient(
                             colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
                           ),
+=======
+                          color: const Color(0xFF4A00E0),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                         ),
                         child: const Icon(
                           Icons.send,

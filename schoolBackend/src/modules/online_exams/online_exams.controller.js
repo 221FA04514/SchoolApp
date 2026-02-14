@@ -35,6 +35,8 @@ exports.listAvailableExams = async (req, res, next) => {
     }
 };
 
+
+
 exports.getQuestions = async (req, res, next) => {
     try {
         const { examId } = req.params;
@@ -65,6 +67,20 @@ exports.submitAttempt = async (req, res, next) => {
         const { attemptId, answers } = req.body;
         await onlineExamsService.submitAttempt(attemptId, answers);
         return success(res, null, "Exam submitted successfully");
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getAttemptDetails = async (req, res, next) => {
+    try {
+        const { examId } = req.params;
+        const { userId } = req.user;
+
+        const result = await onlineExamsService.getAttemptDetails(examId, userId);
+        if (!result) return error(res, "No submitted attempt found", 404);
+
+        return success(res, result, "Attempt details fetched");
     } catch (err) {
         next(err);
     }

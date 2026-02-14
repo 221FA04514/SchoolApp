@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:intl/intl.dart';
+=======
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 import '../../core/api/api_service.dart';
 
 class ManageSubstitutionsScreen extends StatefulWidget {
@@ -10,16 +13,39 @@ class ManageSubstitutionsScreen extends StatefulWidget {
       _ManageSubstitutionsScreenState();
 }
 
+<<<<<<< HEAD
 class _ManageSubstitutionsScreenState extends State<ManageSubstitutionsScreen> {
   final ApiService _api = ApiService();
   List substitutions = [];
   List teachers = [];
   bool isLoading = true;
   DateTime selectedDate = DateTime.now();
+=======
+class _ManageSubstitutionsScreenState extends State<ManageSubstitutionsScreen>
+    with SingleTickerProviderStateMixin {
+  final ApiService _api = ApiService();
+  late TabController _tabController;
+
+  // Data
+  List teachers = [];
+  List substitutions = [];
+  List suggestions = [];
+
+  // Selections
+  String? selectedAbsentTeacherId;
+  String? selectedPeriod;
+  String? selectedDate = DateTime.now().toString().split(' ')[0]; // YYYY-MM-DD
+
+  bool isLoading = false;
+
+  // Theme Color
+  final Color primaryColor = const Color(0xFF673AB7); // Deep Purple
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     _fetchData();
   }
 
@@ -41,12 +67,146 @@ class _ManageSubstitutionsScreenState extends State<ManageSubstitutionsScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => isLoading = false);
+=======
+    _tabController = TabController(length: 3, vsync: this);
+    _fetchTeachers();
+    _fetchSubstitutions();
+  }
+
+  Future<void> _fetchTeachers() async {
+    try {
+      final res = await _api.get("/api/v1/admin/teachers");
+      if (mounted) {
+        setState(() {
+          teachers = res["data"] ?? [];
+        });
+      }
+    } catch (e) {
+      print("Error fetching teachers: $e");
+    }
+  }
+
+  Future<void> _fetchSubstitutions() async {
+    try {
+      final res = await _api.get(
+        "/api/v2/admin/substitutions/list?date=${DateTime.now().toIso8601String().split('T')[0]}",
+      );
+      if (mounted) {
+        setState(() {
+          substitutions = res["data"] ?? [];
+        });
+      }
+    } catch (e) {
+      print("Error fetching substitutions: $e");
+    }
+  }
+
+  Future<void> _getSuggestions() async {
+    if (selectedAbsentTeacherId == null || selectedPeriod == null) return;
+
+    setState(() => isLoading = true);
+    try {
+      // Calculate day name from selectedDate
+      final dayName = _getDayName(DateTime.parse(selectedDate!));
+
+      final res = await _api.get(
+        "/api/v2/admin/substitutions/suggestions?absent_teacher_id=$selectedAbsentTeacherId&period=$selectedPeriod&day=$dayName",
+      );
+      if (mounted) {
+        setState(() {
+          suggestions = res["data"] ?? [];
+          isLoading = false;
+          _tabController.animateTo(1); // Move to suggestions tab
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error fetching suggestions: $e")),
+        );
+      }
+    }
+  }
+
+  String _getDayName(DateTime date) {
+    const days = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    // weekday is 1-7 (Mon-Sun)
+    return days[date.weekday - 1];
+  }
+
+  Future<void> _assignSubstitution(String teacherId, String teacherName) async {
+    try {
+      // 1. Ensure Absence Record Exists (Workaround for backend issue)
+      String? absenceId;
+      try {
+        final absRes = await _api.post("/api/v2/admin/substitutions/absent", {
+          "teacher_id": selectedAbsentTeacherId,
+          "absence_date": selectedDate,
+          "reason": "Substitution Assigned",
+        });
+        if (absRes["success"] == true) {
+          absenceId = absRes["data"]["absenceId"].toString();
+        }
+      } catch (e) {
+        print("Absence creation skipped or failed: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to mark teacher absent: $e")),
+        );
+        return; // STOP HERE if we don't have an ID (assuming backend is old)
+      }
+
+      if (absenceId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Could not retrieve Absence ID. Cannot assign."),
+          ),
+        );
+        return;
+      }
+
+      // 2. Assign Substitution
+      final res = await _api.post("/api/v2/admin/substitutions/assign", {
+        "original_teacher_id": selectedAbsentTeacherId,
+        "substitute_teacher_id": teacherId,
+        "period": selectedPeriod,
+        "date": selectedDate,
+        "section_id":
+            "1", // Client-side fallback to ensure NOT NULL (Backend will use this)
+        "absence_id": absenceId, // Explicitly pass ID
+      });
+
+      if (res["success"]) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Assigned $teacherName successfully!")),
+          );
+          _fetchSubstitutions();
+          _tabController.animateTo(2); // Move to active list
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error assigning: $e")));
+      }
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
       backgroundColor: const Color(0xFFF8FAFF),
       body: CustomScrollView(
         slivers: [
@@ -197,6 +357,144 @@ class _ManageSubstitutionsScreenState extends State<ManageSubstitutionsScreen> {
               style: TextStyle(
                 color: Color(0xFF1A4DFF),
                 fontWeight: FontWeight.bold,
+=======
+      backgroundColor: const Color(0xFFF5F6FA),
+      appBar: AppBar(
+        title: const Text(
+          "Substitution Manager",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          indicatorWeight: 4,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white60,
+          labelStyle: const TextStyle(fontWeight: FontWeight.bold),
+          tabs: const [
+            Tab(icon: Icon(Icons.person_search), text: "Find Sub"),
+            Tab(icon: Icon(Icons.lightbulb_outline), text: "Suggestions"),
+            Tab(icon: Icon(Icons.list_alt), text: "Active Subs"),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildRequestTab(),
+          _buildSuggestionsTab(),
+          _buildActiveTab(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRequestTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            elevation: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Find Substitute",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    value: selectedAbsentTeacherId,
+                    decoration: InputDecoration(
+                      labelText: "Absent Teacher",
+                      labelStyle: TextStyle(color: primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      prefixIcon: Icon(Icons.person_off, color: primaryColor),
+                    ),
+                    items: teachers.map<DropdownMenuItem<String>>((t) {
+                      return DropdownMenuItem(
+                        value: t["id"].toString(),
+                        child: Text(t["name"]),
+                      );
+                    }).toList(),
+                    onChanged: (val) =>
+                        setState(() => selectedAbsentTeacherId = val),
+                  ),
+                  const SizedBox(height: 15),
+                  DropdownButtonFormField<String>(
+                    value: selectedPeriod,
+                    decoration: InputDecoration(
+                      labelText: "Period",
+                      labelStyle: TextStyle(color: primaryColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                      prefixIcon: Icon(Icons.access_time, color: primaryColor),
+                    ),
+                    items: List.generate(8, (i) => (i + 1).toString())
+                        .map(
+                          (p) => DropdownMenuItem(
+                            value: p,
+                            child: Text("Period $p"),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) => setState(() => selectedPeriod = val),
+                  ),
+                  const SizedBox(height: 25),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: isLoading ? null : _getSuggestions,
+                      icon: isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(Icons.search),
+                      label: Text(
+                        isLoading ? "Searching..." : "Find Substitutes",
+                      ),
+                    ),
+                  ),
+                ],
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
               ),
             ),
           ),
@@ -205,6 +503,7 @@ class _ManageSubstitutionsScreenState extends State<ManageSubstitutionsScreen> {
     );
   }
 
+<<<<<<< HEAD
   Widget _buildSubstitutionList() {
     if (substitutions.isEmpty) {
       return SliverFillRemaining(
@@ -227,12 +526,25 @@ class _ManageSubstitutionsScreenState extends State<ManageSubstitutionsScreen> {
             ),
             const Text(
               "No substitutions found for this date.",
+=======
+  Widget _buildSuggestionsTab() {
+    if (suggestions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            const Text(
+              "No suggestions found or search not performed.",
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
               style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
       );
     }
+<<<<<<< HEAD
 
     return SliverPadding(
       padding: const EdgeInsets.all(16),
@@ -727,6 +1039,120 @@ class _ManageSubstitutionsScreenState extends State<ManageSubstitutionsScreen> {
           ),
         ),
       ),
+=======
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: suggestions.length,
+      itemBuilder: (context, index) {
+        final s = suggestions[index];
+        return Card(
+          elevation: 2,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(12),
+            leading: CircleAvatar(
+              backgroundColor: primaryColor.withOpacity(0.1),
+              child: Text(
+                s["name"][0],
+                style: TextStyle(
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            title: Text(
+              s["name"],
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              "Current Load: ${s["load_score"] ?? 'Low'}",
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            trailing: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () =>
+                  _assignSubstitution(s["id"].toString(), s["name"]),
+              child: const Text("Assign"),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildActiveTab() {
+    if (substitutions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.assignment_turned_in_outlined,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "No active substitutions.",
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: substitutions.length,
+      itemBuilder: (context, index) {
+        final sub = substitutions[index];
+        return Card(
+          elevation: 2,
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(12),
+            leading: CircleAvatar(
+              backgroundColor: Colors.orange.withOpacity(0.1),
+              child: const Icon(Icons.swap_horiz, color: Colors.orange),
+            ),
+            title: Text(
+              "For: ${sub["original_teacher"] ?? "Unknown"}",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            subtitle: Text(
+              "Sub: ${sub["substitute_teacher"] ?? "Unknown"} (Period ${sub["period"]})",
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                "Active",
+                style: TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     );
   }
 }

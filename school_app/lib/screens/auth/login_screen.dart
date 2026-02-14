@@ -134,9 +134,7 @@ class _LoginScreenState extends State<LoginScreen>
                   height: size.height * 0.36,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
-                    ),
+                    color: const Color(0xFF4A00E0),
                   ),
                   child: SafeArea(
                     child: Column(

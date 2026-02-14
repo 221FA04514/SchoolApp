@@ -8,32 +8,50 @@ class AuthProvider extends ChangeNotifier {
   String? _role;
   String? get role => _role;
 
+  // ================= LOGIN =================
   Future<Map?> login(String email, String password) async {
     try {
+      // 🔴 IMPORTANT: send EMAIL, not phone
       final response = await _api.post("/api/v1/auth/login", {
         "email": email,
         "password": password,
       });
 
+      // 🔍 Debug (you can remove later)
+      debugPrint("AUTH PROVIDER LOGIN RESPONSE: $response");
+
+      if (response == null) {
+        throw Exception("No response from server");
+      }
+
       if (response["success"] == true) {
-        if (response["data"]["requiresOtp"] == true) {
-          return response["data"]; // Return {requiresOtp, userId, phone}
+        final data = response["data"];
+
+        // 🔐 OTP ONLY FOR ADMIN (Backend decides)
+        if (data["requiresOtp"] == true) {
+          return data; // Admin OTP flow
         }
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("token", response["data"]["token"]);
+        // ✅ STUDENT / FACULTY LOGIN (NO OTP)
+        print("LOGIN STARTED");
 
-        _role = response["data"]["role"];
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString("token", data["token"]);
+
+        _role = data["role"];
         notifyListeners();
-        return response["data"];
+
+        return data;
       }
 
       throw Exception(response["message"] ?? "Login failed");
     } catch (e) {
+      debugPrint("LOGIN ERROR: $e");
       rethrow;
     }
   }
 
+  // ================= VERIFY OTP (ADMIN ONLY) =================
   Future<void> verifyOtp(int userId, String code) async {
     try {
       final response = await _api.post("/api/v1/auth/verify-otp", {
@@ -51,10 +69,15 @@ class AuthProvider extends ChangeNotifier {
         throw Exception(response["message"] ?? "OTP verification failed");
       }
     } catch (e) {
+      debugPrint("OTP ERROR: $e");
       rethrow;
     }
   }
 
+<<<<<<< HEAD
+=======
+  // ================= RESEND OTP =================
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   Future<void> resendOtp(int userId) async {
     try {
       final response = await _api.post("/api/v1/auth/resend-otp", {
@@ -65,10 +88,18 @@ class AuthProvider extends ChangeNotifier {
         throw Exception(response["message"] ?? "Failed to resend OTP");
       }
     } catch (e) {
+<<<<<<< HEAD
+=======
+      debugPrint("RESEND OTP ERROR: $e");
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       rethrow;
     }
   }
 
+<<<<<<< HEAD
+=======
+  // ================= LOGOUT =================
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("token");

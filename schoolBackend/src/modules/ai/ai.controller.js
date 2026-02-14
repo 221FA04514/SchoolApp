@@ -23,10 +23,10 @@ exports.homeworkHelper = async (req, res) => {
 
 exports.solveDoubt = async (req, res) => {
     try {
-        const { query, subject } = req.body;
+        const { query, subject, history } = req.body; // history is optional array of {role, content}
         const studentId = req.user.userId;
 
-        const response = await aiUtil.solveDoubt(query);
+        const response = await aiUtil.solveDoubt(query, history);
 
         // Save to new unified history table
         await pool.query(

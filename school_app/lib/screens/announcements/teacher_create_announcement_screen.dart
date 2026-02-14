@@ -22,7 +22,24 @@ class _TeacherCreateAnnouncementScreenState
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     _fetchSections();
+=======
+
+    _pageController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+
+    _fade = CurvedAnimation(parent: _pageController, curve: Curves.easeOut);
+
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _pageController, curve: Curves.easeOut));
+
+    _pageController.forward();
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   }
 
   Future<void> _fetchSections() async {
@@ -66,11 +83,17 @@ class _TeacherCreateAnnouncementScreenState
         );
       }
     } catch (e) {
+<<<<<<< HEAD
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("❌ Failed to create announcement")),
         );
       }
+=======
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("❌ Failed to create announcement")),
+      );
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     } finally {
       if (mounted) setState(() => submitting = false);
     }
@@ -79,6 +102,7 @@ class _TeacherCreateAnnouncementScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
       backgroundColor: const Color(0xFFF8FAFF),
       body: CustomScrollView(
         slivers: [
@@ -126,6 +150,16 @@ class _TeacherCreateAnnouncementScreenState
             color: Colors.white,
             letterSpacing: -0.5,
           ),
+=======
+      backgroundColor: const Color(0xFFF4F6FB),
+
+      // ================= HEADER =================
+      appBar: AppBar(
+        elevation: 0,
+        title: const Text("📢 Create Announcement"),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ),
         background: Stack(
           fit: StackFit.expand,

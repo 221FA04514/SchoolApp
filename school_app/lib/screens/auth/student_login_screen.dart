@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import '../../core/auth/auth_provider.dart';
 import '../dashboard/student_dashboard.dart';
-import 'package:provider/provider.dart';
 
 class StudentLoginScreen extends StatefulWidget {
   const StudentLoginScreen({super.key});
@@ -28,6 +29,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -69,32 +71,54 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
     super.dispose();
   }
 
+  // ================= LOGIN LOGIC (NO OTP FOR STUDENT) =================
   Future<void> _login() async {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
+
     try {
       final res = await context.read<AuthProvider>().login(
         emailController.text.trim(),
         passwordController.text.trim(),
       );
+
+      if (!mounted) return;
       setState(() => _isLoading = false);
+<<<<<<< HEAD
       if (res != null && mounted) {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (_) => const StudentDashboard()),
           (route) => false,
+=======
+
+      debugPrint("STUDENT LOGIN RESPONSE: $res");
+
+      if (res == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Login failed. Please try again.")),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         );
+        return;
       }
+
+      // ✅ DIRECT DASHBOARD (NO OTP)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const StudentDashboard()),
+      );
     } catch (e) {
+      if (!mounted) return;
+
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
+  // ================= UI =================
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -110,7 +134,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
       body: SingleChildScrollView(
         child: Stack(
           children: [
-            /// 🔵 WAVE HEADER
+            /// 🔵 HEADER
             SlideTransition(
               position: _headerSlide,
               child: ClipPath(
@@ -120,9 +144,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
                   height: size.height * 0.36,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
-                    ),
+                    color: const Color(0xFF4A00E0),
                   ),
                   child: SafeArea(
                     child: Column(
@@ -149,7 +171,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
               ),
             ),
 
-            /// 🖼 CENTER ILLUSTRATION
+            /// 🖼 IMAGE
             Positioned(
               top: size.height * 0.16,
               left: 0,
@@ -158,11 +180,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
                 opacity: _imageFade,
                 child: ScaleTransition(
                   scale: _imageScale,
-                  child: Image.asset(
-                    'assets/images/student.png',
-                    height: 350,
-                    fit: BoxFit.contain,
-                  ),
+                  child: Image.asset('assets/images/student.png', height: 350),
                 ),
               ),
             ),
@@ -223,13 +241,13 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
                           width: double.infinity,
                           height: 52,
                           child: ElevatedButton(
+                            onPressed: _isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(16),
                               ),
                             ),
-                            onPressed: _isLoading ? null : _login,
                             child: _isLoading
                                 ? const CircularProgressIndicator(
                                     color: Colors.white,
@@ -257,6 +275,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
   }
 }
 
+// ================= INPUT FIELD =================
 class _InputField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
@@ -292,6 +311,7 @@ class _InputField extends StatelessWidget {
   }
 }
 
+// ================= WAVE CLIPPER =================
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

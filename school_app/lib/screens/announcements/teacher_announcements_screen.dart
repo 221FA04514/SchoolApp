@@ -10,8 +10,13 @@ class TeacherAnnouncementsScreen extends StatefulWidget {
   State<TeacherAnnouncementsScreen> createState() =>
       _TeacherAnnouncementsScreenState();
 }
+<<<<<<< HEAD
 class _TeacherAnnouncementsScreenState
     extends State<TeacherAnnouncementsScreen>
+=======
+
+class _TeacherAnnouncementsScreenState extends State<TeacherAnnouncementsScreen>
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     with SingleTickerProviderStateMixin {
   final ApiService _api = ApiService();
 
@@ -31,10 +36,7 @@ class _TeacherAnnouncementsScreenState
       duration: const Duration(milliseconds: 700),
     );
 
-    _fade = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
   }
 
   @override
@@ -75,15 +77,7 @@ class _TeacherAnnouncementsScreenState
         elevation: 0,
         title: const Text("📢 My Announcements"),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF1A4DFF),
-                Color(0xFF3A6BFF),
-                Color(0xFF6A11CB),
-              ],
-            ),
-          ),
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
         ),
       ),
 
@@ -113,105 +107,101 @@ class _TeacherAnnouncementsScreenState
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : announcements.isEmpty
-              ? const Center(
-                  child: Text(
-                    "📭 No announcements yet",
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                )
-              : FadeTransition(
-                  opacity: _fade,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: announcements.length,
-                    itemBuilder: (_, i) {
-                      final a = announcements[i];
+          ? const Center(
+              child: Text(
+                "📭 No announcements yet",
+                style: TextStyle(color: Colors.black54),
+              ),
+            )
+          : FadeTransition(
+              opacity: _fade,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(12),
+                itemCount: announcements.length,
+                itemBuilder: (_, i) {
+                  final a = announcements[i];
 
-                      return TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0, end: 1),
-                        duration:
-                            Duration(milliseconds: 400 + i * 120),
-                        builder: (context, value, child) {
-                          return Opacity(
-                            opacity: value,
-                            child: Transform.translate(
-                              offset: Offset(0, 20 * (1 - value)),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    Colors.black.withOpacity(0.06),
-                                blurRadius: 12,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              // EMOJI
-                              Text(
-                                _getEmoji(a.title),
-                                style: const TextStyle(fontSize: 28),
-                              ),
-                              const SizedBox(width: 12),
-
-                              // CONTENT
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      a.title,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      a.description,
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.schedule,
-                                            size: 14,
-                                            color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          "${a.createdAt.day}/${a.createdAt.month}/${a.createdAt.year}",
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: Duration(milliseconds: 400 + i * 120),
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
                         ),
                       );
                     },
-                  ),
-                ),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // EMOJI
+                          Text(
+                            _getEmoji(a.title),
+                            style: const TextStyle(fontSize: 28),
+                          ),
+                          const SizedBox(width: 12),
+
+                          // CONTENT
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  a.title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  a.description,
+                                  style: const TextStyle(color: Colors.black87),
+                                ),
+                                const SizedBox(height: 10),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.schedule,
+                                      size: 14,
+                                      color: Colors.grey,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      "${a.createdAt.day}/${a.createdAt.month}/${a.createdAt.year}",
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

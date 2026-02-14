@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/api_service.dart';
-import 'timetable_model.dart';
 
 class TeacherTimetableScreen extends StatefulWidget {
   const TeacherTimetableScreen({super.key});
@@ -11,8 +10,10 @@ class TeacherTimetableScreen extends StatefulWidget {
   State<TeacherTimetableScreen> createState() => _TeacherTimetableScreenState();
 }
 
-class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
+class _TeacherTimetableScreenState extends State<TeacherTimetableScreen>
+    with SingleTickerProviderStateMixin {
   final ApiService _api = ApiService();
+<<<<<<< HEAD
   List _sections = [];
   int? _selectedSecId;
   List<TimetableItem> _slots = [];
@@ -26,10 +27,24 @@ class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
     "Friday",
     "Saturday",
   ];
+=======
+  late TabController _tabController;
+
+  List sections = [];
+  int? selectedSectionId;
+
+  List myTimetable = [];
+  List sectionTimetable = [];
+
+  bool isLoadingSections = true;
+  bool isLoadingMyTimetable = false;
+  bool isLoadingSectionTimetable = false;
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     _fetchSections(); // Changed to _fetchSections
   }
 
@@ -53,6 +68,35 @@ class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
               _isLoading = false; // No sections, stop loading
             }
           });
+=======
+    _tabController = TabController(length: 2, vsync: this);
+    fetchMyTimetable();
+    fetchSections();
+  }
+
+  Future<void> fetchMyTimetable() async {
+    setState(() => isLoadingMyTimetable = true);
+    try {
+      final res = await _api.get("/api/v1/timetable/personal");
+      setState(() {
+        myTimetable = res["data"] ?? [];
+        isLoadingMyTimetable = false;
+      });
+    } catch (e) {
+      setState(() => isLoadingMyTimetable = false);
+    }
+  }
+
+  Future<void> fetchSections() async {
+    try {
+      final res = await _api.get("/api/v1/sections");
+      setState(() {
+        sections = res["data"] ?? [];
+        isLoadingSections = false;
+        if (sections.isNotEmpty) {
+          selectedSectionId = sections[0]["id"];
+          fetchSectionTimetable(selectedSectionId!);
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         }
       } else {
         // Teachers fetch their personal timetable directly
@@ -64,6 +108,7 @@ class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
     }
   }
 
+<<<<<<< HEAD
   Future<void> _fetchPersonalTimetable() async {
     setState(() => _isLoading = true);
     try {
@@ -89,10 +134,15 @@ class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
       return;
     }
     setState(() => _isLoading = true);
+=======
+  Future<void> fetchSectionTimetable(int sectionId) async {
+    setState(() => isLoadingSectionTimetable = true);
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     try {
       final res = await _api.get(
         "/api/v1/timetable/section?section_id=$_selectedSecId", // Use _selectedSecId
       );
+<<<<<<< HEAD
       if (mounted) {
         setState(() {
           _slots = (res["data"] as List)
@@ -104,12 +154,21 @@ class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
     } catch (e) {
       debugPrint("Error fetching section timetable: $e");
       if (mounted) setState(() => _isLoading = false);
+=======
+      setState(() {
+        sectionTimetable = res["data"] ?? [];
+        isLoadingSectionTimetable = false;
+      });
+    } catch (e) {
+      setState(() => isLoadingSectionTimetable = false);
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
       backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
         title: const Text("Teacher Timetable"),
@@ -136,10 +195,31 @@ class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
                   ),
           ),
         ],
+=======
+      appBar: AppBar(
+        title: const Text("Timetable"),
+        backgroundColor: const Color(0xFF4A00E0),
+        foregroundColor: Colors.white,
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          tabs: const [
+            Tab(text: "My Schedule"),
+            Tab(text: "Class Scheduler"),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildMySchedule(), _buildClassScheduler()],
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
   }
 
+<<<<<<< HEAD
   Widget _buildTopBar() {
     final role = Provider.of<AuthProvider>(context, listen: false).role;
     final isAdmin = role == 'admin';
@@ -345,6 +425,101 @@ class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
             fontWeight: FontWeight.bold,
             color: Colors.blueGrey,
           ),
+=======
+  Widget _buildMySchedule() {
+    if (isLoadingMyTimetable) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (myTimetable.isEmpty) {
+      return const Center(child: Text("No classes scheduled."));
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: myTimetable.length,
+      itemBuilder: (context, index) {
+        final t = myTimetable[index];
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: const Color(0xFF4A00E0).withOpacity(0.1),
+              child: Text(
+                t["period"]?.toString() ?? "-",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4A00E0),
+                ),
+              ),
+            ),
+            title: Text(t["subject"] ?? "Unknown Subject"),
+            subtitle: Text("${t["day"]} | ${t["section_name"] ?? 'N/A'}"),
+            trailing: Text(
+              "${t["start_time"]} - ${t["end_time"]}",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildClassScheduler() {
+    return Column(
+      children: [
+        if (isLoadingSections)
+          const LinearProgressIndicator()
+        else if (sections.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(20),
+            child: Text("No sections available."),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: DropdownButtonFormField<int>(
+              value: selectedSectionId,
+              decoration: const InputDecoration(
+                labelText: "Select Section",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.class_),
+              ),
+              items: sections.map<DropdownMenuItem<int>>((s) {
+                return DropdownMenuItem(value: s["id"], child: Text(s["name"]));
+              }).toList(),
+              onChanged: (val) {
+                setState(() => selectedSectionId = val);
+                if (val != null) fetchSectionTimetable(val);
+              },
+            ),
+          ),
+
+        Expanded(
+          child: isLoadingSectionTimetable
+              ? const Center(child: CircularProgressIndicator())
+              : sectionTimetable.isEmpty
+              ? const Center(child: Text("No schedule for this section."))
+              : ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: sectionTimetable.length,
+                  itemBuilder: (context, index) {
+                    final t = sectionTimetable[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Text(t["period"].toString()),
+                        ),
+                        title: Text("${t["subject"]} (${t["day"]})"),
+                        subtitle: Text("Teacher: ${t["teacher_name"]}"),
+                        trailing: Text("${t["start_time"]} - ${t["end_time"]}"),
+                      ),
+                    );
+                  },
+                ),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ),
       ],
     );

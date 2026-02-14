@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
 import 'student_exam_portal_screen.dart';
+import 'student_exam_review_screen.dart';
 
 class StudentOnlineExamListScreen extends StatefulWidget {
   const StudentOnlineExamListScreen({super.key});
@@ -100,11 +101,7 @@ class _StudentOnlineExamListScreenState
       appBar: AppBar(
         title: const Text("Online Exams"),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A4DFF), Color(0xFF6A11CB)],
-            ),
-          ),
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
         ),
       ),
       body: _isLoading
@@ -142,14 +139,38 @@ class _StudentOnlineExamListScreenState
                       ],
                     ),
                     trailing: ElevatedButton(
-                      onPressed: isAttempted ? null : () => _startExam(exam),
+                      onPressed: () {
+                        if (exam["attempt_status"] == 'submitted') {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => StudentExamReviewScreen(
+                                examId: exam["id"],
+                                title: exam["title"],
+                              ),
+                            ),
+                          );
+                        } else if (isAttempted) {
+                          return; // Do nothing if locked/started but not resume-able yet
+                        } else {
+                          _startExam(exam);
+                        }
+                      },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isAttempted
+                        backgroundColor: exam["attempt_status"] == 'submitted'
+                            ? Colors.green
+                            : isAttempted
                             ? Colors.grey
                             : const Color(0xFF1A4DFF),
                         foregroundColor: Colors.white,
                       ),
-                      child: Text(isAttempted ? "Attempted" : "Start"),
+                      child: Text(
+                        exam["attempt_status"] == 'submitted'
+                            ? "Review"
+                            : isAttempted
+                            ? "Attempted"
+                            : "Start",
+                      ),
                     ),
                   ),
                 );

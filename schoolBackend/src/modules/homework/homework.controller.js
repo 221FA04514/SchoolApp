@@ -110,16 +110,36 @@ exports.markHomeworkStatus = async (req, res, next) => {
 /**
  * Student: submit homework
  */
+/**
+ * Student: submit homework
+ */
 exports.submitHomework = async (req, res, next) => {
   try {
-    if (req.user.role !== "student") return error(res, "Access denied", 403);
-    const { homework_id, content, file_url } = req.body;
+    console.log("Submit Homework Request Headers:", req.headers["content-type"]);
+    console.log("req.body:", req.body);
+    console.log("req.file:", req.file);
 
+    if (req.user.role !== "student") return error(res, "Access denied", 403);
+
+<<<<<<< HEAD
+=======
+    // Ensure req.body is defined
+    const body = req.body || {};
+    const { homework_id, content } = body;
+    let file_url = null;
+
+    if (req.file) {
+      // Store relative path or full URL depending on your preference.
+      // Usually storing relative path like "uploads/filename.ext" is better.
+      file_url = req.file.path.replace(/\\/g, "/"); // Normalize slashes
+    }
+
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     await submitHomework({
       homework_id,
       student_id: req.user.userId,
       content,
-      file_url
+      file_url,
     });
 
     return success(res, null, "Homework submitted successfully");

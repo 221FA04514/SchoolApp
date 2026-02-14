@@ -1,5 +1,9 @@
 import 'dart:convert';
+<<<<<<< HEAD
 import 'package:dio/dio.dart' as dio_lib;
+=======
+import 'dart:async';
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
@@ -14,6 +18,8 @@ class ApiException implements Exception {
 }
 
 class ApiService {
+  static const Duration _timeout = Duration(seconds: 30);
+
   // ================= TOKEN =================
   Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -32,11 +38,13 @@ class ApiService {
   // ================= POST =================
   Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
-      final response = await http.post(
-        Uri.parse("${AppConstants.baseUrl}$endpoint"),
-        headers: await _headers(),
-        body: jsonEncode(body),
-      );
+      final response = await http
+          .post(
+            Uri.parse("${AppConstants.baseUrl}$endpoint"),
+            headers: await _headers(),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
 
       final data = jsonDecode(response.body);
 
@@ -49,6 +57,8 @@ class ApiService {
           data,
         );
       }
+    } on TimeoutException {
+      throw Exception("Server timeout. Please try again.");
     } catch (e) {
       print("POST API ERROR [$endpoint]: $e");
       rethrow;
@@ -58,10 +68,12 @@ class ApiService {
   // ================= GET =================
   Future<dynamic> get(String endpoint) async {
     try {
-      final response = await http.get(
-        Uri.parse("${AppConstants.baseUrl}$endpoint"),
-        headers: await _headers(),
-      );
+      final response = await http
+          .get(
+            Uri.parse("${AppConstants.baseUrl}$endpoint"),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
 
       final data = jsonDecode(response.body);
 
@@ -74,6 +86,8 @@ class ApiService {
           data,
         );
       }
+    } on TimeoutException {
+      throw Exception("Server timeout. Please try again.");
     } catch (e) {
       print("GET API ERROR [$endpoint]: $e");
       rethrow;
@@ -83,10 +97,12 @@ class ApiService {
   // ================= DELETE =================
   Future<dynamic> delete(String endpoint) async {
     try {
-      final response = await http.delete(
-        Uri.parse("${AppConstants.baseUrl}$endpoint"),
-        headers: await _headers(),
-      );
+      final response = await http
+          .delete(
+            Uri.parse("${AppConstants.baseUrl}$endpoint"),
+            headers: await _headers(),
+          )
+          .timeout(_timeout);
 
       final data = jsonDecode(response.body);
 
@@ -99,6 +115,8 @@ class ApiService {
           data,
         );
       }
+    } on TimeoutException {
+      throw Exception("Server timeout. Please try again.");
     } catch (e) {
       print("DELETE API ERROR [$endpoint]: $e");
       rethrow;
@@ -108,11 +126,13 @@ class ApiService {
   // ================= PUT =================
   Future<dynamic> put(String endpoint, Map<String, dynamic> body) async {
     try {
-      final response = await http.put(
-        Uri.parse("${AppConstants.baseUrl}$endpoint"),
-        headers: await _headers(),
-        body: jsonEncode(body),
-      );
+      final response = await http
+          .put(
+            Uri.parse("${AppConstants.baseUrl}$endpoint"),
+            headers: await _headers(),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
 
       final data = jsonDecode(response.body);
 
@@ -125,12 +145,15 @@ class ApiService {
           data,
         );
       }
+    } on TimeoutException {
+      throw Exception("Server timeout. Please try again.");
     } catch (e) {
       print("PUT API ERROR [$endpoint]: $e");
       rethrow;
     }
   }
 
+<<<<<<< HEAD
   // ================= MULTIPART (Upload) =================
   Future<dynamic> postMultipart(
     String endpoint,
@@ -173,6 +196,50 @@ class ApiService {
       }
     } catch (e) {
       print("MULTIPART API ERROR [$endpoint]: $e");
+=======
+  // ================= UPLOAD =================
+  Future<dynamic> uploadFile(
+    String endpoint,
+    Map<String, String> fields,
+    String? filePath,
+    String fileField,
+  ) async {
+    try {
+      final uri = Uri.parse("${AppConstants.baseUrl}$endpoint");
+      final request = http.MultipartRequest("POST", uri);
+
+      // Headers
+      final token = await _getToken();
+      if (token != null) {
+        request.headers["Authorization"] = "Bearer $token";
+      }
+
+      // Fields
+      fields.forEach((key, value) {
+        request.fields[key] = value;
+      });
+
+      // File
+      if (filePath != null) {
+        final file = await http.MultipartFile.fromPath(fileField, filePath);
+        request.files.add(file);
+      }
+
+      final streamResponse = await request.send().timeout(_timeout);
+      final response = await http.Response.fromStream(streamResponse);
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return data;
+      } else {
+        throw Exception(data["message"] ?? "Upload failed");
+      }
+    } on TimeoutException {
+      throw Exception("Server timeout. Please try again.");
+    } catch (e) {
+      print("UPLOAD ERROR [$endpoint]: $e");
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       rethrow;
     }
   }

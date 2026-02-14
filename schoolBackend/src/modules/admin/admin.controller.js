@@ -199,3 +199,14 @@ exports.removePeriodSetting = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.removeUser = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        // Delete from users table - ON DELETE CASCADE should handle related tables
+        await pool.query("DELETE FROM users WHERE id = ?", [id]);
+        return success(res, null, "User deleted successfully");
+    } catch (err) {
+        next(err);
+    }
+};

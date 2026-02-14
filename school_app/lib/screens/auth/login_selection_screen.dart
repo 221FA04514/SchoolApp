@@ -80,9 +80,7 @@ class _LoginSelectionScreenState extends State<LoginSelectionScreen>
                   height: size.height * 0.36,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
-                    ),
+                    color: const Color(0xFF673AB7), // Solid Violet
                   ),
                   child: SafeArea(
                     child: Column(
@@ -164,7 +162,7 @@ class _LoginSelectionScreenState extends State<LoginSelectionScreen>
                         "Administrator",
                         "Full school management",
                         Icons.admin_panel_settings,
-                        Colors.red,
+                        const Color(0xFF673AB7), // Solid Violet
                         const AdminLoginScreen(),
                       ),
                     ],

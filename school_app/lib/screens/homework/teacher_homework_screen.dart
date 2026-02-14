@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
 import '../../models/homework_model.dart';
 import 'teacher_create_homework_screen.dart';
+import 'teacher_assessment_screen.dart';
 
 class TeacherHomeworkScreen extends StatefulWidget {
   const TeacherHomeworkScreen({super.key});
@@ -63,11 +64,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen>
             height: 220,
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: const Color(0xFF4A00E0),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
@@ -179,76 +176,99 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen>
           ),
         ],
       ),
-      child: ClipRRect(
+      child: Material(
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              color: const Color(0xFF6A11CB).withOpacity(0.05),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.class_rounded,
-                    size: 16,
-                    color: Color(0xFF6A11CB),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TeacherHomeworkAssessmentScreen(
+                  homeworkId: h["id"],
+                  title: h["title"] ?? "Homework",
+                ),
+              ),
+            );
+          },
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6A11CB).withOpacity(0.05),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    "Section: ${h["section"] ?? 'N/A'}",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.class_rounded,
+                      size: 16,
                       color: Color(0xFF6A11CB),
                     ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      "Due: ${h["due_date"] ?? 'N/A'}",
-                      style: TextStyle(
-                        fontSize: 10,
+                    const SizedBox(width: 8),
+                    Text(
+                      "Section: ${h["section"] ?? 'N/A'}",
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange.shade800,
+                        fontSize: 13,
+                        color: Color(0xFF6A11CB),
                       ),
                     ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "Due: ${h["due_date"] ?? 'N/A'}",
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.orange.shade800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                contentPadding: const EdgeInsets.all(16),
+                title: Text(
+                  h["title"] ?? "Untitled",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                ],
-              ),
-            ),
-            ListTile(
-              contentPadding: const EdgeInsets.all(16),
-              title: Text(
-                h["title"] ?? "Untitled",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    h["description"] ?? "No description provided",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  ),
+                ),
+                trailing: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: Colors.grey,
                 ),
               ),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  h["description"] ?? "No description provided",
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-                ),
-              ),
-              trailing: const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 16,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

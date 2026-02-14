@@ -1,0 +1,88 @@
+=== DEBUGGING NOTIFICATIONS ===
+Latest Notification: {
+  "id": 13,
+  "title": "Zoom meeting ",
+  "body": "📢 Important School Notification: \nWe would like to inform all students, faculty, and staff that a scheduled event will take place from 2:00 pm to 4:00 pm 🗓️. Please make sure to mark your calendars accordingly and arrive on time. For more information and details, please refer to the official school website or contact the administration office 📝.",
+  "attachment_url": null,
+  "created_by": 8,
+  "scheduled_at": null,
+  "sent_at": null,
+  "created_at": "2026-02-07T23:42:19.000Z",
+  "expires_at": "2026-02-09T18:30:00.000Z"
+}
+Receipts count for ID 13: 7
+Sample Receipts: [
+  {
+    "id": 72,
+    "notification_id": 13,
+    "user_id": 6,
+    "status": "pending",
+    "updated_at": "2026-02-07T23:42:19.000Z"
+  },
+  {
+    "id": 73,
+    "notification_id": 13,
+    "user_id": 9,
+    "status": "pending",
+    "updated_at": "2026-02-07T23:42:19.000Z"
+  },
+  {
+    "id": 74,
+    "notification_id": 13,
+    "user_id": 11,
+    "status": "pending",
+    "updated_at": "2026-02-07T23:42:19.000Z"
+  },
+  {
+    "id": 75,
+    "notification_id": 13,
+    "user_id": 12,
+    "status": "pending",
+    "updated_at": "2026-02-07T23:42:19.000Z"
+  },
+  {
+    "id": 76,
+    "notification_id": 13,
+    "user_id": 3,
+    "status": "pending",
+    "updated_at": "2026-02-07T23:42:19.000Z"
+  }
+]
+Sample Users: [
+  {
+    "id": 3,
+    "role": "student",
+    "email": "student@test.com"
+  },
+  {
+    "id": 6,
+    "role": "teacher",
+    "email": "teacher@test.com"
+  },
+  {
+    "id": 7,
+    "role": "student",
+    "email": "test@student.com"
+  },
+  {
+    "id": 8,
+    "role": "admin",
+    "email": "admin@test.com"
+  },
+  {
+    "id": 9,
+    "role": "teacher",
+    "email": "sathvikach2004@gmail.com"
+  }
+]
+Latest Announcement: {
+  "id": 13,
+  "title": "hello",
+  "description": "hi students",
+  "created_by": 6,
+  "role": "teacher",
+  "created_at": "2026-02-06T04:20:40.000Z",
+  "section_id": null,
+  "scheduled_at": null,
+  "attachment_url": null
+}

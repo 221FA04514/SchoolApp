@@ -160,6 +160,39 @@ exports.getAttendanceSummary = async (student_id, month, year) => {
 };
 
 /**
+ * Student: overall attendance summary
+ */
+exports.getOverallAttendanceSummary = async (student_id) => {
+  const [rows] = await pool.query(
+    `
+    SELECT
+      SUM(status = 'present') AS present,
+      SUM(status = 'absent') AS absent,
+      SUM(status = 'holiday') AS holiday,
+      COUNT(*) AS total
+    FROM attendance
+    WHERE student_id = ?
+    `,
+    [student_id]
+  );
+
+  const s = rows[0];
+  const workingDays = s.total - s.holiday;
+  const percentage =
+    workingDays > 0
+      ? Math.round((s.present / workingDays) * 100)
+      : 0;
+
+  return {
+    present: Number(s.present || 0),
+    absent: Number(s.absent || 0),
+    holiday: Number(s.holiday || 0),
+    total: Number(s.total || 0),
+    percentage,
+  };
+};
+
+/**
  * Student: calendar mapping
  */
 exports.getAttendanceCalendarMap = async (student_id, month, year) => {

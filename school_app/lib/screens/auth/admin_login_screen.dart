@@ -25,7 +25,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
 
   bool _requiresOtp = false;
   int? _userId;
-  String? _maskedPhone;
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -82,11 +81,13 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
 
     setState(() => _isLoading = true);
     try {
+      debugPrint("ADMIN LOGIN: Email=$email");
       final Map? res = await context.read<AuthProvider>().login(
         email,
         password,
       );
 
+<<<<<<< HEAD
       if (res != null && res["requiresOtp"] == true) {
         setState(() {
           _requiresOtp = true;
@@ -101,9 +102,42 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
             MaterialPageRoute(builder: (_) => const AdminDashboard()),
             (route) => false,
           );
+=======
+      debugPrint("ADMIN LOGIN RES: $res");
+
+      if (res != null) {
+        debugPrint("Check RequiresOTP: ${res["requiresOtp"]}");
+
+        if (res["requiresOtp"] == true) {
+          debugPrint("OTP REQUIRED. Setting state...");
+
+          final userId = res["userId"];
+
+          if (userId == null) {
+            throw Exception("User ID missing in response");
+          }
+
+          setState(() {
+            _requiresOtp = true;
+            _userId = userId;
+            _isLoading = false;
+            otpController.text = "00000";
+          });
+        } else {
+          debugPrint("Direct Login. Navigating...");
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            );
+          }
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         }
+      } else {
+        throw Exception("Login response is null");
       }
     } catch (e) {
+      debugPrint("LOGIN EXCEPTION: $e");
       setState(() => _isLoading = false);
       if (mounted)
         ScaffoldMessenger.of(
@@ -113,6 +147,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
   }
 
   Future<void> _handleVerifyOtp() async {
+    FocusScope.of(context).unfocus(); // ⌨️ Close keyboard first
+    await Future.delayed(const Duration(milliseconds: 300)); // ⏳ Let UI settle
+
     final code = otpController.text.trim();
     if (_userId == null) return;
     if (code.isEmpty) {
@@ -180,6 +217,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
             /// 🔵 WAVE HEADER
             SlideTransition(
               position: _headerSlide,
+<<<<<<< HEAD
               child: RepaintBoundary(
                 child: ClipPath(
                   clipper: WaveClipper(),
@@ -204,6 +242,28 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
                             ),
+=======
+              child: ClipPath(
+                clipper: WaveClipper(),
+                child: Container(
+                  width: double.infinity,
+                  height: size.height * 0.36,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: const BoxDecoration(
+                    color: const Color(0xFF4A00E0),
+                  ),
+                  child: SafeArea(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        SizedBox(height: 12),
+                        Text(
+                          'Admin Portal',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                           ),
                           SizedBox(height: 8),
                           Text(
@@ -284,7 +344,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
           const SizedBox(height: 20),
           _InputField(
             controller: emailController,
-            hint: 'Admin Email',
+            hint: 'Email or Mobile', // Updated Hint
             icon: Icons.admin_panel_settings_outlined,
           ),
           const SizedBox(height: 18),
@@ -333,7 +393,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
   Widget _buildOtpView() {
     return Container(
       key: const ValueKey("otp_view"),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -347,50 +407,62 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
       ),
       child: Column(
         children: [
-          const Icon(Icons.security, size: 50, color: Colors.red),
+          // 🛡️ Shield Icon
+          const Icon(Icons.security_rounded, size: 60, color: Colors.red),
           const SizedBox(height: 16),
+
           const Text(
             "Verification",
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
-            "Enter code sent to \n$_maskedPhone",
+
+          const Text(
+            "Enter Admin Security Code",
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey),
+            style: TextStyle(color: Colors.grey, height: 1.5, fontSize: 16),
           ),
-          const SizedBox(height: 24),
-          TextField(
-            controller: otpController,
-            keyboardType: TextInputType.number,
-            maxLength: 6,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 8,
+          const SizedBox(height: 30),
+
+          // 🔢 OTP Input
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF4F6FB),
+              borderRadius: BorderRadius.circular(16),
             ),
-            decoration: InputDecoration(
-              counterText: "",
-              hintText: "000000",
-              filled: true,
-              fillColor: const Color(0xFFF2F4F8),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
+            child: TextField(
+              controller: otpController,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 12,
+              ),
+              decoration: const InputDecoration(
+                counterText: "",
+                hintText: "000000",
+                border: InputBorder.none,
+                hintStyle: TextStyle(color: Colors.black26, letterSpacing: 12),
               ),
             ),
           ),
-          const SizedBox(height: 24),
+
+          const SizedBox(height: 30),
+
+          // 🔴 Verify Button
           SizedBox(
             width: double.infinity,
-            height: 52,
+            height: 54,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: const Color(0xFFFF3B30), // Red color
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
+                elevation: 0,
               ),
               onPressed: _isLoading ? null : _handleVerifyOtp,
               child: _isLoading
@@ -405,12 +477,23 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                     ),
             ),
           ),
+<<<<<<< HEAD
           TextButton(
             onPressed: _isLoading ? null : _handleResendOtp,
             child: const Text(
               "Resend Code",
               style: TextStyle(color: Colors.red),
             ),
+=======
+
+          const SizedBox(height: 16),
+
+          // Resend Code Removed
+          const SizedBox(height: 20),
+          const Text(
+            "Use default OTP: 00000",
+            style: TextStyle(color: Colors.grey),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
           ),
         ],
       ),

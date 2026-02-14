@@ -25,10 +25,12 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
   final ApiService _api = ApiService();
   List<dynamic> _questions = [];
   bool _isLoading = true;
+  bool _allowCopy = false;
   int _currentIndex = 0;
   Map<int, String> _userAnswers = {};
   late Timer _timer;
   int _secondsRemaining = 0;
+  final TextEditingController _textController = TextEditingController();
 
   @override
   void initState() {
@@ -54,14 +56,26 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
         "/api/v1/online-exams/questions/${widget.examId}",
       );
       setState(() {
-        _questions = response["data"] ?? [];
+        _questions = response["data"]["questions"] ?? [];
+        var rawAllowCopy = response["data"]["allowCopy"];
+        _allowCopy = rawAllowCopy == true || rawAllowCopy == 1;
         _isLoading = false;
+        _updateTextController();
       });
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+  }
+
+  void _updateTextController() {
+    if (_questions.isNotEmpty &&
+        _currentIndex < _questions.length &&
+        _questions[_currentIndex]["options_json"] == null) {
+      _textController.text =
+          _userAnswers[_questions[_currentIndex]["id"]] ?? "";
     }
   }
 
@@ -123,6 +137,7 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
   @override
   void dispose() {
     _timer.cancel();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -181,6 +196,13 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
         ),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
+            : _questions.isEmpty
+            ? const Center(
+                child: Text(
+                  "No questions found for this exam.",
+                  style: TextStyle(fontSize: 18, color: Colors.grey),
+                ),
+              )
             : Column(
                 children: [
                   LinearProgressIndicator(
@@ -204,13 +226,22 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          Text(
-                            _questions[_currentIndex]["question_text"],
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
+                          // ... (rest of the column content is same, but I need to include it or cut off carefully)
+                          _allowCopy
+                              ? SelectableText(
+                                  _questions[_currentIndex]["question_text"],
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                )
+                              : Text(
+                                  _questions[_currentIndex]["question_text"],
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                           const SizedBox(height: 24),
                           // Check if it's MCQ (has options_json)
                           if (_questions[_currentIndex]["options_json"] != null)
@@ -233,6 +264,7 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
                             }).toList()
                           else
                             TextField(
+                              controller: _textController,
                               maxLines: 5,
                               controller:
                                   TextEditingController(
@@ -286,7 +318,12 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
         children: [
           if (_currentIndex > 0)
             ElevatedButton(
-              onPressed: () => setState(() => _currentIndex--),
+              onPressed: () {
+                setState(() {
+                  _currentIndex--;
+                  _updateTextController();
+                });
+              },
               child: const Text("Previous"),
             )
           else
@@ -294,7 +331,12 @@ class _StudentExamPortalScreenState extends State<StudentExamPortalScreen> {
 
           if (_currentIndex < _questions.length - 1)
             ElevatedButton(
-              onPressed: () => setState(() => _currentIndex++),
+              onPressed: () {
+                setState(() {
+                  _currentIndex++;
+                  _updateTextController();
+                });
+              },
               child: const Text("Next"),
             )
           else

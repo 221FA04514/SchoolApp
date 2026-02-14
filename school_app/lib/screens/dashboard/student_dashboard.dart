@@ -1,27 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:provider/provider.dart'; // For context.read
+import 'dart:ui'; // For ImageFilter
 import '../../core/auth/auth_provider.dart';
-
+import '../auth/login_selection_screen.dart'; // For Logout navigation
 import '../../core/api/dashboard_service.dart';
 import '../../models/student_dashboard_model.dart';
+import '../alerts/student_alerts_screen.dart';
+import '../profile/student_profile_screen.dart';
 
-// Screens
+// Screens for Grid
 import '../attendance/attendance_screen.dart';
 import '../fees/fees_screen.dart';
 import '../results/results_screen.dart';
-import '../messages/teacher_list_screen.dart';
-import '../announcements/student_announcements_screen.dart';
 import '../homework/student_homework_screen.dart';
 import '../timetable/student_timetable_screen.dart';
-import '../auth/login_selection_screen.dart';
 import '../ai/ai_hub_screen.dart';
 import '../resources/resource_library_screen.dart';
-import '../quizzes/quiz_list_screen.dart';
+
 import '../leaves/leave_management_screen.dart';
 import '../ai/student_online_exam_list.dart';
+<<<<<<< HEAD
 import '../../core/socket/socket_service.dart';
 import '../notifications/notification_inbox_screen.dart';
 import '../../core/api/api_service.dart';
+=======
+import '../announcements/student_announcements_screen.dart';
+import '../messages/teacher_list_screen.dart';
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -32,13 +37,18 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   late Future<StudentDashboardModel> dashboardFuture;
+<<<<<<< HEAD
   bool minimized = false;
   int unreadNotifications = 0;
+=======
+  int _selectedIndex = 0;
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
   @override
   void initState() {
     super.initState();
     dashboardFuture = DashboardService().fetchStudentDashboard();
+<<<<<<< HEAD
     _fetchUnreadCount();
 
     Future.delayed(const Duration(milliseconds: 1200), () {
@@ -123,322 +133,233 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
+=======
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
-    final double expandedHeight = size.height * 0.40;
-    final double minimizedHeight = size.height * 0.20;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
       body: FutureBuilder<StudentDashboardModel>(
         future: dashboardFuture,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (snapshot.hasError) {
+            return _getCurrentPage(
+              StudentDashboardModel(
+                name: "Student",
+                className: "N/A",
+                section: "N/A",
+                roll: "N/A",
+                attendancePercentage: 0,
+                feesDue: 0,
+                announcements: [],
+              ),
+            );
+          }
 
-          final data = snapshot.data!;
+          final data = snapshot.hasData
+              ? snapshot.data!
+              : StudentDashboardModel(
+                  name: "Student",
+                  className: "N/A",
+                  section: "N/A",
+                  roll: "N/A",
+                  attendancePercentage: 0,
+                  feesDue: 0,
+                  announcements: [],
+                );
 
-          return Stack(
-            children: [
-              // ================= BODY =================
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeInOutCubic,
-                top: minimized ? minimizedHeight : expandedHeight,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+          return _getCurrentPage(data);
+        },
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          selectedItemColor: const Color(0xFF4A00E0),
+          unselectedItemColor: Colors.grey,
+          backgroundColor: Colors.white,
+          showUnselectedLabels: true,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.notifications),
+              label: "Alerts",
+            ),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _getCurrentPage(StudentDashboardModel data) {
+    switch (_selectedIndex) {
+      case 0:
+        return _HomeView(data: data, parentContext: context);
+      case 1:
+        return const StudentAlertsScreen();
+      case 2:
+        return StudentProfileScreen(studentData: data);
+      default:
+        return _HomeView(data: data, parentContext: context);
+    }
+  }
+}
+
+class _HomeView extends StatelessWidget {
+  final StudentDashboardModel data;
+  final BuildContext parentContext;
+
+  const _HomeView({required this.data, required this.parentContext});
+
+  Future<void> _logout() async {
+    await parentContext.read<AuthProvider>().logout();
+    if (!parentContext.mounted) return;
+    Navigator.pushAndRemoveUntil(
+      parentContext,
+      MaterialPageRoute(builder: (_) => const LoginSelectionScreen()),
+      (route) => false,
+    );
+  }
+
+  void _go(BuildContext context, Widget screen) {
+    Navigator.push(parentContext, MaterialPageRoute(builder: (_) => screen));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Stack(
+        children: [
+          // Background Color for Header
+          Container(
+            height: 280, // Height of the purple background
+            decoration: const BoxDecoration(
+              color: Color(0xFF4A00E0),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // Header Content
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 20,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      /// ===== STATS =====
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _StatCard(
-                            title: "Attendance",
-                            value: "${data.attendancePercentage}%",
-                            gradient: const [
-                              Color(0xFF43CEA2),
-                              Color(0xFF185A9D),
-                            ],
-                            icon: Icons.event_available,
+                          const Text(
+                            "Welcome Back,",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          _StatCard(
-                            title: "Fees Due",
-                            value: "₹${data.feesDue}",
-                            gradient: const [
-                              Color(0xFFFF5F6D),
-                              Color(0xFFFFC371),
-                            ],
-                            icon: Icons.account_balance_wallet,
+                          const SizedBox(height: 5),
+                          Text(
+                            data.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          const Text(
+                            "STUDENT",
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                              letterSpacing: 1.0,
+                            ),
                           ),
                         ],
                       ),
-
-                      const SizedBox(height: 30),
-
-                      GridView.count(
-                        crossAxisCount: 4,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        children: [
-                          _MenuTile(
-                            icon: Icons.calendar_today,
-                            label: "Attnd",
-                            onTap: () => _go(context, const AttendanceScreen()),
-                          ),
-                          _MenuTile(
-                            icon: Icons.schedule,
-                            label: "TimeT",
-                            onTap: () =>
-                                _go(context, const StudentTimetableScreen()),
-                          ),
-                          _MenuTile(
-                            icon: Icons.book,
-                            label: "HW",
-                            onTap: () =>
-                                _go(context, const StudentHomeworkScreen()),
-                          ),
-                          _MenuTile(
-                            icon: Icons.currency_rupee,
-                            label: "Fees",
-                            onTap: () => _go(context, const FeesScreen()),
-                          ),
-                          _MenuTile(
-                            icon: Icons.assignment,
-                            label: "Results",
-                            onTap: () => _go(context, const ResultsScreen()),
-                          ),
-                          _MenuTile(
-                            icon: Icons.campaign,
-                            label: "Announce",
-                            onTap: () => _go(
-                              context,
-                              const StudentAnnouncementsScreen(),
-                            ),
-                          ),
-                          _MenuTile(
-                            icon: Icons.library_books,
-                            label: "Library",
-                            onTap: () =>
-                                _go(context, const ResourceLibraryScreen()),
-                          ),
-                          _MenuTile(
-                            icon: Icons.quiz,
-                            label: "Quizzes",
-                            onTap: () => _go(context, const QuizListScreen()),
-                          ),
-                          _MenuTile(
-                            icon: Icons.history_edu,
-                            label: "Online Exams",
-                            onTap: () => _go(
-                              context,
-                              const StudentOnlineExamListScreen(),
-                            ),
-                          ),
-                          _MenuTile(
-                            icon: Icons.sick,
-                            label: "Leaves",
-                            onTap: () =>
-                                _go(context, const LeaveManagementScreen()),
-                          ),
-                          _MenuTile(
-                            icon: Icons.chat,
-                            label: "Chat",
-                            onTap: () =>
-                                _go(context, const TeacherListScreen()),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      /// ===== SMART AI HUB CARD =====
-                      InkWell(
-                        onTap: () => _go(context, const AiHubScreen()),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.blue.withOpacity(0.3),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              const CircleAvatar(
-                                radius: 25,
-                                backgroundColor: Colors.white,
-                                child: Icon(
-                                  Icons.auto_awesome,
-                                  color: Color(0xFF6A11CB),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      "Smart AI Learning Hub",
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    Text(
-                                      "Homework Help • Doubt Solver • Planner",
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(
-                                Icons.arrow_forward_ios,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      /// ===== MOTIVATION CARD =====
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-                          ),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: const Text(
-                          "🚀 Believe in yourself!\nEvery day is a chance to learn & grow 📚✨",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      GestureDetector(
+                        onTap: _logout,
+                        child: const CircleAvatar(
+                          radius: 25,
+                          backgroundColor: Colors.white24,
+                          child: Icon(Icons.person, color: Colors.white),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              // ================= HEADER =================
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeInOutCubic,
-                top: 0,
-                left: 0,
-                right: 0,
-                height: minimized ? minimizedHeight : expandedHeight,
-                child: Container(
+                const SizedBox(height: 10),
+
+                // Stats Card
+                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Color(0xFF1A4DFF),
-                        Color(0xFF3A6BFF),
-                        Color(0xFF6A11CB),
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4A00E0).withOpacity(0.2),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
                       ],
                     ),
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(30),
-                    ),
-                  ),
-                  child: SafeArea(
-                    child: Row(
-                      children: [
-                        AnimatedScale(
-                          scale: minimized ? 0.85 : 1.2,
-                          duration: const Duration(milliseconds: 700),
-                          curve: Curves.easeOutBack,
-                          child: GestureDetector(
-                            onTap: () => _showProfileDialog(data),
-                            child: Stack(
-                              children: [
-                                CircleAvatar(
-                                  radius: minimized ? 26 : 44,
-                                  backgroundColor: Colors.white,
-                                  child: const Icon(
-                                    Icons.school_rounded,
-                                    size: 38,
-                                    color: Color(0xFF1A4DFF),
-                                  ),
-                                ),
-                                Positioned(
-                                  right: 0,
-                                  bottom: 0,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(5),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.red,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.logout,
-                                      size: 16,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            AnimatedOpacity(
-                              opacity: minimized ? 0 : 1,
-                              duration: const Duration(milliseconds: 300),
-                              child: const Text(
-                                "Welcome 👋",
-                                style: TextStyle(color: Colors.white70),
-                              ),
+                            _StatItem(
+                              icon: Icons.check_circle,
+                              label: "Attendance (Month)",
+                              value: "${data.attendancePercentage}%",
+                              color: const Color(0xFF4A00E0),
                             ),
-                            Text(
-                              data.name,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              "Class ${data.className}-${data.section}",
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
-                              ),
+                            _VerticalDivider(),
+                            _StatItem(
+                              icon: Icons.assignment_turned_in,
+                              label: "Recent Result",
+                              value: data.recentResult ?? "Pending",
+                              color: Colors.orange,
                             ),
                           ],
                         ),
+<<<<<<< HEAD
                         const Spacer(),
                         Consumer<SocketService>(
                           builder: (context, socket, child) => Stack(
@@ -501,102 +422,250 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           ),
                         ),
                       ],
+=======
+                      ),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+
+                const SizedBox(height: 30),
+
+                // Grid Content
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            "All Modules",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 15,
+                        mainAxisSpacing: 15,
+                        childAspectRatio: 1.1,
+                        children: [
+                          _DashboardCard(
+                            title: "Attendance",
+                            subtitle: "View",
+                            icon: Icons.calendar_today_outlined,
+                            color: Colors.blue.shade50,
+                            iconColor: Colors.blue,
+                            onTap: () => _go(context, const AttendanceScreen()),
+                          ),
+                          _DashboardCard(
+                            title: "Doubts",
+                            subtitle: "Ask Teacher",
+                            icon: Icons.chat_bubble_outline,
+                            color: Colors.deepPurple.shade50,
+                            iconColor: Colors.deepPurple,
+                            onTap: () =>
+                                _go(context, const TeacherListScreen()),
+                          ),
+                          _DashboardCard(
+                            title: "Homework",
+                            subtitle: "View",
+                            icon: Icons.edit_outlined,
+                            color: Colors.orange.shade50,
+                            iconColor: Colors.orange,
+                            onTap: () =>
+                                _go(context, const StudentHomeworkScreen()),
+                          ),
+                          _DashboardCard(
+                            title: "Results",
+                            subtitle: "View",
+                            icon: Icons.assignment_outlined,
+                            color: Colors.purple.shade50,
+                            iconColor: Colors.purple,
+                            onTap: () => _go(context, const ResultsScreen()),
+                          ),
+                          _DashboardCard(
+                            title: "Fees",
+                            subtitle: "Pay",
+                            icon: Icons.payment,
+                            color: Colors.green.shade50,
+                            iconColor: Colors.green,
+                            onTap: () => _go(context, const FeesScreen()),
+                          ),
+                          _DashboardCard(
+                            title: "Time Table",
+                            subtitle: "Schedule",
+                            icon: Icons.schedule,
+                            color: Colors.teal.shade50,
+                            iconColor: Colors.teal,
+                            onTap: () =>
+                                _go(context, const StudentTimetableScreen()),
+                          ),
+                          _DashboardCard(
+                            title: "AI Hub",
+                            subtitle: "Ask AI",
+                            icon: Icons.auto_awesome,
+                            color: Colors.indigo.shade50,
+                            iconColor: Colors.indigo,
+                            onTap: () => _go(context, const AiHubScreen()),
+                          ),
+                          _DashboardCard(
+                            title: "Resources",
+                            subtitle: "Library",
+                            icon: Icons.menu_book_rounded,
+                            color: Colors.pink.shade50,
+                            iconColor: Colors.pink,
+                            onTap: () =>
+                                _go(context, const ResourceLibraryScreen()),
+                          ),
+
+                          _DashboardCard(
+                            title: "Online Exam",
+                            subtitle: "Tests",
+                            icon: Icons.computer,
+                            color: Colors.cyan.shade50,
+                            iconColor: Colors.cyan,
+                            onTap: () => _go(
+                              context,
+                              const StudentOnlineExamListScreen(),
+                            ),
+                          ),
+                          _DashboardCard(
+                            title: "Class Notice",
+                            subtitle: "Updates",
+                            icon: Icons.campaign_outlined,
+                            color: Colors.amber.shade50,
+                            iconColor: Colors.amber.shade800,
+                            onTap: () => _go(
+                              context,
+                              const StudentAnnouncementsScreen(),
+                            ),
+                          ),
+                          _DashboardCard(
+                            title: "Leaves",
+                            subtitle: "Apply",
+                            icon: Icons.time_to_leave,
+                            color: Colors.red.shade50,
+                            iconColor: Colors.red,
+                            onTap: () =>
+                                _go(context, const LeaveManagementScreen()),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  void _go(BuildContext context, Widget screen) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  Widget _buildHeader(StudentDashboardModel data) {
+    // Deprecated
+    return Container();
   }
 }
 
-// ================= STAT CARD =================
-class _StatCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final List<Color> gradient;
-  final IconData icon;
+class _VerticalDivider extends StatelessWidget {
+  const _VerticalDivider();
 
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.gradient,
+  @override
+  Widget build(BuildContext context) {
+    return Container(height: 40, width: 1, color: Colors.grey.shade200);
+  }
+}
+
+class _StatItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatItem({
+    super.key,
     required this.icon,
+    required this.label,
+    required this.value,
+    this.color = Colors.black,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: gradient),
-          borderRadius: BorderRadius.circular(18),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, color: color, size: 28),
+        const SizedBox(height: 5),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        child: Column(
-          children: [
-            Icon(icon, color: Colors.white),
-            const SizedBox(height: 8),
-            Text(title, style: const TextStyle(color: Colors.white70)),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+      ],
     );
   }
 }
 
-// ================= MENU TILE =================
-class _MenuTile extends StatelessWidget {
+class _DashboardCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
   final IconData icon;
-  final String label;
+  final Color color;
+  final Color iconColor;
   final VoidCallback onTap;
 
-  const _MenuTile({
+  const _DashboardCard({
+    super.key,
+    required this.title,
+    required this.subtitle,
     required this.icon,
-    required this.label,
+    required this.color,
+    required this.iconColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 14,
-              offset: const Offset(0, 8),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
+        padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              backgroundColor: const Color(0xFF1A4DFF),
-              child: Icon(icon, color: Colors.white),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 22),
             ),
+<<<<<<< HEAD
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -610,11 +679,64 @@ class _MenuTile extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+=======
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
               ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class _WaveClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 40);
+
+    var firstControlPoint = Offset(size.width / 4, size.height);
+    var firstEndPoint = Offset(size.width / 2.25, size.height - 30);
+    path.quadraticBezierTo(
+      firstControlPoint.dx,
+      firstControlPoint.dy,
+      firstEndPoint.dx,
+      firstEndPoint.dy,
+    );
+    var secondControlPoint = Offset(
+      size.width - (size.width / 3.25),
+      size.height - 80,
+    );
+    var secondEndPoint = Offset(size.width, size.height - 40);
+    path.quadraticBezierTo(
+      secondControlPoint.dx,
+      secondControlPoint.dy,
+      secondEndPoint.dx,
+      secondEndPoint.dy,
+    );
+    path.lineTo(size.width, size.height - 40);
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

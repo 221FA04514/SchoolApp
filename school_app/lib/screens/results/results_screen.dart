@@ -61,7 +61,7 @@ class _ResultsScreenState extends State<ResultsScreen>
           }
           groups[examName]!.add(r);
 
-          final marks = r["marks"] as int;
+          final marks = (r["marks"] as num).toInt();
           if (marks > max) max = marks;
           total += marks;
           count++;
@@ -97,15 +97,7 @@ class _ResultsScreenState extends State<ResultsScreen>
             height: 240,
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF1fa2ff),
-                    Color(0xFF12d8fa),
-                    Color(0xFFa6ffcb),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: const Color(0xFF4A00E0),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
@@ -303,7 +295,7 @@ class _ResultsScreenState extends State<ResultsScreen>
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: subjects.map((s) {
-                final double score = (s["marks"] as int).toDouble();
+                final double score = (s["marks"] as num).toDouble();
                 final isHighest = s["marks"] == highestMark;
 
                 return Padding(
@@ -377,7 +369,7 @@ class _ResultsScreenState extends State<ResultsScreen>
           Padding(
             padding: const EdgeInsets.only(bottom: 12, right: 20),
             child: Text(
-              "Date: ${subjects[0]["exam_date"].toString().split('T')[0]}",
+              _formatDate(subjects[0]),
               textAlign: TextAlign.end,
               style: TextStyle(
                 fontSize: 11,
@@ -395,5 +387,15 @@ class _ResultsScreenState extends State<ResultsScreen>
     if (score >= 80) return const Color(0xFF43CEA2); // High
     if (score >= 40) return const Color(0xFF1fa2ff); // Average
     return const Color(0xFFFF5F6D); // Low
+  }
+
+  String _formatDate(dynamic subject) {
+    try {
+      String dateStr = subject["created_at"] ?? subject["exam_date"];
+      DateTime date = DateTime.parse(dateStr).toLocal();
+      return "Date: ${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+    } catch (e) {
+      return "";
+    }
   }
 }

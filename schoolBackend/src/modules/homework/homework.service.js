@@ -106,9 +106,9 @@ exports.getSubmissionStats = async (homework_id) => {
     `
     SELECT 
       hs.*, 
-      u.name as student_name
+      s.name as student_name
     FROM homework_submissions hs
-    JOIN users u ON hs.student_id = u.id
+    JOIN students s ON hs.student_id = s.user_id
     WHERE hs.homework_id = ?
     `,
     [homework_id]

@@ -16,9 +16,34 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
         let targetUserIds = new Set();
 
         for (const target of targets) {
+<<<<<<< HEAD
             if (target.type === 'role') {
                 const [users] = await connection.query("SELECT id FROM users WHERE role = ?", [target.id]);
                 users.forEach(u => targetUserIds.add(u.id));
+=======
+            console.log(`[MassNotif] Processing target: ${JSON.stringify(target)}`);
+            if (target.type === 'role') {
+                const [users] = await connection.query("SELECT id FROM users WHERE role = ?", [target.id]);
+                console.log(`[MassNotif] Found ${users.length} users for role ${target.id}`);
+                users.forEach(u => targetUserIds.add(u.id));
+
+                // 2.1 Sync with Announcements Board (For Students/Everyone)
+                if (target.id === 'student') {
+                    try {
+                        console.log(`[MassNotif] Syncing to announcements for student`);
+                        await connection.query(
+                            "INSERT INTO announcements (title, description, created_by, role, section_id, scheduled_at, attachment_url) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                            [title, body, created_by, 'admin', null, scheduled_at, attachment_url || null]
+                        );
+                        console.log(`[MassNotif] Synced to announcements successfully`);
+                    } catch (syncErr) {
+                        const fs = require('fs');
+                        fs.appendFileSync('error_log.txt', `[MassNotif] Announcement Sync Error: ${syncErr.message}\n`);
+                        console.error(`[MassNotif] Announcement Sync Error:`, syncErr);
+                        // Do not rethrow, so notification still sends
+                    }
+                }
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             } else if (target.type === 'section') {
                 const [users] = await connection.query(
                     "SELECT user_id FROM students WHERE section_id = ? UNION SELECT user_id FROM teachers t JOIN teacher_subject_mappings m ON t.id = m.teacher_id WHERE m.section_id = ?",
@@ -35,6 +60,11 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
             }
         }
 
+<<<<<<< HEAD
+=======
+        console.log(`[MassNotif] Total unique targets: ${targetUserIds.size}`);
+
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         // 3. Create receipts
         if (targetUserIds.size > 0) {
             const values = Array.from(targetUserIds).map(uid => [notifId, uid]);
@@ -42,6 +72,23 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
                 "INSERT INTO notification_receipts (notification_id, user_id) VALUES ?",
                 [values]
             );
+<<<<<<< HEAD
+=======
+            console.log(`[MassNotif] Receipts inserted for ${values.length} users`);
+
+            // 4. Emit Real-time Socket Events
+            const { sendNotification } = require("../../config/socket");
+            targetUserIds.forEach(uid => {
+                sendNotification(uid, {
+                    title,
+                    message: body,
+                    type: 'admin',
+                    created_at: new Date().toISOString()
+                });
+            });
+        } else {
+            console.warn(`[MassNotif] No users found for targets`);
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         }
 
         await connection.commit();

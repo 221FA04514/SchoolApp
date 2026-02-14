@@ -33,3 +33,7 @@ ALTER TABLE resources MODIFY type VARCHAR(50) NOT NULL;
 -- NOTE: If you get "Duplicate column name 'description'", it means this change is ALREADY applied!
 -- You can safely comment out the line below if it errors.
 -- ALTER TABLE resources ADD COLUMN description TEXT AFTER title;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)

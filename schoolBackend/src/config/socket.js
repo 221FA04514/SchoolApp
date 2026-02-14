@@ -10,17 +10,32 @@ const initSocket = (server) => {
         }
     });
 
-    io.on("connection", (socket) => {
-        console.log(`[SOCKET] User connected: ${socket.id}`);
+    io.use((socket, next) => {
+        const token = socket.handshake.headers.token || socket.handshake.auth.token;
+        if (!token) {
+            return next(new Error("Authentication error"));
+        }
+        try {
+            const jwt = require("jsonwebtoken");
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            socket.user = decoded;
+            next();
+        } catch (err) {
+            next(new Error("Authentication error"));
+        }
+    });
 
-        // Join a private room based on userId (for targeted notifications)
-        socket.on("join", (userId) => {
-            socket.join(`user_${userId}`);
-            console.log(`[SOCKET] User ${userId} joined their private room.`);
-        });
+    io.on("connection", (socket) => {
+        if (!socket.user) return; // Should not happen due to middleware
+
+        console.log(`[SOCKET] User connected: ${socket.user.userId}`);
+
+        // Auto-join private room
+        socket.join(`user_${socket.user.userId}`);
+        console.log(`[SOCKET] User ${socket.user.userId} auto-joined room user_${socket.user.userId}`);
 
         socket.on("disconnect", () => {
-            console.log(`[SOCKET] User disconnected: ${socket.id}`);
+            console.log(`[SOCKET] User disconnected: ${socket.user.userId}`);
         });
     });
 

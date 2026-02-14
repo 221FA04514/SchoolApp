@@ -10,14 +10,32 @@ class ManageMappingsScreen extends StatefulWidget {
 
 class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
   final ApiService _api = ApiService();
+<<<<<<< HEAD
   List mappings = [];
   List teachers = [];
   List sections = [];
   bool isLoading = true;
+=======
+  bool isLoading = true;
+  List teachers = [];
+  List sections = [];
+  List mappings = [];
+
+  // Form selections
+  String? selectedTeacherId;
+  String? selectedSectionId;
+  final subjectController = TextEditingController();
+  final yearController = TextEditingController(text: "2024-2025");
+  String selectedRole = "Subject Teacher"; // Default
+
+  // Theme Color
+  final Color primaryColor = const Color(0xFF673AB7); // Deep Purple
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
   @override
   void initState() {
     super.initState();
+<<<<<<< HEAD
     _fetchInitialData();
   }
 
@@ -32,14 +50,100 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
           mappings = mRes["data"] ?? [];
           teachers = tRes["data"] ?? [];
           sections = sRes["data"] ?? [];
+=======
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    setState(() => isLoading = true);
+    try {
+      final tRes = await _api.get("/api/v1/admin/teachers"); // Corrected route
+      final sRes = await _api.get(
+        "/api/v1/admin/sections",
+      ); // Consistent admin route
+      // final subRes = await _api.get("/api/v1/subjects"); // Keep v1 if valid
+
+      // Mappings is now v2
+      final mRes = await _api.get("/api/v2/admin/mappings");
+
+      if (mounted) {
+        setState(() {
+          teachers = tRes["data"] ?? [];
+          sections = sRes["data"] ?? [];
+          mappings = mRes["data"] ?? [];
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
           isLoading = false;
         });
       }
     } catch (e) {
+<<<<<<< HEAD
+=======
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error fetching data: $e")));
+      }
+    }
+  }
+
+  Future<void> _createMapping() async {
+    if (selectedTeacherId == null ||
+        selectedSectionId == null ||
+        subjectController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please fill all fields (Teacher, Section, Subject)"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => isLoading = true); // Show loading during request
+
+    try {
+      final res = await _api.post("/api/v2/admin/mappings", {
+        "teacher_id": int.tryParse(selectedTeacherId!) ?? 0,
+        "section_id": int.tryParse(selectedSectionId!) ?? 0,
+        "subject_name": subjectController.text.trim(),
+        "academic_year": "2024-2025", // Hardcoded for now
+        "role": selectedRole,
+      });
+
+      if (res["success"]) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Mapping created successfully!"),
+              backgroundColor: Colors.green,
+            ),
+          );
+          subjectController.clear();
+          // Keep academic year/teacher/section as they might want to add more for same
+          await _fetchData(); // Refresh list and wait
+        }
+      } else {
+        throw Exception(res["message"] ?? "Unknown error");
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Error creating mapping: ${e.toString().replaceAll('Exception:', '')}",
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       if (mounted) setState(() => isLoading = false);
     }
   }
 
+<<<<<<< HEAD
   void _showAddMappingDialog() {
     int? selectedTeacherId;
     int? selectedSectionId;
@@ -215,10 +319,24 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     );
+=======
+  Future<void> _deleteMapping(String id) async {
+    try {
+      await _api.delete("/api/v2/admin/mappings/$id");
+      _fetchData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error deleting mapping: $e")));
+      }
+    }
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   }
 
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFF),
       body: CustomScrollView(
@@ -458,4 +576,319 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
       }
     }
   }
+=======
+    // Unique list for dropdown to prevent dup errors
+    final uniqueTeachers = <String>{};
+    final validTeachers = teachers.where((t) {
+      final id = t["id"].toString();
+      if (uniqueTeachers.contains(id)) return false;
+      uniqueTeachers.add(id);
+      return true;
+    }).toList();
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+      appBar: AppBar(
+        title: const Text("Manage Mappings"),
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator(color: primaryColor))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Create Mapping Form
+                  Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.link, color: primaryColor),
+                              const SizedBox(width: 8),
+                              Text(
+                                "Link Subject to Teacher",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Teacher Dropdown
+                          DropdownButtonFormField<String>(
+                            value: selectedTeacherId,
+                            decoration: InputDecoration(
+                              labelText: "Select Teacher",
+                              labelStyle: TextStyle(color: primaryColor),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: primaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.person,
+                                color: primaryColor,
+                              ),
+                            ),
+                            items: validTeachers.isEmpty
+                                ? null
+                                : validTeachers.map<DropdownMenuItem<String>>((
+                                    t,
+                                  ) {
+                                    return DropdownMenuItem(
+                                      value: t["id"].toString(),
+                                      child: Text(t["name"] ?? "Unknown"),
+                                    );
+                                  }).toList(),
+                            onChanged: (val) =>
+                                setState(() => selectedTeacherId = val),
+                            hint: validTeachers.isEmpty
+                                ? const Text("No teachers found.")
+                                : null,
+                          ),
+                          const SizedBox(height: 15),
+
+                          // Section Dropdown
+                          DropdownButtonFormField<String>(
+                            value: selectedSectionId,
+                            decoration: InputDecoration(
+                              labelText: "Select Section",
+                              labelStyle: TextStyle(color: primaryColor),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: primaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.class_,
+                                color: primaryColor,
+                              ),
+                            ),
+                            items: sections.isEmpty
+                                ? null
+                                : sections.map<DropdownMenuItem<String>>((s) {
+                                    return DropdownMenuItem(
+                                      value: s["id"].toString(),
+                                      child: Text(s["name"] ?? "Unknown"),
+                                    );
+                                  }).toList(),
+                            onChanged: (val) =>
+                                setState(() => selectedSectionId = val),
+                            hint: sections.isEmpty
+                                ? const Text("No sections found.")
+                                : null,
+                          ),
+                          const SizedBox(height: 15),
+
+                          // Subject & Role Row
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: TextField(
+                                  controller: subjectController,
+                                  decoration: InputDecoration(
+                                    labelText: "Subject Name",
+                                    labelStyle: TextStyle(color: primaryColor),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: primaryColor,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                flex: 3,
+                                child: DropdownButtonFormField<String>(
+                                  value: selectedRole,
+                                  decoration: InputDecoration(
+                                    labelText: "Role",
+                                    labelStyle: TextStyle(color: primaryColor),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide(
+                                        color: primaryColor,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  items: ["Class Teacher", "Subject Teacher"]
+                                      .map(
+                                        (r) => DropdownMenuItem(
+                                          value: r,
+                                          child: Text(r),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (val) =>
+                                      setState(() => selectedRole = val!),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 15),
+
+                          // Academic Year
+                          TextField(
+                            controller: yearController,
+                            decoration: InputDecoration(
+                              labelText: "Academic Year",
+                              labelStyle: TextStyle(color: primaryColor),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: primaryColor,
+                                  width: 2,
+                                ),
+                              ),
+                              suffixIcon: Icon(
+                                Icons.calendar_today,
+                                color: primaryColor,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: _createMapping,
+                              icon: const Icon(Icons.link),
+                              label: const Text(
+                                "Create Link",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+                  const Text(
+                    "Existing Mappings",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF455A64),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  mappings.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(20),
+                          child: Center(child: Text("No mappings found.")),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: mappings.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemBuilder: (context, index) {
+                            final m = mappings[index];
+                            return Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: primaryColor.withOpacity(
+                                    0.1,
+                                  ),
+                                  child: Icon(Icons.book, color: primaryColor),
+                                ),
+                                title: Text(
+                                  "${m["subject_name"]} - ${m["section_name"]}",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: RichText(
+                                  text: TextSpan(
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 13,
+                                    ),
+                                    children: [
+                                      const TextSpan(text: "Teacher: "),
+                                      TextSpan(
+                                        text: m["teacher_name"],
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const TextSpan(text: "\nRole: "),
+                                      TextSpan(text: m["role"]),
+                                    ],
+                                  ),
+                                ),
+                                isThreeLine: true,
+                                trailing: IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    color: Colors.deepOrangeAccent,
+                                  ),
+                                  onPressed: () =>
+                                      _deleteMapping(m["id"].toString()),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ],
+              ),
+            ),
+    );
+  }
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 }

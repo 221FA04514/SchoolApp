@@ -1,0 +1,7 @@
+Available Interfaces:
+Interface: Wi-Fi
+  - IPv6: fe80::15:456b:fa99:fefc (Internal: false)
+  - IPv4: 172.21.43.67 (Internal: false)
+Interface: Loopback Pseudo-Interface 1
+  - IPv6: ::1 (Internal: true)
+  - IPv4: 127.0.0.1 (Internal: true)

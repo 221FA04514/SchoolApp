@@ -1,0 +1,72 @@
+{
+  "lastAttempt": {
+    "id": 10,
+    "exam_id": 16,
+    "student_id": 7,
+    "start_time": "2026-02-12T23:41:09.000Z",
+    "submit_time": "2026-02-12T23:41:45.000Z",
+    "marks_obtained": "2.00",
+    "status": "submitted"
+  },
+  "studentByUser": {
+    "id": 5,
+    "user_id": 7,
+    "name": "Test Student",
+    "class": "10",
+    "section": "A",
+    "roll_number": "01",
+    "parent_name": null,
+    "phone": null,
+    "address": null,
+    "created_at": "2025-12-31T00:44:32.000Z",
+    "section_id": 1,
+    "roll_no": null
+  },
+  "exam": {
+    "id": 16,
+    "title": "Science : plants ",
+    "subject": "Science ",
+    "section_id": 1,
+    "start_time": "2026-02-13T05:52:29.000Z",
+    "end_time": "2026-02-13T07:52:29.000Z",
+    "duration_mins": 30,
+    "total_marks": 5,
+    "created_by": 6,
+    "created_at": "2026-02-12T23:23:15.000Z",
+    "linked_exam_id": 20
+  },
+  "linkedExam": {
+    "id": 20,
+    "name": "Science : plants ",
+    "class": "Online",
+    "exam_date": "2026-02-12T18:30:00.000Z",
+    "created_by": 6,
+    "created_at": "2026-02-12T23:23:15.000Z",
+    "is_published": 1,
+    "section_id": 1,
+    "total_marks": 5,
+    "passing_marks": 1
+  },
+  "results": [
+    {
+      "id": 24,
+      "exam_id": 20,
+      "student_id": 5,
+      "subject": "Science ",
+      "marks": 2,
+      "created_at": "2026-02-12T23:41:45.000Z",
+      "grade": null,
+      "remarks": "Online Exam: Science : plants "
+    }
+  ],
+  "resultsColumns": [
+    "id",
+    "exam_id",
+    "student_id",
+    "subject",
+    "marks",
+    "created_at",
+    "grade",
+    "remarks"
+  ]
+}

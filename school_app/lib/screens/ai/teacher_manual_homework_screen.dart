@@ -60,7 +60,7 @@ class _TeacherManualHomeworkScreenState
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text("Homework created!")));
-      Navigator.pop(context);
+      Navigator.pop(context, true);
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
@@ -69,65 +69,205 @@ class _TeacherManualHomeworkScreenState
     }
   }
 
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: const Color(0xFF673AB7)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: Color(0xFF673AB7), width: 2),
+      ),
+      filled: true,
+      fillColor: Colors.grey.shade100,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Manual Homework")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(labelText: "Homework Title"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _subjectController,
-              decoration: const InputDecoration(labelText: "Subject"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descController,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: "Description / Instructions",
+      backgroundColor: const Color(0xFFF5F5F7),
+      body: Stack(
+        children: [
+          // Header Background
+          Container(
+            height: 250,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
               ),
             ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _selectedSectionId,
-              decoration: const InputDecoration(labelText: "Select Section"),
-              items: _sections
-                  .map(
-                    (s) => DropdownMenuItem(
-                      value: s["id"].toString(),
-                      child: Text(s["name"] ?? "S-${s['id']}"),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (val) => setState(() => _selectedSectionId = val),
-            ),
-            const SizedBox(height: 12),
-            SwitchListTile(
-              title: const Text("Offline Mode (No file submission)"),
-              subtitle: const Text("Use this for physical book work"),
-              value: _isOffline,
-              onChanged: (val) => setState(() => _isOffline = val),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _save,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // AppBar Content
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        "Manual Homework",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: const Text("Submit Homework"),
-              ),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextField(
+                            controller: _titleController,
+                            decoration: _inputDecoration(
+                              "Homework Title",
+                              Icons.title,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          TextField(
+                            controller: _subjectController,
+                            decoration: _inputDecoration("Subject", Icons.book),
+                          ),
+                          const SizedBox(height: 16),
+
+                          TextField(
+                            controller: _descController,
+                            maxLines: 4,
+                            decoration: _inputDecoration(
+                              "Description / Instructions",
+                              Icons.description,
+                            ).copyWith(alignLabelWithHint: true),
+                          ),
+                          const SizedBox(height: 16),
+
+                          DropdownButtonFormField<String>(
+                            value: _selectedSectionId,
+                            decoration: _inputDecoration(
+                              "Select Section",
+                              Icons.class_,
+                            ),
+                            items: _sections.map((s) {
+                              return DropdownMenuItem(
+                                value: s["id"].toString(),
+                                child: Text(s["name"] ?? "S-${s['id']}"),
+                              );
+                            }).toList(),
+                            onChanged: (val) =>
+                                setState(() => _selectedSectionId = val),
+                          ),
+                          const SizedBox(height: 16),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: SwitchListTile(
+                              title: const Text(
+                                "Offline Mode",
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: const Text(
+                                "No file submission required (physical work)",
+                                style: TextStyle(fontSize: 12),
+                              ),
+                              value: _isOffline,
+                              activeColor: const Color(0xFF673AB7),
+                              onChanged: (val) =>
+                                  setState(() => _isOffline = val),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          SizedBox(
+                            height: 55,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _save,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF673AB7),
+                                foregroundColor: Colors.white,
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
+                                  : const Text(
+                                      "Submit Homework",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

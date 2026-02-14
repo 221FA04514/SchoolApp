@@ -19,6 +19,7 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
   int _count = 5;
   List<Map<String, dynamic>> _questions = [];
   bool _isLoading = false;
+  bool _allowCopy = false;
 
   @override
   void initState() {
@@ -37,7 +38,7 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
     }
   }
 
-  void _generate() async {
+  void _generate({bool append = false}) async {
     if (_subjectController.text.isEmpty || _topicController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please enter subject and topic")),
@@ -47,7 +48,7 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
 
     setState(() {
       _isLoading = true;
-      _questions = [];
+      if (!append) _questions = [];
     });
 
     try {
@@ -59,7 +60,11 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
       );
 
       setState(() {
-        _questions = questions;
+        if (append) {
+          _questions.addAll(questions);
+        } else {
+          _questions = questions;
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -68,6 +73,67 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
+  }
+
+  void _removeQuestion(int index) {
+    setState(() {
+      _questions.removeAt(index);
+    });
+  }
+
+  void _showManualQuestionDialog() {
+    final qController = TextEditingController();
+    final aController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Add Manual Question"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: qController,
+              decoration: const InputDecoration(
+                labelText: "Question",
+                hintText: "Enter the question here",
+              ),
+              maxLines: 3,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: aController,
+              decoration: const InputDecoration(
+                labelText: "Answer",
+                hintText: "Enter the answer here",
+              ),
+              maxLines: 2,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (qController.text.isNotEmpty && aController.text.isNotEmpty) {
+                setState(() {
+                  _questions.add({
+                    "question": qController.text,
+                    "answer": aController.text,
+                    "options": [],
+                  });
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
   }
 
   final _durationController = TextEditingController(text: "30");
@@ -206,7 +272,12 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
         "start_time": _startTime.toIso8601String(),
         "end_time": _endTime.toIso8601String(),
         "duration_mins": int.tryParse(_durationController.text) ?? 30,
+<<<<<<< HEAD
         "total_marks": _questions.length,
+=======
+        "total_marks": _questions.length, // 1 mark per question for now
+        "allow_copy": _allowCopy,
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         "questions": _questions
             .map(
               (q) => {
@@ -238,11 +309,7 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
       appBar: AppBar(
         title: const Text("Smart Exam Generator"),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A4DFF), Color(0xFF6A11CB)],
-            ),
-          ),
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
         ),
       ),
       body: SingleChildScrollView(
@@ -352,11 +419,23 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
                 _diffChip("hard"),
               ],
             ),
+<<<<<<< HEAD
             const SizedBox(height: 24),
+=======
+            const SizedBox(height: 12),
+            SwitchListTile(
+              title: const Text("Allow Text Copying"),
+              subtitle: const Text("Students can select/copy question text"),
+              value: _allowCopy,
+              onChanged: (val) => setState(() => _allowCopy = val),
+              contentPadding: EdgeInsets.zero,
+            ),
+            const SizedBox(height: 20),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _isLoading ? null : _generate,
+                onPressed: _isLoading ? null : () => _generate(append: false),
                 icon: const Icon(Icons.auto_awesome),
                 label: const Text("Generate Questions"),
                 style: ElevatedButton.styleFrom(
@@ -414,6 +493,7 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
           ],
         ),
         const SizedBox(height: 12),
+<<<<<<< HEAD
         ..._questions.asMap().entries.map((entry) {
           final index = entry.key;
           final q = entry.value;
@@ -441,6 +521,67 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
                     style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
                   ),
                 ],
+=======
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _questions.length,
+          itemBuilder: (context, index) {
+            final q = _questions[index];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.grey.shade200),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "Q${index + 1}: ${q['question']}",
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _removeQuestion(index),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
+                    ),
+                    const Divider(height: 24),
+                    Text(
+                      "A: ${q['answer']}",
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isLoading ? null : () => _generate(append: true),
+                icon: const Icon(Icons.refresh),
+                label: const Text("Generate More"),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: const BorderSide(color: Color(0xFF1A4DFF)),
+                ),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -460,8 +601,27 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
                 ],
               ),
             ),
+<<<<<<< HEAD
           );
         }),
+=======
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _showManualQuestionDialog,
+                icon: const Icon(Icons.add),
+                label: const Text("Manual Entry"),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  side: const BorderSide(color: Colors.green),
+                  foregroundColor: Colors.green,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 80), // Space for FAB/BottomBar
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ],
     );
   }

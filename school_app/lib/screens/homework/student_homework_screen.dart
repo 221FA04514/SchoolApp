@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
 import '../../models/homework_model.dart';
+import 'package:file_picker/file_picker.dart';
 
 class StudentHomeworkScreen extends StatefulWidget {
   const StudentHomeworkScreen({super.key});
@@ -75,26 +76,55 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
     }
   }
 
+  Future<void> _pickAndUploadHomework(int homeworkId) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Uploading homework...")),
+          );
+        }
+
+        final filePath = result.files.single.path!;
+        await _api.uploadFile(
+          "/api/v1/homework/submit",
+          {"homework_id": homeworkId.toString(), "content": "Uploaded via App"},
+          filePath,
+          "file",
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Homework uploaded successfully!"),
+              backgroundColor: Color(0xFF43CEA2),
+            ),
+          );
+          // Refresh list
+          fetchHomework();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Upload failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   // Helper to get subject color
   Color _getSubjectColor(String subject) {
-    switch (subject.toLowerCase()) {
-      case 'math':
-      case 'mathematics':
-        return const Color(0xFF4ea1ff); // Blue
-      case 'science':
-      case 'physics':
-      case 'chemistry':
-        return const Color(0xFF43cea2); // Green
-      case 'history':
-      case 'social':
-        return const Color(0xFFffb347); // Orange
-      case 'english':
-        return const Color(0xFFff758c); // Pinkish Red
-      case 'computer':
-        return const Color(0xFF9d50bb); // Purple
-      default:
-        return const Color(0xFF757f9a); // Grey
-    }
+    // Unified Color (Violet)
+    return const Color(0xFF4A00E0);
   }
 
   @override
@@ -111,15 +141,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
             height: 200,
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF1fa2ff),
-                    Color(0xFF12d8fa),
-                    Color(0xFFa6ffcb),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: const Color(0xFF4A00E0),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
@@ -395,6 +417,46 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      const SizedBox(width: 8),
+                      // Upload Button
+                      if (!isDone) ...[
+                        GestureDetector(
+                          onTap: () => _pickAndUploadHomework(hw.id),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: subjectColor.withOpacity(0.5),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.upload_file_rounded,
+                                  size: 14,
+                                  color: subjectColor,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  "Upload",
+                                  style: TextStyle(
+                                    color: subjectColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
                       const Spacer(),
                       Icon(
                         Icons.calendar_today_rounded,
@@ -408,9 +470,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: isDone ? Colors.grey : subjectColor,
-                          decoration: isDone
-                              ? TextDecoration.lineThrough
-                              : null,
+                          // No strike-through
                         ),
                       ),
                     ],
@@ -478,11 +538,9 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: isDone
-                                    ? Colors.grey.shade400
+                                    ? Colors.grey.shade600
                                     : Colors.black87,
-                                decoration: isDone
-                                    ? TextDecoration.lineThrough
-                                    : null,
+                                // No strike-through
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -494,9 +552,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                                 fontSize: 14,
                                 color: Colors.grey.shade400,
                                 height: 1.4,
-                                decoration: isDone
-                                    ? TextDecoration.lineThrough
-                                    : null,
+                                // No strike-through
                               ),
                             ),
                           ],

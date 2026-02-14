@@ -10,12 +10,16 @@ class ManageStudentsScreen extends StatefulWidget {
 
 class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   final ApiService _api = ApiService();
+  final searchController = TextEditingController();
   List students = [];
   List filteredStudentsList = [];
   List sections = [];
   String? selectedSection = "All";
   bool isLoading = true;
   final TextEditingController searchController = TextEditingController();
+
+  // Theme Color
+  final Color primaryColor = const Color(0xFF4A00E0); // Modern Violet
 
   @override
   void initState() {
@@ -34,6 +38,12 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     _applyFilters();
   }
 
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> fetchData() async {
     try {
       final sRes = await _api.get("/api/v1/admin/students");
@@ -49,6 +59,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     }
   }
 
+<<<<<<< HEAD
   void _applyFilters() {
     setState(() {
       filteredStudentsList = students.where((s) {
@@ -398,6 +409,38 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
         },
       ),
     );
+=======
+  Future<void> fetchStudents() async {
+    try {
+      final res = await _api.get("/api/v1/admin/students");
+      if (mounted) {
+        setState(() {
+          students = res["data"] ?? [];
+        });
+      }
+    } catch (e) {}
+  }
+
+  List get filteredStudents {
+    List temp = students;
+
+    // Filter by Section
+    if (selectedSection != null && selectedSection != "All") {
+      temp = temp.where((s) => s["section_name"] == selectedSection).toList();
+    }
+
+    // Filter by Search
+    final query = searchController.text.toLowerCase();
+    if (query.isNotEmpty) {
+      temp = temp.where((s) {
+        final name = (s["name"] ?? "").toLowerCase();
+        final roll = (s["roll_number"] ?? "").toString().toLowerCase();
+        return name.contains(query) || roll.contains(query);
+      }).toList();
+    }
+
+    return temp;
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   }
 
   void _showEditStudentDialog(Map s) {
@@ -412,6 +455,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
 
     showModalBottomSheet(
       context: context,
+<<<<<<< HEAD
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -494,6 +538,37 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                     "Section",
                     Icons.grid_view_rounded,
                   ),
+=======
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text("Edit Student", style: TextStyle(color: primaryColor)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTextField(nameController, "Full Name", Icons.person),
+                const SizedBox(height: 10),
+                _buildTextField(emailController, "Email", Icons.email),
+                const SizedBox(height: 10),
+                _buildTextField(
+                  passwordController,
+                  "New Password",
+                  Icons.lock,
+                  isObscure: true,
+                ),
+                const SizedBox(height: 10),
+                _buildTextField(classController, "Class", Icons.class_),
+                const SizedBox(height: 10),
+                _buildTextField(sectionController, "Section", Icons.grid_view),
+                const SizedBox(height: 10),
+                _buildTextField(
+                  rollController,
+                  "Roll Number",
+                  Icons.confirmation_number,
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                 ),
               ],
             ),
@@ -502,6 +577,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
               "Roll Number",
               Icons.format_list_numbered_rounded,
             ),
+<<<<<<< HEAD
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -530,8 +606,247 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                  ),
+=======
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
+              ),
+              onPressed: () async {
+                try {
+                  final res = await _api
+                      .put("/api/v1/admin/users/${s["user_id"]}", {
+                        "role": "student",
+                        "name": nameController.text,
+                        "email": emailController.text,
+                        "password": passwordController.text,
+                        "class": classController.text,
+                        "section": sectionController.text,
+                        "roll_number": rollController.text,
+                      });
+                  if (res["success"]) {
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Student updated!")),
+                      );
+                      fetchStudents();
+                    }
+                  }
+                } catch (e) {
+                  if (mounted)
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                }
+              },
+              child: const Text("Save", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAddStudentDialog() {
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+    final classController = TextEditingController();
+    final sectionController = TextEditingController();
+    final rollController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            "Register Student",
+            style: TextStyle(color: primaryColor),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildTextField(nameController, "Full Name", Icons.person),
+                const SizedBox(height: 10),
+                _buildTextField(emailController, "Email", Icons.email),
+                const SizedBox(height: 10),
+                _buildTextField(
+                  passwordController,
+                  "Password",
+                  Icons.lock,
+                  isObscure: true,
+                ),
+                const SizedBox(height: 10),
+                _buildTextField(classController, "Class", Icons.class_),
+                const SizedBox(height: 10),
+                _buildTextField(sectionController, "Section", Icons.grid_view),
+                const SizedBox(height: 10),
+                _buildTextField(
+                  rollController,
+                  "Roll Number",
+                  Icons.confirmation_number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () async {
+                try {
+                  final res = await _api.post("/api/v1/admin/register", {
+                    "role": "student",
+                    "name": nameController.text,
+                    "email": emailController.text,
+                    "password": passwordController.text,
+                    "class": classController.text,
+                    "section": sectionController.text,
+                    "roll_number": rollController.text,
+                  });
+                  if (res["success"]) {
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Student registered!")),
+                      );
+                      fetchStudents();
+                    }
+                  }
+                } catch (e) {
+                  if (mounted)
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                }
+              },
+              child: const Text(
+                "Register",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    IconData icon, {
+    bool isObscure = false,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: isObscure,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: primaryColor),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        filled: true,
+        fillColor: Colors.grey[50],
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: primaryColor, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(Map s) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Delete Student"),
+        content: Text("Are you sure you want to delete ${s['name']}?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _api.delete("/api/v1/admin/users/${s['user_id']}");
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Student deleted successfully")),
+          );
+          fetchStudents();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Error deleting student: $e")));
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayStudents = filteredStudents;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.only(
+                  top: 50,
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [primaryColor, primaryColor.withOpacity(0.8)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+<<<<<<< HEAD
               ),
             ),
             const SizedBox(height: 24),
@@ -565,6 +880,279 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
+=======
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.arrow_back_ios,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  "Manage Students",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "${displayStudents.length} Students Active",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.8),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        // Add Student Icon Button in Header
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.add, color: Colors.white),
+                            onPressed: _showAddStudentDialog,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 25),
+                    // Search
+                    TextField(
+                      controller: searchController,
+                      onChanged: (val) => setState(() {}),
+                      cursorColor: primaryColor,
+                      decoration: InputDecoration(
+                        hintText: "Search Name or Roll Number...",
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Filter Chips
+              Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    _buildFilterChip("All"),
+                    ...sections.map((s) => _buildFilterChip(s["name"])),
+                  ],
+                ),
+              ),
+
+              // List
+              Expanded(
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(color: primaryColor),
+                      )
+                    : displayStudents.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No students found",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                        itemCount: displayStudents.length,
+                        itemBuilder: (context, index) {
+                          final s = displayStudents[index];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 15),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  // Avatar
+                                  Container(
+                                    width: 50,
+                                    height: 50,
+                                    decoration: BoxDecoration(
+                                      color: primaryColor.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        (s["name"] ?? "S")[0].toUpperCase(),
+                                        style: TextStyle(
+                                          color: primaryColor,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 22,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Info
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          s["name"] ?? "Unnamed",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue.withOpacity(
+                                                  0.1,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                "Roll: ${s["roll_number"]}",
+                                                style: TextStyle(
+                                                  color: Colors.blue[700],
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              "Class ${s["class"]} - ${s["section"]}",
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Actions
+                                  Row(
+                                    children: [
+                                      IconButton(
+                                        onPressed: () =>
+                                            _showEditStudentDialog(s),
+                                        icon: Icon(
+                                          Icons.edit_rounded,
+                                          color: primaryColor,
+                                          size: 20,
+                                        ),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: primaryColor
+                                              .withOpacity(0.1),
+                                          padding: const EdgeInsets.all(8),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        onPressed: () => _confirmDelete(s),
+                                        icon: const Icon(
+                                          Icons.delete_rounded,
+                                          color: Colors.red,
+                                          size: 20,
+                                        ),
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: Colors.red
+                                              .withOpacity(0.1),
+                                          padding: const EdgeInsets.all(8),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddStudentDialog,
+        backgroundColor: primaryColor,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Add Student", style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label) {
+    final isSelected = selectedSection == label;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (val) {
+          if (val) setState(() => selectedSection = label);
+        },
+        selectedColor: primaryColor,
+        labelStyle: TextStyle(
+          color: isSelected ? Colors.white : Colors.black87,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+        backgroundColor: Colors.white,
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
   }

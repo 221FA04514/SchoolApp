@@ -58,3 +58,39 @@ exports.recordPayment = async (req, res, next) => {
   }
 };
 
+/**
+ * Student pays fees online (Mock)
+ */
+exports.payOnline = async (req, res, next) => {
+  try {
+    const { role, userId } = req.user;
+    const { amount_paid, payment_mode } = req.body;
+
+    if (role !== "student") {
+      return error(res, "Access denied. Only students can pay online.", 403);
+    }
+
+    if (!amount_paid || amount_paid <= 0) {
+      return error(res, "Invalid amount", 400);
+    }
+
+    // 1. Check due amount
+    const summary = await getFeeSummary(userId);
+    if (amount_paid > summary.due) {
+      return error(res, `Amount exceeds due fees (₹${summary.due})`, 400);
+    }
+
+    // 2. Record payment
+    await recordFeePayment({
+      student_id: userId,
+      amount_paid,
+      payment_date: new Date(),
+      payment_mode: payment_mode || "Online",
+    });
+
+    return success(res, null, "Payment successful (Mock)");
+  } catch (err) {
+    next(err);
+  }
+};
+

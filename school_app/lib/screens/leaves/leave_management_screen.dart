@@ -138,7 +138,9 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text("Leave Management"),
-        backgroundColor: Colors.redAccent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
+        ),
         foregroundColor: Colors.white,
         bottom: TabBar(
           controller: _tabController,

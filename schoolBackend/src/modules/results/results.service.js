@@ -53,11 +53,12 @@ exports.getStudentResults = async (student_id) => {
       r.subject,
       r.marks,
       r.grade,
-      r.remarks
+      r.remarks,
+      r.created_at
     FROM results r
     JOIN exams e ON r.exam_id = e.id
     WHERE r.student_id = ? AND e.is_published = TRUE
-    ORDER BY e.exam_date DESC
+    ORDER BY r.created_at DESC, e.exam_date DESC
     `,
     [student_id]
   );

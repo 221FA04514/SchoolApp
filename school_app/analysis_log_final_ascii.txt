@@ -1,0 +1,26 @@
+Analyzing 3 items...                                            
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\alerts\student_alerts_screen.dart:117:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\alerts\student_alerts_screen.dart:129:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\admin_dashboard.dart:209:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\admin_dashboard.dart:229:32 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\dashboard_button.dart:66:39 - deprecated_member_use
+   info - The import of 'dart:ui' is unnecessary because all of the used elements are also provided by the import of 'package:flutter/material.dart' - lib\screens\dashboard\student_dashboard.dart:3:8 - unnecessary_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\student_dashboard.dart:91:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\student_dashboard.dart:235:58 - deprecated_member_use
+warning - The declaration '_buildHeader' isn't referenced - lib\screens\dashboard\student_dashboard.dart:409:10 - unused_element
+warning - A value for optional parameter 'key' isn't ever given - lib\screens\dashboard\student_dashboard.dart:431:11 - unused_element_parameter
+warning - A value for optional parameter 'key' isn't ever given - lib\screens\dashboard\student_dashboard.dart:468:11 - unused_element_parameter
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\student_dashboard.dart:487:35 - deprecated_member_use
+warning - The declaration '_WaveClipper' isn't referenced - lib\screens\dashboard\student_dashboard.dart:527:7 - unused_element
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\teacher_dashboard.dart:63:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\teacher_dashboard.dart:194:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\teacher_dashboard.dart:505:35 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\dashboard\teacher_dashboard.dart:571:30 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\screens\dashboard\teacher_insight_detail.dart:42:9 - use_build_context_synchronously
+   info - Unnecessary 'const' keyword - lib\screens\dashboard\teacher_insight_detail.dart:53:50 - unnecessary_const
+   info - Unnecessary 'const' keyword - lib\screens\timetable\student_timetable_screen.dart:71:50 - unnecessary_const
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\timetable\student_timetable_screen.dart:121:64 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\screens\timetable\teacher_timetable_screen.dart:122:56 - deprecated_member_use
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\timetable\teacher_timetable_screen.dart:157:15 - deprecated_member_use
+

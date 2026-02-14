@@ -122,7 +122,13 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen> {
       backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
         title: const Text("Digital Library"),
+<<<<<<< HEAD
         backgroundColor: const Color(0xFF1A4DFF),
+=======
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
+        ),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         foregroundColor: Colors.white,
         elevation: 0,
       ),

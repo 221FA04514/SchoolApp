@@ -71,11 +71,7 @@ class _TeacherAiAssistantPortalState extends State<TeacherAiAssistantPortal> {
       appBar: AppBar(
         title: const Text("AI Teacher Assistant"),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1A4DFF), Color(0xFF6A11CB)],
-            ),
-          ),
+          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
         ),
       ),
       body: SingleChildScrollView(

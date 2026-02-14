@@ -153,25 +153,32 @@ exports.analyzeHomework = async (prompt, imageBase64 = null) => {
 /**
  * AI Doubt Solver
  */
-exports.solveDoubt = async (studentQuery, context = "") => {
+/**
+ * AI Doubt Solver (Continuous Chat)
+ */
+exports.solveDoubt = async (studentQuery, history = []) => {
     try {
         if (!groq) throw new Error("Groq API key missing");
 
-        const fullPrompt = `You are a friendly school teaching assistant. 
-        Context: ${context}
-        Student Question: ${studentQuery}
-        
+        const systemPrompt = `You are a friendly school teaching assistant. 
         Provide a clear, simple explanation. 
         RULES:
         1. Use ONLY simple plain text. 
-        2. DO NOT use LaTeX formatting or symbols like $, \\\\frac, \\\\sqrt, etc.
+        2. DO NOT use LaTeX formatting or symbols like $, \\frac, \\sqrt, etc.
         3. Use standard symbols like /, *, -, +, ^.
         4. Be encouraging and helpful.`;
+
+        // Construct messages array
+        const messages = [
+            { role: "system", content: systemPrompt },
+            ...history.map(msg => ({ role: msg.role, content: msg.content })),
+            { role: "user", content: studentQuery }
+        ];
 
         console.log("→ Doubt Solver: Using Groq (llama-3.3-70b-versatile)");
 
         const chatCompletion = await groq.chat.completions.create({
-            messages: [{ role: "user", content: fullPrompt }],
+            messages: messages,
             model: "llama-3.3-70b-versatile",
         });
 

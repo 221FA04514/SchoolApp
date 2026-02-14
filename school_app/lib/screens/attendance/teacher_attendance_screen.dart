@@ -187,15 +187,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
             height: 200,
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF1fa2ff),
-                    Color(0xFF12d8fa),
-                    Color(0xFFa6ffcb),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: const Color(0xFF4A00E0),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),

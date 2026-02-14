@@ -13,6 +13,9 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
   List sections = [];
   bool isLoading = true;
 
+  // Theme Color
+  final Color primaryColor = const Color(0xFF673AB7); // Deep Purple
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +33,7 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => isLoading = false);
+<<<<<<< HEAD
     }
   }
 
@@ -230,6 +234,8 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
           ).showSnackBar(SnackBar(content: Text(e.toString())));
         }
       }
+=======
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     }
   }
 
@@ -239,6 +245,7 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
 
     showModalBottomSheet(
       context: context,
+<<<<<<< HEAD
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -249,6 +256,50 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
           left: 24,
           right: 24,
           top: 24,
+=======
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text("Create Section", style: TextStyle(color: primaryColor)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: classController,
+              decoration: InputDecoration(
+                labelText: "Class (e.g. 10)",
+                labelStyle: TextStyle(color: primaryColor),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: primaryColor, width: 2),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: sectionController,
+              decoration: InputDecoration(
+                labelText: "Section (e.g. A)",
+                labelStyle: TextStyle(color: primaryColor),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: primaryColor, width: 2),
+                ),
+              ),
+              textCapitalization: TextCapitalization.characters,
+            ),
+          ],
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -322,11 +373,45 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
               const SizedBox(height: 24),
             ],
           ),
+<<<<<<< HEAD
         ),
+=======
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () async {
+              if (classController.text.isEmpty ||
+                  sectionController.text.isEmpty)
+                return;
+              try {
+                final res = await _api.post("/api/v1/admin/sections", {
+                  "class": classController.text,
+                  "section": sectionController.text,
+                });
+                if (res["success"]) {
+                  if (mounted) Navigator.pop(context);
+                  fetchSections();
+                }
+              } catch (e) {
+                if (mounted)
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(e.toString())));
+              }
+            },
+            child: const Text("Create", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
   }
 
+<<<<<<< HEAD
   Widget _buildTextField(
     TextEditingController controller,
     String label,
@@ -353,7 +438,175 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
+=======
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6FA),
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.only(
+                  top: 50,
+                  left: 20,
+                  right: 20,
+                  bottom: 20,
+                ),
+                decoration: BoxDecoration(
+                  color: primaryColor, // Solid
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Manage Sections",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Content
+              Expanded(
+                child: isLoading
+                    ? Center(
+                        child: CircularProgressIndicator(color: primaryColor),
+                      )
+                    : sections.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No sections found",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.all(20),
+                        itemCount: sections.length,
+                        itemBuilder: (context, index) {
+                          final s = sections[index];
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 8,
+                              ),
+                              leading: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: primaryColor.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  "${s['class']}",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: primaryColor,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                "Class ${s['class']}",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              subtitle: Text(
+                                "Section ${s['section']}",
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () => _confirmDelete(s),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showAddSectionDialog,
+        backgroundColor: primaryColor,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text("Add Section", style: TextStyle(color: Colors.white)),
+>>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
+  }
+
+  Future<void> _confirmDelete(Map s) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Delete Section"),
+        content: const Text("Are you sure you want to delete this section?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        final res = await _api.delete("/api/v1/admin/sections/${s["id"]}");
+        if (res["success"]) {
+          fetchSections();
+        }
+      } catch (e) {
+        if (mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
   }
 }
