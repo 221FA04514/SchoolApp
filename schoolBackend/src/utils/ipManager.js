@@ -3,6 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 function updateFrontendIp() {
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
   const interfaces = os.networkInterfaces();
   let currentIp = '127.0.0.1';
 
