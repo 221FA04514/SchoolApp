@@ -118,51 +118,109 @@ class _LeaveManagementScreenState extends State<LeaveManagementScreen>
   Widget build(BuildContext context) {
     final role = Provider.of<AuthProvider>(context).role;
     final bool isStudent = role == 'student';
-
-    if (isStudent) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text("My Leaves"),
-          backgroundColor: Colors.redAccent,
-          foregroundColor: Colors.white,
-        ),
-        body: _buildLeaveList(_historyFuture, false),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _applyLeave,
-          backgroundColor: Colors.redAccent,
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
-      );
-    }
+    final bool isAdmin = role == 'admin';
+    final bool isTeacher = role == 'teacher';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Leave Management"),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
-        ),
-        foregroundColor: Colors.white,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          tabs: const [
-            Tab(text: "Approvals"),
-            Tab(text: "My Leaves"),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
+      backgroundColor: const Color(0xFFF8FAFF),
+      body: Stack(
         children: [
-          _buildLeaveList(_approvalsFuture, true),
-          _buildLeaveList(_historyFuture, false),
+          // Curved Header Background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: (isTeacher) ? 180 : 160,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF4A00E0),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const BackButton(color: Colors.white),
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        isStudent ? "My Leaves" : "Leave Management",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (isTeacher) ...[
+                  // Tabs for Teacher
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: TabBar(
+                      controller: _tabController,
+                      indicatorColor: Colors.white,
+                      indicatorWeight: 4,
+                      indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
+                      indicatorSize: TabBarIndicatorSize.label,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.white70,
+                      dividerColor: Colors.transparent,
+                      labelStyle: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                      tabs: const [
+                        Tab(text: "APPROVALS"),
+                        Tab(text: "MY LEAVES"),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildLeaveList(_approvalsFuture, true),
+                        _buildLeaveList(_historyFuture, false),
+                      ],
+                    ),
+                  ),
+                ] else if (isStudent) ...[
+                  Expanded(child: _buildLeaveList(_historyFuture, false)),
+                ] else if (isAdmin) ...[
+                  Expanded(child: _buildLeaveList(_approvalsFuture, true)),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _applyLeave,
-        backgroundColor: Colors.redAccent,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+      floatingActionButton: (isStudent || isTeacher)
+          ? FloatingActionButton(
+              onPressed: _applyLeave,
+              backgroundColor: const Color(0xFF4A00E0),
+              child: const Icon(Icons.add, color: Colors.white),
+            )
+          : null,
     );
   }
 

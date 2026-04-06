@@ -14,7 +14,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
     with SingleTickerProviderStateMixin {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final otpController = TextEditingController();
+  final otpController = TextEditingController(text: "000000");
 
   late AnimationController _controller;
   late Animation<double> _fade;
@@ -87,12 +87,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
         password,
       );
 
-<<<<<<< HEAD
       if (res != null && res["requiresOtp"] == true) {
         setState(() {
           _requiresOtp = true;
           _userId = res["userId"];
-          _maskedPhone = res["phone"];
           _isLoading = false;
         });
       } else if (res != null) {
@@ -102,36 +100,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
             MaterialPageRoute(builder: (_) => const AdminDashboard()),
             (route) => false,
           );
-=======
-      debugPrint("ADMIN LOGIN RES: $res");
-
-      if (res != null) {
-        debugPrint("Check RequiresOTP: ${res["requiresOtp"]}");
-
-        if (res["requiresOtp"] == true) {
-          debugPrint("OTP REQUIRED. Setting state...");
-
-          final userId = res["userId"];
-
-          if (userId == null) {
-            throw Exception("User ID missing in response");
-          }
-
-          setState(() {
-            _requiresOtp = true;
-            _userId = userId;
-            _isLoading = false;
-            otpController.text = "00000";
-          });
-        } else {
-          debugPrint("Direct Login. Navigating...");
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const AdminDashboard()),
-            );
-          }
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         }
       } else {
         throw Exception("Login response is null");
@@ -217,7 +185,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
             /// 🔵 WAVE HEADER
             SlideTransition(
               position: _headerSlide,
-<<<<<<< HEAD
               child: RepaintBoundary(
                 child: ClipPath(
                   clipper: WaveClipper(),
@@ -227,7 +194,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Color(0xFF1A4DFF), Color(0xFF3A6BFF)],
+                        colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
                       ),
                     ),
                     child: SafeArea(
@@ -242,28 +209,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
                             ),
-=======
-              child: ClipPath(
-                clipper: WaveClipper(),
-                child: Container(
-                  width: double.infinity,
-                  height: size.height * 0.36,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  decoration: const BoxDecoration(
-                    color: const Color(0xFF4A00E0),
-                  ),
-                  child: SafeArea(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        SizedBox(height: 12),
-                        Text(
-                          'Admin Portal',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                           ),
                           SizedBox(height: 8),
                           Text(
@@ -340,7 +285,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
       ),
       child: Column(
         children: [
-          const Icon(Icons.admin_panel_settings, size: 50, color: Colors.red),
+          const Icon(
+            Icons.admin_panel_settings,
+            size: 50,
+            color: Color(0xFF673AB7),
+          ),
           const SizedBox(height: 20),
           _InputField(
             controller: emailController,
@@ -367,7 +316,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
             height: 52,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
+                backgroundColor: const Color(0xFF673AB7),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -408,7 +357,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
       child: Column(
         children: [
           // 🛡️ Shield Icon
-          const Icon(Icons.security_rounded, size: 60, color: Colors.red),
+          const Icon(
+            Icons.security_rounded,
+            size: 60,
+            color: Color(0xFF673AB7),
+          ),
           const SizedBox(height: 16),
 
           const Text(
@@ -458,7 +411,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
             height: 54,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF3B30), // Red color
+                backgroundColor: const Color(0xFF673AB7), // Violet color
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -477,23 +430,12 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                     ),
             ),
           ),
-<<<<<<< HEAD
           TextButton(
             onPressed: _isLoading ? null : _handleResendOtp,
             child: const Text(
               "Resend Code",
-              style: TextStyle(color: Colors.red),
+              style: TextStyle(color: Color(0xFF673AB7)),
             ),
-=======
-
-          const SizedBox(height: 16),
-
-          // Resend Code Removed
-          const SizedBox(height: 20),
-          const Text(
-            "Use default OTP: 00000",
-            style: TextStyle(color: Colors.grey),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
           ),
         ],
       ),

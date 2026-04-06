@@ -108,7 +108,6 @@ exports.submitAttempt = async (attemptId, answers) => {
         );
 
         // Sync to results table for student visibility
-<<<<<<< HEAD
         const [attRow] = await connection.query(`SELECT exam_id, student_id as user_id FROM online_exam_attempts WHERE id = ?`, [attemptId]);
         const userId = attRow[0].user_id;
 
@@ -118,36 +117,16 @@ exports.submitAttempt = async (attemptId, answers) => {
 
         if (!actualStudentId) {
             console.error(`[EXAM] Could not find student record for user_id: ${userId}`);
-=======
-        const [attRow] = await connection.query(`SELECT exam_id, student_id as user_id FROM online_exam_attempts WHERE id = ? `, [attemptId]);
-        const userId = attRow[0].user_id;
-
-        // Get actual student_id from students table (not user_id)
-        const [studentRow] = await connection.query(`SELECT id FROM students WHERE user_id = ? `, [userId]);
-        const actualStudentId = studentRow[0]?.id;
-
-        if (!actualStudentId) {
-            console.error(`[EXAM] Could not find student record for user_id: ${userId} `);
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             await connection.commit();
             return;
         }
 
-<<<<<<< HEAD
         const [exRow] = await connection.query(`SELECT title, subject, linked_exam_id FROM online_exams WHERE id = ?`, [attRow[0].exam_id]);
 
         // Check if result already exists to avoid duplicate
         await connection.query(
             `INSERT INTO results (student_id, subject, marks, remarks, exam_id)
              VALUES (?, ?, ?, ?, ?)
-=======
-        const [exRow] = await connection.query(`SELECT title, subject, linked_exam_id FROM online_exams WHERE id = ? `, [attRow[0].exam_id]);
-
-        // Check if result already exists to avoid duplicate
-        await connection.query(
-            `INSERT INTO results(student_id, subject, marks, remarks, exam_id)
-        VALUES(?, ?, ?, ?, ?)
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
              ON DUPLICATE KEY UPDATE marks = VALUES(marks)`,
             [actualStudentId, exRow[0].subject, totalMarks, "Online Exam: " + exRow[0].title, exRow[0].linked_exam_id]
         );

@@ -33,7 +33,6 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => isLoading = false);
-<<<<<<< HEAD
     }
   }
 
@@ -53,7 +52,7 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddSectionDialog,
-        backgroundColor: const Color(0xFF1A4DFF),
+        backgroundColor: const Color(0xFF673AB7),
         icon: const Icon(Icons.add_rounded, color: Colors.white),
         label: const Text(
           "Create Section",
@@ -68,7 +67,7 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
       expandedHeight: 140,
       pinned: true,
       stretch: true,
-      backgroundColor: const Color(0xFF1A4DFF),
+      backgroundColor: const Color(0xFF673AB7),
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
@@ -85,12 +84,15 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF1A4DFF), Color(0xFF0031D1)],
+            ClipPath(
+              clipper: _HeaderClipper(),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
+                  ),
                 ),
               ),
             ),
@@ -153,13 +155,13 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: const Color(0xFF1A4DFF).withOpacity(0.08),
+                color: const Color(0xFF673AB7).withOpacity(0.08),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: const Center(
                 child: Icon(
                   Icons.grid_view_rounded,
-                  color: Color(0xFF1A4DFF),
+                  color: Color(0xFF673AB7),
                   size: 26,
                 ),
               ),
@@ -234,8 +236,6 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
           ).showSnackBar(SnackBar(content: Text(e.toString())));
         }
       }
-=======
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     }
   }
 
@@ -245,7 +245,6 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
 
     showModalBottomSheet(
       context: context,
-<<<<<<< HEAD
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -256,50 +255,6 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
           left: 24,
           right: 24,
           top: 24,
-=======
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Create Section", style: TextStyle(color: primaryColor)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: classController,
-              decoration: InputDecoration(
-                labelText: "Class (e.g. 10)",
-                labelStyle: TextStyle(color: primaryColor),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor, width: 2),
-                ),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: sectionController,
-              decoration: InputDecoration(
-                labelText: "Section (e.g. A)",
-                labelStyle: TextStyle(color: primaryColor),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor, width: 2),
-                ),
-              ),
-              textCapitalization: TextCapitalization.characters,
-            ),
-          ],
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ),
         child: SingleChildScrollView(
           child: Column(
@@ -333,7 +288,7 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
                 height: 54,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A4DFF),
+                    backgroundColor: const Color(0xFF673AB7),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -373,45 +328,11 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
               const SizedBox(height: 24),
             ],
           ),
-<<<<<<< HEAD
         ),
-=======
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () async {
-              if (classController.text.isEmpty ||
-                  sectionController.text.isEmpty)
-                return;
-              try {
-                final res = await _api.post("/api/v1/admin/sections", {
-                  "class": classController.text,
-                  "section": sectionController.text,
-                });
-                if (res["success"]) {
-                  if (mounted) Navigator.pop(context);
-                  fetchSections();
-                }
-              } catch (e) {
-                if (mounted)
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(e.toString())));
-              }
-            },
-            child: const Text("Create", style: TextStyle(color: Colors.white)),
-          ),
-        ],
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
   }
 
-<<<<<<< HEAD
   Widget _buildTextField(
     TextEditingController controller,
     String label,
@@ -438,138 +359,6 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
-=======
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.only(
-                  top: 50,
-                  left: 20,
-                  right: 20,
-                  bottom: 20,
-                ),
-                decoration: BoxDecoration(
-                  color: primaryColor, // Solid
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      "Manage Sections",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Content
-              Expanded(
-                child: isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(color: primaryColor),
-                      )
-                    : sections.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No sections found",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: sections.length,
-                        itemBuilder: (context, index) {
-                          final s = sections[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 8,
-                              ),
-                              leading: Container(
-                                width: 50,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: primaryColor.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  "${s['class']}",
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: primaryColor,
-                                  ),
-                                ),
-                              ),
-                              title: Text(
-                                "Class ${s['class']}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              subtitle: Text(
-                                "Section ${s['section']}",
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                  fontSize: 14,
-                                ),
-                              ),
-                              trailing: IconButton(
-                                icon: const Icon(
-                                  Icons.delete_outline,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () => _confirmDelete(s),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddSectionDialog,
-        backgroundColor: primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Add Section", style: TextStyle(color: Colors.white)),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
   }
@@ -609,4 +398,24 @@ class _ManageSectionsScreenState extends State<ManageSectionsScreen> {
       }
     }
   }
+}
+
+class _HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 40);
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height + 40,
+      size.width,
+      size.height - 40,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

@@ -42,12 +42,6 @@ exports.getSubstituteSuggestions = async (section_id, day, period, subject) => {
 };
 
 exports.assignSubstitution = async (data) => {
-<<<<<<< HEAD
-    const { absence_id, date, period, section_id, original_teacher_id, substitute_teacher_id, remarks } = data;
-    const [result] = await pool.query(
-        "INSERT INTO substitutions (absence_id, date, period, section_id, original_teacher_id, substitute_teacher_id, remarks) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [absence_id, date, period, section_id, original_teacher_id, substitute_teacher_id, remarks]
-=======
     let { absence_id, date, period, section_id, original_teacher_id, substitute_teacher_id, remarks, absent_teacher_id } = data;
 
     // Map absent_teacher_id to original_teacher_id if missing
@@ -113,7 +107,6 @@ exports.assignSubstitution = async (data) => {
     const [result] = await pool.query(
         "INSERT INTO substitutions (absence_id, date, period, section_id, original_teacher_id, substitute_teacher_id, remarks) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [absence_id, date, period, section_id, original_teacher_id, substitute_teacher_id, remarks || '']
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     );
     return result.insertId;
 };

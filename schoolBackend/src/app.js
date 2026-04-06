@@ -55,6 +55,7 @@ app.use("/api/v1/admin", require("./modules/admin/admin.routes"));
 
 // Authentication routes (login, profile, etc.)
 app.use("/api/v1/auth", require("./modules/auth/auth.routes"));
+app.use("/api/v1/performance", require("./modules/performance/performance.routes"));
 app.use("/api/v1/dashboard", require("./modules/dashboard/dashboard.routes"));
 app.use("/api/v1/notifications", require("./modules/notifications/notifications.routes"));
 app.use("/api/v1/ai", require("./modules/ai/ai.routes"));

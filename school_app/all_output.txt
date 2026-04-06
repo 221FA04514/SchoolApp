@@ -1,0 +1,97 @@
+﻿Running Gradle task 'assembleRelease'...                        
+flutter : C:\Users\Ad
+min\Desktop\school1\S
+choolApp\school_app\a
+ndroid\app\src\main\j
+ava\io\flutter\plugin
+s\GeneratedPluginRegi
+strant.java:44: 
+error: cannot find 
+symbol
+At line:1 char:1
++ flutter build apk 
+--release 2>&1 | 
+Out-File -Encoding 
+utf8 all_output ...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (C:\User   
+ s\Admin\...not f    
+ind symbol:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+      flutterEngine.g
+etPlugins().add(new i
+o.flutter.plugins.sha
+redpreferences.Shared
+PreferencesPlugin());
+                     
+                     
+                     
+              ^
+  symbol:   class Sha
+redPreferencesPlugin
+  location: package i
+o.flutter.plugins.sha
+redpreferences
+1 error
+
+FAILURE: Build 
+failed with an 
+exception.
+
+* What went wrong:
+Execution failed for 
+task ':app:compileRel
+easeJavaWithJavac'.
+> Compilation 
+failed; see the 
+compiler output 
+below.
+  C:\Users\Admin\Desk
+top\school1\SchoolApp
+\school_app\android\a
+pp\src\main\java\io\f
+lutter\plugins\Genera
+tedPluginRegistrant.j
+ava:44: error: 
+cannot find symbol
+        flutterEngine
+.getPlugins().add(new
+ io.flutter.plugins.s
+haredpreferences.Shar
+edPreferencesPlugin()
+);
+                     
+                     
+                     
+                ^
+    symbol:   class S
+haredPreferencesPlugi
+n
+    location: 
+package io.flutter.pl
+ugins.sharedpreferenc
+es
+  1 error
+
+* Try:
+> Check your code 
+and dependencies to 
+fix the compilation 
+error(s)
+> Run with --scan to 
+get full insights.
+
+BUILD FAILED in 4s
+Running Gradle task 'assembleRelease'...                            4.9s
+Gradle task 
+assembleRelease 
+failed with exit 
+code 1

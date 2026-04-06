@@ -71,6 +71,11 @@ exports.upsertTimetable = async ({
     INSERT INTO timetable
       (section_id, day, period, subject, teacher_name, start_time, end_time)
     VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON DUPLICATE KEY UPDATE
+      subject = VALUES(subject),
+      teacher_name = VALUES(teacher_name),
+      start_time = VALUES(start_time),
+      end_time = VALUES(end_time)
     `,
     [
       section_id,

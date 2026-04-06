@@ -121,8 +121,6 @@ exports.submitHomework = async (req, res, next) => {
 
     if (req.user.role !== "student") return error(res, "Access denied", 403);
 
-<<<<<<< HEAD
-=======
     // Ensure req.body is defined
     const body = req.body || {};
     const { homework_id, content } = body;
@@ -133,8 +131,6 @@ exports.submitHomework = async (req, res, next) => {
       // Usually storing relative path like "uploads/filename.ext" is better.
       file_url = req.file.path.replace(/\\/g, "/"); // Normalize slashes
     }
-
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     await submitHomework({
       homework_id,
       student_id: req.user.userId,

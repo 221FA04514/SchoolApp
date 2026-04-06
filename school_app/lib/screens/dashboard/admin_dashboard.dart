@@ -9,13 +9,8 @@ import '../admin/manage_sections.dart';
 import '../admin/manage_period_settings.dart';
 import '../admin/manage_mappings.dart';
 import '../admin/manage_substitutions.dart';
-<<<<<<< HEAD
-import '../admin/notification_center.dart';
-import '../leaves/leave_management_screen.dart';
-=======
 import '../admin/manage_notifications.dart';
-import '../admin/manage_leaves.dart';
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+import '../leaves/leave_management_screen.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -29,6 +24,7 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   bool minimized = false;
+  bool _showAllModules = false;
 
   @override
   void initState() {
@@ -54,7 +50,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     final double minimizedHeight = size.height * 0.18;
 
     return Scaffold(
-<<<<<<< HEAD
       backgroundColor: const Color(0xFFF8FAFF),
       body: Stack(
         children: [
@@ -66,82 +61,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             left: 0,
             right: 0,
             bottom: 0,
-=======
-      backgroundColor: const Color(0xFFF5F6FA), // Light grey background
-      body: Column(
-        children: [
-          // Custom Header
-          Container(
-            padding: const EdgeInsets.only(
-              top: 50,
-              left: 20,
-              right: 20,
-              bottom: 30,
-            ),
-            decoration: BoxDecoration(
-              color: primaryColor, // Solid Violet
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(2),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.white,
-                        child: Icon(
-                          Icons.admin_panel_settings,
-                          color: primaryColor,
-                          size: 30,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 15),
-                    const Text(
-                      "Administrator",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                IconButton(
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  onPressed: () {
-                    context.read<AuthProvider>().logout();
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LoginSelectionScreen(),
-                      ),
-                      (route) => false,
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          Expanded(
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-<<<<<<< HEAD
                   const Text(
                     "💎 Control Center",
                     style: TextStyle(
@@ -152,161 +76,121 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     ),
                   ),
                   const SizedBox(height: 16),
-=======
-                  Row(
-                    children: [
-                      Icon(Icons.grid_view_rounded, color: primaryColor),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Control Center",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
+                  Builder(
+                    builder: (context) {
+                      final List<Widget> modules = [
+                        _buildHubTile(
+                          context,
+                          "Teachers",
+                          "assets/3d_icons/teachers.png",
+                          const ManageTeachersScreen(),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1.1,
-                    children: [
-<<<<<<< HEAD
-                      _buildHubTile(
-                        context,
-                        "Teachers",
-                        Icons.supervisor_account_rounded,
-                        Colors.blue,
-                        const ManageTeachersScreen(),
-                      ),
-                      _buildHubTile(
-                        context,
-                        "Students",
-                        Icons.school_rounded,
-                        Colors.teal,
-                        const ManageStudentsScreen(),
-                      ),
-                      _buildHubTile(
-                        context,
-                        "Timetable",
-                        Icons.calendar_today_rounded,
-                        Colors.indigo,
-                        const ManageTimetableScreen(),
-                      ),
-                      _buildHubTile(
-                        context,
-                        "Sections",
-                        Icons.grid_view_rounded,
-                        Colors.orange,
-                        const ManageSectionsScreen(),
-                      ),
-                      _buildHubTile(
-                        context,
-                        "Time Mgmt",
-                        Icons.timer_rounded,
-                        Colors.pink,
-                        const ManagePeriodSettingsScreen(),
-                      ),
-                      _buildHubTile(
-                        context,
-                        "Mappings",
-                        Icons.join_inner_rounded,
-                        Colors.cyan,
-                        const ManageMappingsScreen(),
-                      ),
-                      _buildHubTile(
-                        context,
-                        "Substitution",
-                        Icons.cached_rounded,
-                        Colors.purple,
-                        const ManageSubstitutionsScreen(),
-                      ),
-                      _buildHubTile(
-                        context,
-                        "Notify Hub",
-                        Icons.notifications_active_rounded,
-                        Colors.deepOrange,
-                        const NotificationCenterScreen(),
-                      ),
-                      _buildHubTile(
-                        context,
-                        "Leaves",
-                        Icons.sick_rounded,
-                        Colors.redAccent,
-                        const LeaveManagementScreen(),
-                      ),
-                    ],
+                        _buildHubTile(
+                          context,
+                          "Students",
+                          "assets/3d_icons/students_admin.png",
+                          const ManageStudentsScreen(),
+                        ),
+                        _buildHubTile(
+                          context,
+                          "Timetable",
+                          "assets/3d_icons/timetable.png",
+                          const ManageTimetableScreen(),
+                        ),
+                        _buildHubTile(
+                          context,
+                          "Sections",
+                          "assets/3d_icons/sections.png",
+                          const ManageSectionsScreen(),
+                        ),
+                        _buildHubTile(
+                          context,
+                          "Time Mgmt",
+                          "assets/3d_icons/time_mgmt.png",
+                          const ManagePeriodSettingsScreen(),
+                        ),
+                        _buildHubTile(
+                          context,
+                          "Mappings",
+                          "assets/3d_icons/mappings.png",
+                          const ManageMappingsScreen(),
+                        ),
+                        _buildHubTile(
+                          context,
+                          "Substitution",
+                          "assets/3d_icons/substitution.png",
+                          const ManageSubstitutionsScreen(),
+                        ),
+                        _buildHubTile(
+                          context,
+                          "Notify Hub",
+                          "assets/3d_icons/notice.png",
+                          const ManageNotificationsScreen(),
+                        ),
+                        _buildHubTile(
+                          context,
+                          "Leaves",
+                          "assets/3d_icons/leaves.png",
+                          const LeaveManagementScreen(),
+                        ),
+                      ];
+
+                      final displayModules = _showAllModules
+                          ? modules
+                          : modules.take(9).toList();
+
+                      return Column(
+                        children: [
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 25,
+                            childAspectRatio: 0.85,
+                            children: displayModules,
+                          ),
+                          const SizedBox(height: 20),
+                          if (modules.length > 9)
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _showAllModules = !_showAllModules;
+                                });
+                              },
+                              icon: Icon(
+                                _showAllModules
+                                    ? Icons.keyboard_arrow_up
+                                    : Icons.keyboard_arrow_down,
+                                color: const Color(0xFF673AB7),
+                              ),
+                              label: Text(
+                                _showAllModules ? "Show Less" : "Show More",
+                                style: const TextStyle(
+                                  color: Color(0xFF673AB7),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Colors.transparent,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                backgroundColor: Colors.white,
+                                elevation: 2,
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 40),
-=======
-                      _buildModuleCard(
-                        context,
-                        "Teachers",
-                        Icons.people,
-                        const ManageTeachersScreen(),
-                      ),
-                      _buildModuleCard(
-                        context,
-                        "Students",
-                        Icons.school,
-                        const ManageStudentsScreen(),
-                      ),
-                      _buildModuleCard(
-                        context,
-                        "Timetable",
-                        Icons.calendar_today,
-                        const ManageTimetableScreen(),
-                      ),
-                      _buildModuleCard(
-                        context,
-                        "Sections",
-                        Icons.grid_view,
-                        const ManageSectionsScreen(),
-                      ),
-                      _buildModuleCard(
-                        context,
-                        "Time Mgmt",
-                        Icons.timer,
-                        const ManagePeriodSettingsScreen(),
-                      ),
-                      _buildModuleCard(
-                        context,
-                        "Mappings",
-                        Icons.link,
-                        const ManageMappingsScreen(),
-                      ),
-                      _buildModuleCard(
-                        context,
-                        "Substitution",
-                        Icons.sync_alt,
-                        const ManageSubstitutionsScreen(),
-                      ),
-                      _buildModuleCard(
-                        context,
-                        "Notify Hub",
-                        Icons.notifications_active,
-                        const ManageNotificationsScreen(),
-                      ),
-                      _buildModuleCard(
-                        context,
-                        "Leaves",
-                        Icons.exit_to_app,
-                        const ManageLeavesScreen(),
-                      ),
-                    ],
-                  ),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                 ],
               ),
             ),
           ),
-<<<<<<< HEAD
 
           // ================= HEADER =================
           AnimatedPositioned(
@@ -320,7 +204,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF1A4DFF), Color(0xFF0031D1)],
+                  colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -337,7 +221,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       child: const Icon(
                         Icons.admin_panel_settings_rounded,
                         size: 36,
-                        color: Color(0xFF1A4DFF),
+                        color: Color(0xFF673AB7),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -380,109 +264,47 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
             ),
           ),
-=======
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ],
       ),
     );
   }
 
-<<<<<<< HEAD
   Widget _buildHubTile(
     BuildContext context,
     String title,
-    IconData icon,
-    Color color,
+    String imagePath,
     Widget screen,
   ) {
     return InkWell(
       onTap: () =>
           Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
       borderRadius: BorderRadius.circular(20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 70,
+            height: 70,
+            child: Image.asset(
+              imagePath,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 30),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+              color: Colors.black87,
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                color: Color(0xFF1E263E),
-              ),
-            ),
-          ],
-=======
-  Widget _buildModuleCard(
-    BuildContext context,
-    String title,
-    IconData icon,
-    Widget target,
-  ) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
-            spreadRadius: 2,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
           ),
         ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => target));
-          },
-          borderRadius: BorderRadius.circular(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, size: 32, color: primaryColor),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
-        ),
       ),
     );
   }

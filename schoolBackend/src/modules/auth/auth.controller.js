@@ -31,32 +31,18 @@ exports.login = async (req, res, next) => {
 
     // Role-based custom logic
     if (user.role === "admin") {
-<<<<<<< HEAD
-      // 2. Start Twilio Verification
-      const verification = await sms.startVerification(user.admin_phone);
-
-      if (!verification.success) {
-        return error(res, `Verification failed: ${verification.error || 'Check Twilio setup'}`, 500);
-      }
-=======
       // 2. SKIP Twilio Verification for default OTP flow
       // const verification = await sms.startVerification(user.admin_phone);
 
       // if (!verification.success) {
       //   return error(res, `Verification failed: ${verification.error || 'Check Twilio setup'}`, 500);
       // }
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
       return success(res, {
         requiresOtp: true,
         userId: user.id,
-<<<<<<< HEAD
-        phone: user.admin_phone ? `******${user.admin_phone.slice(-4)}` : "unknown",
-      }, verification.simulated ? "Simulation Mode: Use 123456" : "Password verified. OTP sent.");
-=======
         phone: "HIDDEN",
       }, "Password verified. Enter default OTP.");
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     }
 
     const token = generateToken({

@@ -241,48 +241,102 @@ class _TeacherResourceLibraryScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFF),
-      appBar: AppBar(
-        title: const Text("Digital Library"),
-        backgroundColor: const Color(0xFF1A4DFF),
-        foregroundColor: Colors.white,
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : resources.isEmpty
-          ? const Center(child: Text("No resources uploaded yet"))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: resources.length,
-              itemBuilder: (context, index) {
-                final r = resources[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: ListTile(
-                    leading: _getIcon(r["type"]),
-                    title: Text(
-                      r["title"],
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      "${r["subject"]} • Section: ${r["section_name"] ?? 'All'}\n${r["description"] ?? ''}",
-                    ),
-                    isThreeLine: true,
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () async {
-                        // TODO: Add delete functionality if needed
-                      },
-                    ),
-                  ),
-                );
-              },
+      body: Stack(
+        children: [
+          // Curved Header Background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 160,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF4A00E0),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
             ),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const BackButton(color: Colors.white),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        "Digital Library",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : resources.isEmpty
+                          ? const Center(
+                              child: Text("No resources uploaded yet"))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: resources.length,
+                              itemBuilder: (context, index) {
+                                final r = resources[index];
+                                return Card(
+                                  elevation: 2,
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: ListTile(
+                                    leading: _getIcon(r["type"]),
+                                    title: Text(
+                                      r["title"],
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Text(
+                                      "${r["subject"]} • Section: ${r["section_name"] ?? 'All'}\n${r["description"] ?? ''}",
+                                    ),
+                                    isThreeLine: true,
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.delete_outline,
+                                          color: Colors.red),
+                                      onPressed: () async {
+                                        // TODO: Add delete functionality if needed
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _uploadResource,
-        backgroundColor: const Color(0xFF1A4DFF),
+        backgroundColor: const Color(0xFF4A00E0),
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

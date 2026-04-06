@@ -98,84 +98,144 @@ class _StudentOnlineExamListScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Online Exams"),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _exams.isEmpty
-          ? const Center(child: Text("No exams scheduled for your section"))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _exams.length,
-              itemBuilder: (context, index) {
-                final exam = _exams[index];
-                bool isAttempted = exam["attempt_status"] != null;
-
-                return Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    title: Text(
-                      exam["title"],
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        Text("Subject: ${exam['subject']}"),
-                        Text("Duration: ${exam['duration_mins']} mins"),
-                        Text("Deadline: ${exam['end_time']}"),
-                      ],
-                    ),
-                    trailing: ElevatedButton(
-                      onPressed: () {
-                        if (exam["attempt_status"] == 'submitted') {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => StudentExamReviewScreen(
-                                examId: exam["id"],
-                                title: exam["title"],
-                              ),
-                            ),
-                          );
-                        } else if (isAttempted) {
-                          return; // Do nothing if locked/started but not resume-able yet
-                        } else {
-                          _startExam(exam);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: exam["attempt_status"] == 'submitted'
-                            ? Colors.green
-                            : isAttempted
-                            ? Colors.grey
-                            : const Color(0xFF1A4DFF),
-                        foregroundColor: Colors.white,
-                      ),
-                      child: Text(
-                        exam["attempt_status"] == 'submitted'
-                            ? "Review"
-                            : isAttempted
-                            ? "Attempted"
-                            : "Start",
-                      ),
-                    ),
-                  ),
-                );
-              },
+      backgroundColor: const Color(0xFFF8FAFF),
+      body: Stack(
+        children: [
+          // Curved Header Background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 160,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF4A00E0),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
             ),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const BackButton(color: Colors.white),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        "Online Exams",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _exams.isEmpty
+                          ? const Center(
+                              child: Text("No exams scheduled for your section"))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _exams.length,
+                              itemBuilder: (context, index) {
+                                final exam = _exams[index];
+                                bool isAttempted = exam["attempt_status"] != null;
+
+                                return Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.all(16),
+                                    title: Text(
+                                      exam["title"],
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const SizedBox(height: 8),
+                                        Text("Subject: ${exam['subject']}"),
+                                        Text(
+                                            "Duration: ${exam['duration_mins']} mins"),
+                                        Text("Deadline: ${exam['end_time']}"),
+                                      ],
+                                    ),
+                                    trailing: ElevatedButton(
+                                      onPressed: () {
+                                        if (exam["attempt_status"] ==
+                                            'submitted') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  StudentExamReviewScreen(
+                                                examId: exam["id"],
+                                                title: exam["title"],
+                                              ),
+                                            ),
+                                          );
+                                        } else if (isAttempted) {
+                                          return;
+                                        } else {
+                                          _startExam(exam);
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor:
+                                            exam["attempt_status"] == 'submitted'
+                                                ? Colors.green
+                                                : isAttempted
+                                                    ? Colors.grey
+                                                    : const Color(0xFF4A00E0),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        exam["attempt_status"] == 'submitted'
+                                            ? "Review"
+                                            : isAttempted
+                                                ? "Attempted"
+                                                : "Start",
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

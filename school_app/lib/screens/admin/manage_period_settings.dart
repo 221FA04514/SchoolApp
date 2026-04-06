@@ -27,23 +27,12 @@ class _ManagePeriodSettingsScreenState
   Future<void> fetchSettings() async {
     try {
       final res = await _api.get("/api/v1/admin/period-settings");
-<<<<<<< HEAD
       if (mounted) {
         setState(() {
           settings = res["data"] ?? [];
           isLoading = false;
         });
       }
-=======
-      setState(() {
-        settings = res["data"] ?? [];
-        // Sort by period number
-        settings.sort(
-          (a, b) => (a['period_number'] as int).compareTo(b['period_number']),
-        );
-        isLoading = false;
-      });
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     } catch (e) {
       if (mounted) setState(() => isLoading = false);
     }
@@ -62,7 +51,6 @@ class _ManagePeriodSettingsScreenState
 
     showModalBottomSheet(
       context: context,
-<<<<<<< HEAD
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -73,13 +61,6 @@ class _ManagePeriodSettingsScreenState
           left: 24,
           right: 24,
           top: 24,
-=======
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          setting == null ? "Add Period Timing" : "Edit Period Timing",
-          style: TextStyle(color: primaryColor),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -96,27 +77,11 @@ class _ManagePeriodSettingsScreenState
             const SizedBox(height: 24),
             _buildTextField(
               controller: periodController,
-<<<<<<< HEAD
               label: "Period Number (e.g. 1)",
               icon: Icons.format_list_numbered_rounded,
-=======
-              decoration: InputDecoration(
-                labelText: "Period Number (e.g. 1)",
-                labelStyle: TextStyle(color: primaryColor),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor, width: 2),
-                ),
-              ),
-              keyboardType: TextInputType.number,
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
               enabled: setting == null,
               keyboardType: TextInputType.number,
             ),
-<<<<<<< HEAD
             Row(
               children: [
                 Expanded(
@@ -142,7 +107,7 @@ class _ManagePeriodSettingsScreenState
               height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A4DFF),
+                  backgroundColor: const Color(0xFF673AB7),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -177,77 +142,6 @@ class _ManagePeriodSettingsScreenState
             const SizedBox(height: 24),
           ],
         ),
-=======
-            const SizedBox(height: 10),
-            TextField(
-              controller: startController,
-              decoration: InputDecoration(
-                labelText: "Start Time (HH:mm)",
-                labelStyle: TextStyle(color: primaryColor),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor, width: 2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: endController,
-              decoration: InputDecoration(
-                labelText: "End Time (HH:mm)",
-                labelStyle: TextStyle(color: primaryColor),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: primaryColor, width: 2),
-                ),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () async {
-              try {
-                // Basic validation
-                if (periodController.text.isEmpty ||
-                    startController.text.isEmpty ||
-                    endController.text.isEmpty)
-                  return;
-
-                await _api.post("/api/v1/admin/period-settings", {
-                  "period_number": int.parse(periodController.text),
-                  "start_time": startController.text,
-                  "end_time": endController.text,
-                });
-                if (mounted) Navigator.pop(context);
-                fetchSettings();
-              } catch (e) {
-                if (mounted)
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(e.toString())));
-              }
-            },
-            child: const Text("Save", style: TextStyle(color: Colors.white)),
-          ),
-        ],
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
   }
@@ -289,7 +183,6 @@ class _ManagePeriodSettingsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< HEAD
       backgroundColor: const Color(0xFFF8FAFF),
       body: CustomScrollView(
         slivers: [
@@ -303,7 +196,7 @@ class _ManagePeriodSettingsScreenState
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditSettingDialog(),
-        backgroundColor: const Color(0xFF1A4DFF),
+        backgroundColor: const Color(0xFF673AB7),
         icon: const Icon(Icons.add_alarm_rounded, color: Colors.white),
         label: const Text(
           "Add Timing",
@@ -318,7 +211,7 @@ class _ManagePeriodSettingsScreenState
       expandedHeight: 140,
       pinned: true,
       stretch: true,
-      backgroundColor: const Color(0xFF1A4DFF),
+      backgroundColor: const Color(0xFF673AB7),
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
@@ -335,12 +228,15 @@ class _ManagePeriodSettingsScreenState
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF1A4DFF), Color(0xFF0031D1)],
+            ClipPath(
+              clipper: _HeaderClipper(),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
+                  ),
                 ),
               ),
             ),
@@ -418,14 +314,14 @@ class _ManagePeriodSettingsScreenState
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFF1A4DFF).withOpacity(0.08),
+            color: const Color(0xFF673AB7).withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Center(
             child: Text(
               s["period_number"].toString(),
               style: const TextStyle(
-                color: Color(0xFF1A4DFF),
+                color: Color(0xFF673AB7),
                 fontWeight: FontWeight.w900,
                 fontSize: 18,
               ),
@@ -540,75 +436,27 @@ class _ManagePeriodSettingsScreenState
           ),
           contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
-=======
-      backgroundColor: const Color(0xFFF5F6FA),
-      appBar: AppBar(
-        title: const Text("Time Management"),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator(color: primaryColor))
-          : settings.isEmpty
-          ? const Center(child: Text("No period settings found"))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: settings.length,
-              itemBuilder: (context, index) {
-                final s = settings[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  elevation: 2,
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
-                    leading: CircleAvatar(
-                      backgroundColor: primaryColor.withOpacity(0.1),
-                      child: Text(
-                        s["period_number"].toString(),
-                        style: TextStyle(
-                          color: primaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      "Period ${s['period_number']}",
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text(
-                      "${s["start_time"]} - ${s["end_time"]}",
-                      style: TextStyle(color: Colors.grey[600]),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit, color: primaryColor),
-                          onPressed: () => _showAddEditSettingDialog(s),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDelete(s),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddEditSettingDialog(),
-        backgroundColor: primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       ),
     );
   }
+}
+
+class _HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 40);
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height + 40,
+      size.width,
+      size.height - 40,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

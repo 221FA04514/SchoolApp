@@ -33,6 +33,20 @@ exports.fetchTeacherDashboard = async (teacher_id) => {
     [teacher_id]
   );
 
+  // today's schedule
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const today = days[new Date().getDay()];
+
+  const [schedule] = await pool.query(
+    `
+    SELECT id, day, period, subject, start_time, end_time, section_id
+    FROM timetable
+    WHERE teacher_name = ? AND day = ?
+    ORDER BY period
+    `,
+    [teacher?.name || "", today]
+  );
+
   return {
     teacher: {
       name: teacher?.name || "",
@@ -42,6 +56,7 @@ exports.fetchTeacherDashboard = async (teacher_id) => {
       total_students: students.total,
       pending_doubts: doubts.pending,
     },
+    today_schedule: schedule,
   };
 };
 

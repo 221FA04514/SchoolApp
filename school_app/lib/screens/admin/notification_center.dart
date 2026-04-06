@@ -140,7 +140,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       expandedHeight: 140,
       pinned: true,
       stretch: true,
-      backgroundColor: const Color(0xFF1A4DFF),
+      backgroundColor: const Color(0xFF673AB7),
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
@@ -157,12 +157,15 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF1A4DFF), Color(0xFF0031D1)],
+            ClipPath(
+              clipper: _HeaderClipper(),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
+                  ),
                 ),
               ),
             ),
@@ -269,7 +272,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
             .map(
               (t) => Chip(
                 onDeleted: () => setState(() => targets.remove(t)),
-                backgroundColor: const Color(0xFF1A4DFF),
+                backgroundColor: const Color(0xFF673AB7),
                 deleteIconColor: Colors.white70,
                 side: BorderSide.none,
                 shape: RoundedRectangleBorder(
@@ -316,7 +319,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
               border: InputBorder.none,
               prefixIcon: const Icon(
                 Icons.title_rounded,
-                color: Color(0xFF1A4DFF),
+                color: Color(0xFF673AB7),
               ),
             ),
           ),
@@ -381,8 +384,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF1A4DFF),
-        side: const BorderSide(color: Color(0xFF1A4DFF)),
+        foregroundColor: const Color(0xFF673AB7),
+        side: const BorderSide(color: Color(0xFF673AB7)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
@@ -396,7 +399,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1A4DFF).withOpacity(0.3),
+            color: const Color(0xFF673AB7).withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -404,7 +407,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       ),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF1A4DFF),
+          backgroundColor: const Color(0xFF673AB7),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 18),
           shape: RoundedRectangleBorder(
@@ -582,4 +585,24 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       },
     );
   }
+}
+
+class _HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 40);
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height + 40,
+      size.width,
+      size.height - 40,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

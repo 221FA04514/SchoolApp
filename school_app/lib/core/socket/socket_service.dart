@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'dart:async';
+
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
@@ -50,14 +50,8 @@ class SocketService extends ChangeNotifier {
 
     // Listen for general notifications
     _socket!.on("notification", (data) {
-<<<<<<< HEAD
-      print("[SOCKET] New Notification: $data");
-      _messageController.add(data);
-      notifyListeners();
-=======
       debugPrint("[SOCKET] New Notification: $data");
       _notificationController.add(data);
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     });
   }
 

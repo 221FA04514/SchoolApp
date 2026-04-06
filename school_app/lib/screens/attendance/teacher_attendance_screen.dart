@@ -184,7 +184,7 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
             top: 0,
             left: 0,
             right: 0,
-            height: 200,
+            height: 160,
             child: Container(
               decoration: const BoxDecoration(
                 color: const Color(0xFF4A00E0),

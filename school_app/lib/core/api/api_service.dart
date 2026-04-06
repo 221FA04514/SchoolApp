@@ -1,9 +1,6 @@
 import 'dart:convert';
-<<<<<<< HEAD
-import 'package:dio/dio.dart' as dio_lib;
-=======
 import 'dart:async';
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+import 'package:dio/dio.dart' as dio_lib;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
@@ -153,7 +150,6 @@ class ApiService {
     }
   }
 
-<<<<<<< HEAD
   // ================= MULTIPART (Upload) =================
   Future<dynamic> postMultipart(
     String endpoint,
@@ -196,50 +192,6 @@ class ApiService {
       }
     } catch (e) {
       print("MULTIPART API ERROR [$endpoint]: $e");
-=======
-  // ================= UPLOAD =================
-  Future<dynamic> uploadFile(
-    String endpoint,
-    Map<String, String> fields,
-    String? filePath,
-    String fileField,
-  ) async {
-    try {
-      final uri = Uri.parse("${AppConstants.baseUrl}$endpoint");
-      final request = http.MultipartRequest("POST", uri);
-
-      // Headers
-      final token = await _getToken();
-      if (token != null) {
-        request.headers["Authorization"] = "Bearer $token";
-      }
-
-      // Fields
-      fields.forEach((key, value) {
-        request.fields[key] = value;
-      });
-
-      // File
-      if (filePath != null) {
-        final file = await http.MultipartFile.fromPath(fileField, filePath);
-        request.files.add(file);
-      }
-
-      final streamResponse = await request.send().timeout(_timeout);
-      final response = await http.Response.fromStream(streamResponse);
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return data;
-      } else {
-        throw Exception(data["message"] ?? "Upload failed");
-      }
-    } on TimeoutException {
-      throw Exception("Server timeout. Please try again.");
-    } catch (e) {
-      print("UPLOAD ERROR [$endpoint]: $e");
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       rethrow;
     }
   }

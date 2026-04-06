@@ -67,95 +67,165 @@ class _TeacherResultsScreenState extends State<TeacherResultsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Result Management"),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateExamDialog,
-        icon: const Icon(Icons.add),
-        label: const Text("Create Exam"),
-        backgroundColor: const Color(0xFF1A4DFF),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _exams.isEmpty
-          ? const Center(child: Text("No exams recorded yet"))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _exams.length,
-              itemBuilder: (context, index) {
-                final exam = _exams[index];
-                final isPublished =
-                    exam["is_published"] == 1 || exam["is_published"] == true;
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  child: Column(
+      backgroundColor: const Color(0xFFF8FAFF),
+      body: Stack(
+        children: [
+          // Curved Header Background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 160,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF4A00E0),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
+                ),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
                     children: [
-                      ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Color(0xFFEEF2FF),
-                          child: Icon(
-                            Icons.description_outlined,
-                            color: Color(0xFF1A4DFF),
-                          ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        title: Text(exam["name"] ?? "Exam"),
-                        subtitle: Text("Date: ${exam["exam_date"] ?? 'N/A'}"),
-                        trailing: Switch(
-                          value: isPublished,
-                          activeColor: Colors.green,
-                          onChanged: (val) =>
-                              _togglePublish(exam["id"], isPublished),
-                        ),
+                        child: const BackButton(color: Colors.white),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              isPublished ? "✅ PUBLIC" : "🔒 DRAFT",
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: isPublished ? Colors.green : Colors.grey,
-                              ),
-                            ),
-                            const Spacer(),
-                            TextButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        TeacherMarksEntryScreen(
-                                          examId: exam["id"],
-                                          examName: exam["name"],
-                                          sectionId:
-                                              exam["section_id"] ??
-                                              1, // Fallback
-                                        ),
-                                  ),
-                                );
-                              },
-                              icon: const Icon(Icons.edit, size: 16),
-                              label: const Text("Upload Marks"),
-                            ),
-                          ],
+                      const SizedBox(width: 16),
+                      const Text(
+                        "Result Management",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ],
                   ),
-                );
-              },
+                ),
+
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _exams.isEmpty
+                          ? const Center(child: Text("No exams recorded yet"))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: _exams.length,
+                              itemBuilder: (context, index) {
+                                final exam = _exams[index];
+                                final isPublished = exam["is_published"] == 1 ||
+                                    exam["is_published"] == true;
+                                return Card(
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  child: Column(
+                                    children: [
+                                      ListTile(
+                                        leading: const CircleAvatar(
+                                          backgroundColor: Color(0xFFEEF2FF),
+                                          child: Icon(
+                                            Icons.description_outlined,
+                                            color: Color(0xFF4A00E0),
+                                          ),
+                                        ),
+                                        title: Text(
+                                          exam["name"] ?? "Exam",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        subtitle: Text(
+                                            "Date: ${exam["exam_date"] ?? 'N/A'}"),
+                                        trailing: Switch(
+                                          value: isPublished,
+                                          activeColor: Colors.green,
+                                          onChanged: (val) =>
+                                              _togglePublish(exam["id"], isPublished),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 8,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Text(
+                                              isPublished ? "✅ PUBLIC" : "🔒 DRAFT",
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                                color: isPublished
+                                                    ? Colors.green
+                                                    : Colors.grey,
+                                              ),
+                                            ),
+                                            const Spacer(),
+                                            TextButton.icon(
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        TeacherMarksEntryScreen(
+                                                      examId: exam["id"],
+                                                      examName: exam["name"],
+                                                      sectionId:
+                                                          exam["section_id"] ??
+                                                              1, // Fallback
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              icon: const Icon(Icons.edit,
+                                                  size: 16),
+                                              label: const Text("Upload Marks"),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: const Color(0xFF4A00E0),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                ),
+              ],
             ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showCreateExamDialog,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          "Create Exam",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: const Color(0xFF4A00E0),
+      ),
     );
   }
+
 
   void _showCreateExamDialog() {
     final nameController = TextEditingController();

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
 import '../../models/homework_model.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:dio/dio.dart' as dio_lib;
 
 class StudentHomeworkScreen extends StatefulWidget {
   const StudentHomeworkScreen({super.key});
@@ -91,12 +92,12 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
         }
 
         final filePath = result.files.single.path!;
-        await _api.uploadFile(
-          "/api/v1/homework/submit",
-          {"homework_id": homeworkId.toString(), "content": "Uploaded via App"},
-          filePath,
-          "file",
-        );
+        final formData = dio_lib.FormData.fromMap({
+          "homework_id": homeworkId.toString(),
+          "content": "Uploaded via App",
+          "file": await dio_lib.MultipartFile.fromFile(filePath),
+        });
+        await _api.postMultipart("/api/v1/homework/submit", formData);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

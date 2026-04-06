@@ -111,7 +111,6 @@ class _AttendanceSummaryCardState extends State<AttendanceSummaryCard>
                                     letterSpacing: -1,
                                   ),
                                 ),
-<<<<<<< HEAD
                                 const Text(
                                   "SCORE",
                                   style: TextStyle(
@@ -120,11 +119,6 @@ class _AttendanceSummaryCardState extends State<AttendanceSummaryCard>
                                     color: Colors.grey,
                                     letterSpacing: 1,
                                   ),
-=======
-                                _section(
-                                  widget.holiday,
-                                  const Color(0xFFFBC02D), // Yellow for Holiday
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                                 ),
                               ],
                             ),
@@ -157,25 +151,8 @@ class _AttendanceSummaryCardState extends State<AttendanceSummaryCard>
                     ),
                   ],
                 ),
-<<<<<<< HEAD
               ),
             ],
-=======
-                const SizedBox(height: 8),
-                _compactLegendItem(
-                  "Absent",
-                  widget.absent,
-                  const Color(0xFFFF5F6D),
-                ),
-                const SizedBox(height: 8),
-                _compactLegendItem(
-                  "Holiday",
-                  widget.holiday,
-                  const Color(0xFFFBC02D), // Yellow for Holiday
-                ),
-              ],
-            ),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
           ),
         ],
       ),

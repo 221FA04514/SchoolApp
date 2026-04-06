@@ -70,19 +70,29 @@ class _StudentAnnouncementDetailScreenState
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 160,
       pinned: true,
       stretch: true,
-      backgroundColor: const Color(0xFF1A4DFF),
+      backgroundColor: const Color(0xFF4A00E0),
       elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 10, top: 10, bottom: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const BackButton(color: Colors.white),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 20),
         title: const Text(
           "Notice Detail",
           style: TextStyle(
             fontWeight: FontWeight.w800,
-            fontSize: 20,
+            fontSize: 22,
             color: Colors.white,
             letterSpacing: -0.5,
           ),
@@ -95,16 +105,24 @@ class _StudentAnnouncementDetailScreenState
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF1A4DFF), Color(0xFF0031D1)],
+                  colors: [Color(0xFF4A00E0), Color(0xFF6A11CB)],
                 ),
               ),
             ),
             Positioned(
-              right: -30,
-              top: -30,
+              right: -50,
+              top: -50,
               child: CircleAvatar(
-                radius: 70,
+                radius: 100,
                 backgroundColor: Colors.white.withOpacity(0.05),
+              ),
+            ),
+            Positioned(
+              left: -30,
+              bottom: -30,
+              child: CircleAvatar(
+                radius: 60,
+                backgroundColor: Colors.white.withOpacity(0.03),
               ),
             ),
           ],
@@ -132,12 +150,12 @@ class _StudentAnnouncementDetailScreenState
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF4A00E0).withOpacity(0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -147,21 +165,21 @@ class _StudentAnnouncementDetailScreenState
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF1A4DFF).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFF4A00E0).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(15),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(emoji, style: const TextStyle(fontSize: 18)),
                 const SizedBox(width: 8),
-                Text(
-                  "Official Notice",
+                const Text(
+                  "OFFICIAL NOTICE",
                   style: TextStyle(
-                    color: const Color(0xFF1A4DFF),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
+                    color: Color(0xFF4A00E0),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                    letterSpacing: 1.2,
                   ),
                 ),
               ],
@@ -171,67 +189,78 @@ class _StudentAnnouncementDetailScreenState
           Text(
             announcement["title"],
             style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
               color: Color(0xFF1E263E),
-              letterSpacing: -0.5,
-              height: 1.2,
+              letterSpacing: -0.8,
+              height: 1.1,
             ),
           ),
           const SizedBox(height: 16),
-          const Divider(height: 32),
+          Divider(height: 32, color: Colors.grey.shade100),
           Text(
             announcement["description"],
             style: TextStyle(
               fontSize: 16,
               color: Colors.blueGrey.shade700,
-              height: 1.6,
+              height: 1.7,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 48),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F6FB),
-              borderRadius: BorderRadius.circular(16),
+              color: const Color(0xFFF8FAFF),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFF4A00E0).withOpacity(0.05)),
             ),
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(12),
                   decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.calendar_month_rounded,
-                    color: Color(0xFF1A4DFF),
-                    size: 18,
+                    color: Color(0xFF4A00E0),
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Posted On",
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.blueGrey.shade400,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "POSTED ON",
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.blueGrey.shade400,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
                       ),
-                    ),
-                    Text(
-                      postDate,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1E263E),
+                      const SizedBox(height: 2),
+                      Text(
+                        postDate,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1E263E),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -84,29 +84,26 @@ class _StudentLoginScreenState extends State<StudentLoginScreen>
 
       if (!mounted) return;
       setState(() => _isLoading = false);
-<<<<<<< HEAD
-      if (res != null && mounted) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const StudentDashboard()),
-          (route) => false,
-=======
-
-      debugPrint("STUDENT LOGIN RESPONSE: $res");
-
       if (res == null) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Login failed. Please try again.")),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         );
         return;
       }
 
-      // ✅ DIRECT DASHBOARD (NO OTP)
-      Navigator.pushReplacement(
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const StudentDashboard()),
+        (route) => false,
       );
+
+      // ✅ DIRECT DASHBOARD (NO OTP)
+      // Navigator.pushReplacement(
+      //   context,
+      //   MaterialPageRoute(builder: (_) => const StudentDashboard()),
+      // );
     } catch (e) {
       if (!mounted) return;
 

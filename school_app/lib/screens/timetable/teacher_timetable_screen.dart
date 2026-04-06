@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../core/auth/auth_provider.dart';
 import '../../core/api/api_service.dart';
+import 'timetable_model.dart';
 
 class TeacherTimetableScreen extends StatefulWidget {
   const TeacherTimetableScreen({super.key});
@@ -10,518 +9,373 @@ class TeacherTimetableScreen extends StatefulWidget {
   State<TeacherTimetableScreen> createState() => _TeacherTimetableScreenState();
 }
 
-class _TeacherTimetableScreenState extends State<TeacherTimetableScreen>
-    with SingleTickerProviderStateMixin {
+class _TeacherTimetableScreenState extends State<TeacherTimetableScreen> {
   final ApiService _api = ApiService();
-<<<<<<< HEAD
+  
+  List<TimetableItem> _mySlots = [];
+  List<TimetableItem> _sectionSlots = [];
   List _sections = [];
   int? _selectedSecId;
-  List<TimetableItem> _slots = [];
-  bool _isLoading = true;
-
-  final List<String> days = [
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-=======
-  late TabController _tabController;
-
-  List sections = [];
-  int? selectedSectionId;
-
-  List myTimetable = [];
-  List sectionTimetable = [];
-
-  bool isLoadingSections = true;
-  bool isLoadingMyTimetable = false;
-  bool isLoadingSectionTimetable = false;
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+  
+  bool _isMyLoading = true;
+  bool _isSecLoading = false;
+  bool _isSectionsLoading = true;
 
   @override
   void initState() {
     super.initState();
-<<<<<<< HEAD
-    _fetchSections(); // Changed to _fetchSections
+    _fetchMyTimetable();
+    _fetchSections();
+  }
+
+  Future<void> _fetchMyTimetable() async {
+    setState(() => _isMyLoading = true);
+    try {
+      final res = await _api.get("/api/v1/timetable/personal");
+      if (mounted) {
+        setState(() {
+          _mySlots = (res["data"] as List)
+              .map((e) => TimetableItem.fromJson(e))
+              .toList();
+          _isMyLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isMyLoading = false);
+    }
   }
 
   Future<void> _fetchSections() async {
-    // Renamed from fetchSections
-    setState(() {
-      _isLoading = true; // Set loading state for initial fetch
-    });
-    try {
-      final role = Provider.of<AuthProvider>(context, listen: false).role;
-      // Only admins need the section dropdown to view all timetables
-      if (role == 'admin') {
-        final res = await _api.get("/api/v1/sections");
-        if (mounted) {
-          setState(() {
-            _sections = res["data"] ?? [];
-            if (_sections.isNotEmpty) {
-              _selectedSecId = _sections[0]["id"];
-              _fetchTimetable(); // Call _fetchTimetable for admin
-            } else {
-              _isLoading = false; // No sections, stop loading
-            }
-          });
-=======
-    _tabController = TabController(length: 2, vsync: this);
-    fetchMyTimetable();
-    fetchSections();
-  }
-
-  Future<void> fetchMyTimetable() async {
-    setState(() => isLoadingMyTimetable = true);
-    try {
-      final res = await _api.get("/api/v1/timetable/personal");
-      setState(() {
-        myTimetable = res["data"] ?? [];
-        isLoadingMyTimetable = false;
-      });
-    } catch (e) {
-      setState(() => isLoadingMyTimetable = false);
-    }
-  }
-
-  Future<void> fetchSections() async {
+    setState(() => _isSectionsLoading = true);
     try {
       final res = await _api.get("/api/v1/sections");
-      setState(() {
-        sections = res["data"] ?? [];
-        isLoadingSections = false;
-        if (sections.isNotEmpty) {
-          selectedSectionId = sections[0]["id"];
-          fetchSectionTimetable(selectedSectionId!);
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
-        }
-      } else {
-        // Teachers fetch their personal timetable directly
-        _fetchPersonalTimetable();
-      }
-    } catch (e) {
-      debugPrint("Error fetching sections: $e");
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-<<<<<<< HEAD
-  Future<void> _fetchPersonalTimetable() async {
-    setState(() => _isLoading = true);
-    try {
-      final res = await _api.get("/api/v1/timetable/personal");
       if (mounted) {
         setState(() {
-          _slots = (res["data"] as List)
-              .map((e) => TimetableItem.fromJson(e))
-              .toList(); // Map to TimetableItem
-          _isLoading = false;
+          _sections = res["data"] ?? [];
+          _isSectionsLoading = false;
+          if (_sections.isNotEmpty) {
+            _selectedSecId = _sections[0]["id"];
+            _fetchSectionTimetable();
+          }
         });
       }
     } catch (e) {
-      debugPrint("Error fetching personal timetable: $e");
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) setState(() => _isSectionsLoading = false);
     }
   }
 
-  Future<void> _fetchTimetable() async {
-    // Renamed from fetchTimetable
-    if (_selectedSecId == null) {
-      if (mounted) setState(() => _isLoading = false);
-      return;
-    }
-    setState(() => _isLoading = true);
-=======
-  Future<void> fetchSectionTimetable(int sectionId) async {
-    setState(() => isLoadingSectionTimetable = true);
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+  Future<void> _fetchSectionTimetable() async {
+    if (_selectedSecId == null) return;
+    setState(() => _isSecLoading = true);
     try {
-      final res = await _api.get(
-        "/api/v1/timetable/section?section_id=$_selectedSecId", // Use _selectedSecId
-      );
-<<<<<<< HEAD
+      final res = await _api.get("/api/v1/timetable/section?section_id=$_selectedSecId");
       if (mounted) {
         setState(() {
-          _slots = (res["data"] as List)
+          _sectionSlots = (res["data"] as List)
               .map((e) => TimetableItem.fromJson(e))
-              .toList(); // Map to TimetableItem
-          _isLoading = false;
+              .toList();
+          _isSecLoading = false;
         });
       }
     } catch (e) {
-      debugPrint("Error fetching section timetable: $e");
-      if (mounted) setState(() => _isLoading = false);
-=======
-      setState(() {
-        sectionTimetable = res["data"] ?? [];
-        isLoadingSectionTimetable = false;
-      });
-    } catch (e) {
-      setState(() => isLoadingSectionTimetable = false);
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+      if (mounted) setState(() => _isSecLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-<<<<<<< HEAD
-      backgroundColor: const Color(0xFFF8FAFF),
-      appBar: AppBar(
-        title: const Text("Teacher Timetable"),
-        backgroundColor: const Color(0xFF1A4DFF),
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          _buildTopBar(),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF9FAFF),
+        body: Stack(
+          children: [
+            // Curved Header Background
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 180, // Slightly taller for tabs
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4A00E0),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
+              ),
+            ),
+
+            SafeArea(
+              child: Column(
+                children: [
+                  // Custom App Bar
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
                       children: [
-                        _buildDayHeader(),
-                        const SizedBox(height: 16),
-                        _buildTimetableGrid(),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const BackButton(color: Colors.white),
+                        ),
+                        const SizedBox(width: 16),
+                        const Text(
+                          "Timetable",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-          ),
-        ],
-=======
-      appBar: AppBar(
-        title: const Text("Timetable"),
-        backgroundColor: const Color(0xFF4A00E0),
-        foregroundColor: Colors.white,
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          tabs: const [
-            Tab(text: "My Schedule"),
-            Tab(text: "Class Scheduler"),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildMySchedule(), _buildClassScheduler()],
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
-      ),
-    );
-  }
 
-<<<<<<< HEAD
-  Widget _buildTopBar() {
-    final role = Provider.of<AuthProvider>(context, listen: false).role;
-    final isAdmin = role == 'admin';
-
-    return Container(
-      color: const Color(0xFF1A4DFF),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Column(
-        children: [
-          if (_isLoading && _sections.isEmpty && isAdmin)
-            const LinearProgressIndicator(color: Colors.white)
-          else if (_sections.isEmpty && isAdmin)
-            const Text(
-              "No sections assigned",
-              style: TextStyle(color: Colors.white),
-            )
-          else if (isAdmin)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<int>(
-                  value: _selectedSecId,
-                  dropdownColor: const Color(0xFF1A4DFF),
-                  items: _sections.map<DropdownMenuItem<int>>((s) {
-                    return DropdownMenuItem(
-                      value: s["id"],
-                      child: Text(
-                        "Section ${s["class"]}-${s["section"]}",
-                        style: const TextStyle(color: Colors.white),
+                  // Tabs
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: const TabBar(
+                      indicatorColor: Colors.white,
+                      indicatorWeight: 4,
+                      indicatorPadding: EdgeInsets.symmetric(horizontal: 4),
+                      indicatorSize: TabBarIndicatorSize.label,
+                      labelColor: Colors.white,
+                      unselectedLabelColor: Colors.white70,
+                      dividerColor: Colors.transparent,
+                      labelStyle: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
                       ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    setState(() => _selectedSecId = val);
-                    _fetchTimetable();
-                  },
-                  icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+                      tabs: [
+                        Tab(text: "MY SCHEDULE"),
+                        Tab(text: "CLASS SCHEDULER"),
+                      ],
+                    ),
+                  ),
 
-  Widget _buildDayHeader() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: days.map((day) {
-          final isToday = day == _getCurrentDay();
-          return Container(
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: isToday ? const Color(0xFF1A4DFF) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isToday ? const Color(0xFF1A4DFF) : Colors.grey.shade200,
-              ),
-            ),
-            child: Text(
-              day,
-              style: TextStyle(
-                color: isToday ? Colors.white : Colors.blueGrey,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+                  const SizedBox(height: 10),
 
-  String _getCurrentDay() {
-    int weekday = DateTime.now().weekday;
-    if (weekday > 6) return "Sunday"; // Sunday usually not in timetable
-    return days[weekday - 1];
-  }
-
-  Widget _buildTimetableGrid() {
-    int maxPeriod = 0;
-    for (var item in _slots) {
-      if (item.period > maxPeriod) maxPeriod = item.period;
-    }
-
-    if (maxPeriod == 0) return _buildEmptyState();
-
-    return Column(
-      children: List.generate(maxPeriod, (index) {
-        final period = index + 1;
-        return _buildPeriodRow(period);
-      }),
-    );
-  }
-
-  Widget _buildPeriodRow(int period) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 8, top: 16),
-          child: Text(
-            "Period $period",
-            style: const TextStyle(
-              fontWeight: FontWeight.w900,
-              color: Colors.blueGrey,
-              fontSize: 12,
-              letterSpacing: 1,
-            ),
-          ),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: days.map((day) {
-              final item = _slots.firstWhere(
-                (t) => t.day == day && t.period == period,
-                orElse: () => TimetableItem(
-                  day: day,
-                  period: period,
-                  subject: "Free",
-                  teacherName: "",
-                  startTime: "",
-                  endTime: "",
-                ),
-              );
-              return _buildGridCard(item, day);
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGridCard(TimetableItem t, String day) {
-    final bool isFree = t.subject == "Free";
-    final isToday = day == _getCurrentDay();
-
-    return Container(
-      width: 140,
-      height: 100,
-      margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isFree ? Colors.grey.shade50 : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isToday && !isFree
-              ? const Color(0xFF1A4DFF).withOpacity(0.3)
-              : Colors.grey.shade200,
-          width: isToday ? 2 : 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            t.subject,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 14,
-              color: isFree ? Colors.grey : const Color(0xFF1E263E),
-            ),
-          ),
-          if (!isFree) ...[
-            const SizedBox(height: 4),
-            Text(
-              t.startTime,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1A4DFF),
+                  // Main Content
+                  Expanded(
+                    child: TabBarView(
+                      children: [
+                        // My Schedule Tab
+                        _buildMyScheduleViewWrapper(),
+                        // Class Scheduler Tab
+                        _buildClassSchedulerViewWrapper(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.event_available_rounded,
-          size: 64,
-          color: Colors.grey.shade300,
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          "No classes found",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.blueGrey,
-          ),
-=======
-  Widget _buildMySchedule() {
-    if (isLoadingMyTimetable) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (myTimetable.isEmpty) {
-      return const Center(child: Text("No classes scheduled."));
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: myTimetable.length,
-      itemBuilder: (context, index) {
-        final t = myTimetable[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: const Color(0xFF4A00E0).withOpacity(0.1),
-              child: Text(
-                t["period"]?.toString() ?? "-",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A00E0),
-                ),
-              ),
-            ),
-            title: Text(t["subject"] ?? "Unknown Subject"),
-            subtitle: Text("${t["day"]} | ${t["section_name"] ?? 'N/A'}"),
-            trailing: Text(
-              "${t["start_time"]} - ${t["end_time"]}",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
+  // Wrappers to call internal methods from different context
+  static Widget _buildMyScheduleViewWrapper() {
+    return Builder(
+      builder: (context) {
+        final state = context.findAncestorStateOfType<_TeacherTimetableScreenState>();
+        return state?._buildMyScheduleView() ?? const SizedBox();
       },
     );
   }
 
-  Widget _buildClassScheduler() {
+  static Widget _buildClassSchedulerViewWrapper() {
+    return Builder(
+      builder: (context) {
+        final state = context.findAncestorStateOfType<_TeacherTimetableScreenState>();
+        return state?._buildClassSchedulerView() ?? const SizedBox();
+      },
+    );
+  }
+
+  Widget _buildMyScheduleView() {
+    if (_isMyLoading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF4A00E0)));
+    }
+    if (_mySlots.isEmpty) {
+      return _buildEmptyState("No personal schedule found");
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: _mySlots.length,
+      itemBuilder: (context, index) => _buildTimetableCard(_mySlots[index], isPersonal: true),
+    );
+  }
+
+  Widget _buildClassSchedulerView() {
     return Column(
       children: [
-        if (isLoadingSections)
-          const LinearProgressIndicator()
-        else if (sections.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(20),
-            child: Text("No sections available."),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: DropdownButtonFormField<int>(
-              value: selectedSectionId,
-              decoration: const InputDecoration(
-                labelText: "Select Section",
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.class_),
-              ),
-              items: sections.map<DropdownMenuItem<int>>((s) {
-                return DropdownMenuItem(value: s["id"], child: Text(s["name"]));
-              }).toList(),
-              onChanged: (val) {
-                setState(() => selectedSectionId = val);
-                if (val != null) fetchSectionTimetable(val);
-              },
-            ),
-          ),
-
+        _buildSectionSelector(),
         Expanded(
-          child: isLoadingSectionTimetable
-              ? const Center(child: CircularProgressIndicator())
-              : sectionTimetable.isEmpty
-              ? const Center(child: Text("No schedule for this section."))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: sectionTimetable.length,
-                  itemBuilder: (context, index) {
-                    final t = sectionTimetable[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(t["period"].toString()),
-                        ),
-                        title: Text("${t["subject"]} (${t["day"]})"),
-                        subtitle: Text("Teacher: ${t["teacher_name"]}"),
-                        trailing: Text("${t["start_time"]} - ${t["end_time"]}"),
-                      ),
-                    );
-                  },
-                ),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+          child: _isSecLoading
+              ? const Center(child: CircularProgressIndicator(color: Color(0xFF4A00E0)))
+              : _sectionSlots.isEmpty
+                  ? _buildEmptyState("No classes for this section")
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _sectionSlots.length,
+                      itemBuilder: (context, index) => _buildTimetableCard(_sectionSlots[index], isPersonal: false),
+                    ),
         ),
       ],
+    );
+  }
+
+  Widget _buildSectionSelector() {
+    if (_isSectionsLoading) return const SizedBox.shrink();
+    if (_sections.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: DropdownButtonFormField<int>(
+          value: _selectedSecId,
+          decoration: InputDecoration(
+            labelText: "Select Section",
+            labelStyle: const TextStyle(color: Colors.blueGrey, fontSize: 14),
+            prefixIcon: const Icon(Icons.menu_book_rounded, color: Color(0xFF4A00E0)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF4A00E0), width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+          items: _sections.map((s) {
+            return DropdownMenuItem<int>(
+              value: s["id"],
+              child: Text(
+                "${s["class"]}-${s["section"]}",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            );
+          }).toList(),
+          onChanged: (val) {
+            setState(() {
+              _selectedSecId = val;
+              _fetchSectionTimetable();
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimetableCard(TimetableItem item, {required bool isPersonal}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Period Badge
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: const Color(0xFF4A00E0).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              item.period.toString(),
+              style: const TextStyle(
+                color: Color(0xFF4A00E0),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.subject,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E263E),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (isPersonal)
+                  Text(
+                    "${item.day} | N/A",
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  )
+                else ...[
+                  Text(
+                    "(${item.day})",
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                  Text(
+                    "Teacher: ${item.teacherName}",
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Time
+          Text(
+            "${item.startTime} - ${item.endTime}",
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.calendar_today_outlined, size: 64, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            message,
+            style: const TextStyle(color: Colors.blueGrey, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
     );
   }
 }

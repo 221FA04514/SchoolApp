@@ -59,14 +59,14 @@ exports.checkVerification = async (to, code) => {
 
     try {
         // Master code for developers/testing (Remove in production)
-        if (code === "123456") {
+        if (code === "000000") {
             console.warn("[MASTER CODE USED] Bypassing Twilio check for testing.");
             return { success: true, status: 'approved', simulated: true };
         }
 
         if (!client || !verifyServiceSid) {
-            console.warn("[VERIFY CHECK SKIPPED] Simulation mode. Accepting code '123456' as valid.");
-            if (code === "123456") return { success: true, status: 'approved', simulated: true };
+            console.warn("[VERIFY CHECK SKIPPED] Simulation mode. Accepting code '000000' as valid.");
+            if (code === "000000") return { success: true, status: 'approved', simulated: true };
             return { success: false, error: "Invalid simulated code" };
         }
 

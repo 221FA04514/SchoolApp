@@ -16,11 +16,6 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
         let targetUserIds = new Set();
 
         for (const target of targets) {
-<<<<<<< HEAD
-            if (target.type === 'role') {
-                const [users] = await connection.query("SELECT id FROM users WHERE role = ?", [target.id]);
-                users.forEach(u => targetUserIds.add(u.id));
-=======
             console.log(`[MassNotif] Processing target: ${JSON.stringify(target)}`);
             if (target.type === 'role') {
                 const [users] = await connection.query("SELECT id FROM users WHERE role = ?", [target.id]);
@@ -43,7 +38,6 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
                         // Do not rethrow, so notification still sends
                     }
                 }
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             } else if (target.type === 'section') {
                 const [users] = await connection.query(
                     "SELECT user_id FROM students WHERE section_id = ? UNION SELECT user_id FROM teachers t JOIN teacher_subject_mappings m ON t.id = m.teacher_id WHERE m.section_id = ?",
@@ -60,11 +54,7 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
             }
         }
 
-<<<<<<< HEAD
-=======
         console.log(`[MassNotif] Total unique targets: ${targetUserIds.size}`);
-
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         // 3. Create receipts
         if (targetUserIds.size > 0) {
             const values = Array.from(targetUserIds).map(uid => [notifId, uid]);
@@ -72,8 +62,6 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
                 "INSERT INTO notification_receipts (notification_id, user_id) VALUES ?",
                 [values]
             );
-<<<<<<< HEAD
-=======
             console.log(`[MassNotif] Receipts inserted for ${values.length} users`);
 
             // 4. Emit Real-time Socket Events
@@ -88,7 +76,6 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
             });
         } else {
             console.warn(`[MassNotif] No users found for targets`);
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         }
 
         await connection.commit();

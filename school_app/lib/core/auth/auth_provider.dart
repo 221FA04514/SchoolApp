@@ -74,10 +74,7 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-<<<<<<< HEAD
-=======
   // ================= RESEND OTP =================
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   Future<void> resendOtp(int userId) async {
     try {
       final response = await _api.post("/api/v1/auth/resend-otp", {
@@ -88,18 +85,12 @@ class AuthProvider extends ChangeNotifier {
         throw Exception(response["message"] ?? "Failed to resend OTP");
       }
     } catch (e) {
-<<<<<<< HEAD
-=======
       debugPrint("RESEND OTP ERROR: $e");
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       rethrow;
     }
   }
 
-<<<<<<< HEAD
-=======
   // ================= LOGOUT =================
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("token");

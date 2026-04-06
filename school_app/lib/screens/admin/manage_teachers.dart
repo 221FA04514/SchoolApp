@@ -14,7 +14,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
   List teachers = [];
   List filteredTeachers = [];
   bool isLoading = true;
-  final TextEditingController searchController = TextEditingController();
 
   // Theme Color
   final Color primaryColor = const Color(0xFF673AB7); // Deep Purple
@@ -23,11 +22,7 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
   void initState() {
     super.initState();
     fetchTeachers();
-<<<<<<< HEAD
     searchController.addListener(_onSearchChanged);
-=======
-    searchController.addListener(_filterTeachers);
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   }
 
   @override
@@ -36,7 +31,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
     super.dispose();
   }
 
-<<<<<<< HEAD
   void _onSearchChanged() {
     setState(() {
       filteredTeachers = teachers.where((t) {
@@ -44,15 +38,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
         final subject = t["subject"].toString().toLowerCase();
         final search = searchController.text.toLowerCase();
         return name.contains(search) || subject.contains(search);
-=======
-  void _filterTeachers() {
-    final query = searchController.text.toLowerCase();
-    setState(() {
-      filteredTeachers = teachers.where((t) {
-        final name = (t["name"] ?? "").toLowerCase();
-        final subject = (t["subject"] ?? "").toLowerCase();
-        return name.contains(query) || subject.contains(query);
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
       }).toList();
     });
   }
@@ -60,21 +45,11 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
   Future<void> fetchTeachers() async {
     try {
       final res = await _api.get("/api/v1/admin/teachers");
-<<<<<<< HEAD
       setState(() {
         teachers = res["data"] ?? [];
         filteredTeachers = teachers;
         isLoading = false;
       });
-=======
-      if (mounted) {
-        setState(() {
-          teachers = res["data"] ?? [];
-          filteredTeachers = teachers;
-          isLoading = false;
-        });
-      }
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     } catch (e) {
       if (mounted) setState(() => isLoading = false);
     }
@@ -105,7 +80,7 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddTeacherDialog,
-        backgroundColor: const Color(0xFF1A4DFF),
+        backgroundColor: const Color(0xFF673AB7),
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text("Add Teacher", style: TextStyle(color: Colors.white)),
       ),
@@ -114,19 +89,19 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 180,
       pinned: true,
       stretch: true,
-      backgroundColor: const Color(0xFF1A4DFF),
+      backgroundColor: Colors.transparent,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        titlePadding: const EdgeInsets.only(left: 20, bottom: 20),
         title: const Text(
           "Manage Teachers",
           style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            fontSize: 22,
             color: Colors.white,
             letterSpacing: -0.5,
           ),
@@ -134,16 +109,18 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF1A4DFF), Color(0xFF0031D1)],
+            ClipPath(
+              clipper: _HeaderClipper(),
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
+                  ),
                 ),
               ),
             ),
-            // Subtle decorative elements
             Positioned(
               right: -50,
               top: -50,
@@ -201,125 +178,142 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
     );
   }
 
-  Widget _buildTeacherCard(Map t) {
-    String emoji = "�"; // Professional profile symbol
-    final sub = (t["subject"] ?? "").toString().toLowerCase();
-    if (sub.contains("math"))
-      emoji = "📐";
-    else if (sub.contains("science") ||
-        sub.contains("physics") ||
-        sub.contains("chem"))
-      emoji = "🔬";
-    else if (sub.contains("computer") ||
-        sub.contains("python") ||
-        sub.contains("it"))
-      emoji = "�️";
-    else if (sub.contains("english") ||
-        sub.contains("hindi") ||
-        sub.contains("lang"))
-      emoji = "�";
-    else if (sub.contains("art") ||
-        sub.contains("dance") ||
-        sub.contains("music"))
-      emoji = "�";
-    else if (sub.contains("sport") ||
-        sub.contains("pt") ||
-        sub.contains("yoga"))
-      emoji = "�";
+  Future<void> _deleteTeacher(Map t) async {
+    bool? confirm = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Teacher?"),
+        content: Text("Are you sure you want to remove ${t["name"]}?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
 
+    if (confirm == true) {
+      try {
+        await _api.delete("/api/v1/admin/users/${t["user_id"]}");
+        fetchTeachers();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text("Error: $e")));
+        }
+      }
+    }
+  }
+
+  Widget _buildTeacherCard(Map t) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey.withOpacity(0.05)),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: InkWell(
-        onTap: () => _showEditTeacherDialog(t),
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // Styled Avatar with Emoji
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A4DFF).withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: Text(emoji, style: const TextStyle(fontSize: 28)),
-                ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFF673AB7).withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 16),
-              // Main Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t["name"],
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF1E263E),
-                        letterSpacing: -0.4,
+              child: const Center(
+                child: Icon(Icons.person, color: Color(0xFF673AB7), size: 28),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t["name"],
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.book, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          t["subject"]?.toString() ?? "General",
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1A4DFF).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            t["subject"]?.toString().toUpperCase() ?? "GENERAL",
-                            style: const TextStyle(
-                              color: Color(0xFF1A4DFF),
-                              fontWeight: FontWeight.w900,
-                              fontSize: 10,
-                            ),
-                          ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.phone, size: 14, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        t["phone"] ?? "Not provided",
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            t["email"],
-                            style: TextStyle(
-                              color: Colors.blueGrey.shade400,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const Icon(Icons.chevron_right_rounded, color: Color(0xFFBDC2D1)),
-            ],
-          ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.edit,
+                    color: Color(0xFF673AB7),
+                    size: 22,
+                  ),
+                  onPressed: () => _showEditTeacherDialog(t),
+                ),
+                IconButton(
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.red,
+                    size: 22,
+                  ),
+                  onPressed: () => _deleteTeacher(t),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -339,7 +333,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) {
-<<<<<<< HEAD
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -348,22 +341,10 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
             top: 24,
           ),
           child: SingleChildScrollView(
-=======
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            "Register Teacher",
-            style: TextStyle(color: primaryColor),
-          ),
-          content: SingleChildScrollView(
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-<<<<<<< HEAD
                 const Text(
                   "👨‍🏫 New Teacher",
                   style: TextStyle(
@@ -371,25 +352,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
                   ),
-=======
-                _buildTextField(nameController, "Full Name", Icons.person),
-                const SizedBox(height: 10),
-                _buildTextField(emailController, "Email", Icons.email),
-                const SizedBox(height: 10),
-                _buildTextField(
-                  passwordController,
-                  "Password",
-                  Icons.lock,
-                  isObscure: true,
-                ),
-                const SizedBox(height: 10),
-                _buildTextField(subjectController, "Subject", Icons.book),
-                const SizedBox(height: 10),
-                _buildTextField(
-                  phoneController,
-                  "Phone (Optional)",
-                  Icons.phone,
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
                 ),
                 const SizedBox(height: 24),
                 _buildTextField(
@@ -424,7 +386,7 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                   height: 56,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A4DFF),
+                      backgroundColor: const Color(0xFF673AB7),
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -440,9 +402,11 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                           "subject": subjectController.text,
                           "phone": phoneController.text,
                         });
+                        if (!mounted) return;
                         Navigator.pop(context);
                         fetchTeachers();
                       } catch (e) {
+                        if (!mounted) return;
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text("Error: $e")));
@@ -462,53 +426,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
               ],
             ),
           ),
-<<<<<<< HEAD
-=======
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () async {
-                try {
-                  final res = await _api.post("/api/v1/admin/register", {
-                    "role": "teacher",
-                    "name": nameController.text,
-                    "email": emailController.text,
-                    "password": passwordController.text,
-                    "subject": subjectController.text,
-                    "phone": phoneController.text,
-                  });
-                  if (res["success"]) {
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Teacher registered!")),
-                      );
-                      fetchTeachers();
-                    }
-                  }
-                } catch (e) {
-                  if (mounted)
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text("Error: $e")));
-                }
-              },
-              child: const Text(
-                "Register",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
-          ],
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         );
       },
     );
@@ -528,7 +445,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       builder: (context) {
-<<<<<<< HEAD
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -537,19 +453,10 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
             top: 24,
           ),
           child: SingleChildScrollView(
-=======
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text("Edit Teacher", style: TextStyle(color: primaryColor)),
-          content: SingleChildScrollView(
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-<<<<<<< HEAD
                 const Text(
                   "📝 Edit Specialist",
                   style: TextStyle(
@@ -591,7 +498,7 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                   height: 56,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A4DFF),
+                      backgroundColor: const Color(0xFF673AB7),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -606,9 +513,11 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                           "subject": subjectController.text,
                           "phone": phoneController.text,
                         });
+                        if (!mounted) return;
                         Navigator.pop(context);
                         fetchTeachers();
                       } catch (e) {
+                        if (!mounted) return;
                         ScaffoldMessenger.of(
                           context,
                         ).showSnackBar(SnackBar(content: Text("Error: $e")));
@@ -628,67 +537,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
               ],
             ),
           ),
-=======
-                _buildTextField(nameController, "Full Name", Icons.person),
-                const SizedBox(height: 10),
-                _buildTextField(emailController, "Email", Icons.email),
-                const SizedBox(height: 10),
-                _buildTextField(
-                  passwordController,
-                  "New Password",
-                  Icons.lock,
-                  isObscure: true,
-                ),
-                const SizedBox(height: 10),
-                _buildTextField(subjectController, "Subject", Icons.book),
-                const SizedBox(height: 10),
-                _buildTextField(phoneController, "Phone", Icons.phone),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onPressed: () async {
-                try {
-                  final res = await _api
-                      .put("/api/v1/admin/users/${t["user_id"]}", {
-                        "role": "teacher",
-                        "name": nameController.text,
-                        "email": emailController.text,
-                        "password": passwordController.text,
-                        "subject": subjectController.text,
-                        "phone": phoneController.text,
-                      });
-                  if (res["success"]) {
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Teacher updated!")),
-                      );
-                      fetchTeachers();
-                    }
-                  }
-                } catch (e) {
-                  if (mounted)
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text("Error: $e")));
-                }
-              },
-              child: const Text("Save", style: TextStyle(color: Colors.white)),
-            ),
-          ],
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         );
       },
     );
@@ -698,7 +546,6 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
     TextEditingController controller,
     String label,
     IconData icon, {
-<<<<<<< HEAD
     bool obscure = false,
   }) {
     return Padding(
@@ -713,7 +560,7 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
             color: Colors.blueGrey.shade400,
             fontWeight: FontWeight.w500,
           ),
-          prefixIcon: Icon(icon, size: 20, color: const Color(0xFF1A4DFF)),
+          prefixIcon: Icon(icon, size: 20, color: const Color(0xFF673AB7)),
           filled: true,
           fillColor: const Color(0xFFF4F6FB),
           enabledBorder: OutlineInputBorder(
@@ -722,266 +569,30 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: Color(0xFF1A4DFF), width: 1.5),
+            borderSide: const BorderSide(color: Color(0xFF673AB7), width: 1.5),
           ),
-=======
-    bool isObscure = false,
-  }) {
-    return TextField(
-      controller: controller,
-      obscureText: isObscure,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: primaryColor),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Colors.grey[50],
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primaryColor, width: 2),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
         ),
       ),
     );
   }
-<<<<<<< HEAD
-=======
+}
 
-  Future<void> _confirmDelete(Map t) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Delete Teacher"),
-        content: Text("Are you sure you want to delete ${t['name']}?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancel"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+class _HeaderClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    var path = Path();
+    path.lineTo(0, size.height - 40);
+    path.quadraticBezierTo(
+      size.width / 2,
+      size.height + 40,
+      size.width,
+      size.height - 40,
     );
-
-    if (confirm == true) {
-      try {
-        await _api.delete("/api/v1/admin/users/${t['user_id']}");
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Teacher deleted successfully")),
-          );
-          fetchTeachers();
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("Error deleting teacher: $e")));
-        }
-      }
-    }
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.only(
-                  top: 50,
-                  left: 20,
-                  right: 20,
-                  bottom: 20,
-                ),
-                decoration: BoxDecoration(
-                  color: primaryColor, // Solid color
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(30),
-                    bottomRight: Radius.circular(30),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.white,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          "Manage Teachers",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: searchController,
-                      cursorColor: primaryColor,
-                      decoration: InputDecoration(
-                        hintText: "Search Teachers...",
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.grey,
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(15),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 0,
-                          horizontal: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // List
-              Expanded(
-                child: isLoading
-                    ? Center(
-                        child: CircularProgressIndicator(color: primaryColor),
-                      )
-                    : filteredTeachers.isEmpty
-                    ? const Center(
-                        child: Text(
-                          "No teachers found",
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: filteredTeachers.length,
-                        itemBuilder: (context, index) {
-                          final t = filteredTeachers[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            elevation: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: primaryColor.withOpacity(0.1),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.person,
-                                      color: primaryColor,
-                                      size: 28,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          t["name"] ?? "Unnamed",
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.book,
-                                              size: 14,
-                                              color: Colors.grey,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              t["subject"] ?? "No Subject",
-                                              style: const TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.phone,
-                                              size: 14,
-                                              color: Colors.grey,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              t["phone"] ?? "No Phone",
-                                              style: const TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: Icon(
-                                      Icons.edit_outlined,
-                                      color: primaryColor,
-                                    ),
-                                    onPressed: () => _showEditTeacherDialog(t),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.delete_outline,
-                                      color: Colors.red,
-                                    ),
-                                    onPressed: () => _confirmDelete(t),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddTeacherDialog,
-        backgroundColor: primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Add Teacher", style: TextStyle(color: Colors.white)),
-      ),
-    );
-  }
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

@@ -109,198 +109,229 @@ class _AiHubScreenState extends State<AiHubScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // Modern Clean White
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 220,
-            floating: false,
-            pinned: true,
-            elevation: 0,
-            backgroundColor: const Color(0xFF4F46E5),
-            flexibleSpace: FlexibleSpaceBar(
-              centerTitle: true,
-              title: const Text(
-                "AI Learning Hub",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  letterSpacing: 0.5,
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Stack(
+        children: [
+          // Curved Header Background
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 220,
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFF4A00E0),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(30),
+                  bottomRight: Radius.circular(30),
                 ),
               ),
-              background: Container(
-                decoration: const BoxDecoration(color: const Color(0xFF4A00E0)),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Positioned(
-                      top: -40,
-                      right: -40,
-                      child: CircleAvatar(
-                        radius: 100,
-                        backgroundColor: Colors.white.withOpacity(0.05),
-                      ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    top: -40,
+                    right: -40,
+                    child: CircleAvatar(
+                      radius: 100,
+                      backgroundColor: Colors.white.withOpacity(0.05),
                     ),
-                    Positioned(
-                      bottom: -20,
-                      left: -20,
-                      child: CircleAvatar(
-                        radius: 80,
-                        backgroundColor: Colors.white.withOpacity(0.05),
-                      ),
+                  ),
+                  Positioned(
+                    bottom: -20,
+                    left: -20,
+                    child: CircleAvatar(
+                      radius: 80,
+                      backgroundColor: Colors.white.withOpacity(0.05),
                     ),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.auto_awesome_rounded,
-                            color: Colors.white,
-                            size: 44,
+                  ),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40),
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.2),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "Your Smarter Study Companion",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        child: const Icon(
+                          Icons.auto_awesome_rounded,
+                          color: Colors.white,
+                          size: 44,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        "Your Smarter Study Companion",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.all(24),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                const Text(
-                  "What would you like to do?",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                _StudentAiCard(
-                  title: "Homework Helper",
-                  desc: "Scan your problem and get a step-by-step solution.",
-                  icon: Icons.camera_alt_rounded,
-                  color: const Color(0xFF4F46E5),
-                  onTap: _showHomeworkHelper,
-                ),
-                const SizedBox(height: 16),
-                _StudentAiCard(
-                  title: "Doubt Solver",
-                  desc: "Ask any question and get a simple explanation.",
-                  icon: Icons.psychology_rounded,
-                  color: const Color(0xFFEC4899),
-                  onTap: _showDoubtSolver,
-                ),
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Recent Activity",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    if (_history.isNotEmpty)
-                      TextButton(
-                        onPressed: _fetchHistory,
-                        child: const Text("Refresh"),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (_loadingHistory)
-                  const Center(child: CircularProgressIndicator())
-                else if (_history.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: const Color(0xFFF1F5F9)),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.history_rounded,
-                          size: 48,
-                          color: Colors.grey.shade300,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          "No history yet. Start learning!",
-                          style: TextStyle(color: Colors.grey.shade500),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _history.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final item = _history[index];
-                      return _HistoryTile(
-                        item: item,
-                        onTap: () => _showHistoryDetail(item),
-                        onDelete: () => _deleteHistoryItem(item['id']),
-                      );
-                    },
-                  ),
-                const SizedBox(height: 48),
-                Center(
-                  child: Column(
+
+          SafeArea(
+            child: Column(
+              children: [
+                // Custom App Bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Text(
-                          "Powered by NeuralTrix AI",
-                          style: TextStyle(
-                            color: Color(0xFF64748B),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: const BackButton(color: Colors.white),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        "AI Learning Hub",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
-              ]),
+
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "What would you like to do?",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        _StudentAiCard(
+                          title: "Homework Helper",
+                          desc: "Scan your problem and get a step-by-step solution.",
+                          icon: Icons.camera_alt_rounded,
+                          color: const Color(0xFF4F46E5),
+                          onTap: _showHomeworkHelper,
+                        ),
+                        const SizedBox(height: 16),
+                        _StudentAiCard(
+                          title: "Doubt Solver",
+                          desc: "Ask any question and get a simple explanation.",
+                          icon: Icons.psychology_rounded,
+                          color: const Color(0xFFEC4899),
+                          onTap: _showDoubtSolver,
+                        ),
+                        const SizedBox(height: 32),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Recent Activity",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            if (_history.isNotEmpty)
+                              TextButton(
+                                onPressed: _fetchHistory,
+                                child: const Text("Refresh"),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        if (_loadingHistory)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_history.isEmpty)
+                          Container(
+                            padding: const EdgeInsets.all(32),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: const Color(0xFFF1F5F9)),
+                            ),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.history_rounded,
+                                  size: 48,
+                                  color: Colors.grey.shade300,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  "No history yet. Start learning!",
+                                  style: TextStyle(color: Colors.grey.shade500),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _history.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final item = _history[index];
+                              return _HistoryTile(
+                                item: item,
+                                onTap: () => _showHistoryDetail(item),
+                                onDelete: () => _deleteHistoryItem(item['id']),
+                              );
+                            },
+                          ),
+                        const SizedBox(height: 48),
+                        Center(
+                          child: Column(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text(
+                                  "Powered by NeuralTrix AI",
+                                  style: TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

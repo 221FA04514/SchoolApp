@@ -70,6 +70,24 @@ exports.getStudentHomework = async (sectionId, studentId) => {
 };
 
 /**
+ * Student: get pending homework count
+ */
+exports.getPendingHomeworkCount = async (sectionId, studentId) => {
+  const [[result]] = await pool.query(
+    `
+    SELECT COUNT(*) as count
+    FROM homework h
+    LEFT JOIN student_homework_status shs 
+           ON shs.homework_id = h.id AND shs.student_id = ?
+    WHERE h.section_id = ? AND (shs.is_completed IS NULL OR shs.is_completed = 0)
+    `,
+    [studentId, sectionId]
+  );
+
+  return result.count;
+};
+
+/**
  * Student: update homework status
  */
 exports.updateHomeworkStatus = async (studentId, homeworkId, isCompleted) => {

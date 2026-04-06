@@ -18,15 +18,14 @@ import '../ai/ai_hub_screen.dart';
 import '../resources/resource_library_screen.dart';
 
 import '../leaves/leave_management_screen.dart';
-import '../ai/student_online_exam_list.dart';
-<<<<<<< HEAD
+
 import '../../core/socket/socket_service.dart';
 import '../notifications/notification_inbox_screen.dart';
 import '../../core/api/api_service.dart';
-=======
 import '../announcements/student_announcements_screen.dart';
 import '../messages/teacher_list_screen.dart';
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+import '../performance/student_performance_screen.dart';
+import '../ai/student_online_exam_list.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -37,23 +36,28 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   late Future<StudentDashboardModel> dashboardFuture;
-<<<<<<< HEAD
   bool minimized = false;
   int unreadNotifications = 0;
-=======
   int _selectedIndex = 0;
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
 
   @override
   void initState() {
     super.initState();
-    dashboardFuture = DashboardService().fetchStudentDashboard();
-<<<<<<< HEAD
+    _refreshData(); // Fetch initial data
+
     _fetchUnreadCount();
 
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) setState(() => minimized = true);
     });
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      dashboardFuture = DashboardService().fetchStudentDashboard();
+    });
+    await dashboardFuture;
+    await _fetchUnreadCount();
   }
 
   Future<void> _fetchUnreadCount() async {
@@ -133,16 +137,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-=======
-  }
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
   }
 
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -217,41 +217,81 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget _getCurrentPage(StudentDashboardModel data) {
     switch (_selectedIndex) {
       case 0:
-        return _HomeView(data: data, parentContext: context);
+        return _HomeView(
+          data: data,
+          parentContext: context,
+          unreadNotifications: unreadNotifications,
+          onRefreshNotifications: _fetchUnreadCount,
+          onRefresh: _refreshData,
+        );
       case 1:
         return const StudentAlertsScreen();
       case 2:
         return StudentProfileScreen(studentData: data);
       default:
-        return _HomeView(data: data, parentContext: context);
+        return _HomeView(
+          data: data,
+          parentContext: context,
+          unreadNotifications: unreadNotifications,
+          onRefreshNotifications: _fetchUnreadCount,
+          onRefresh: _refreshData,
+        );
     }
   }
 }
 
-class _HomeView extends StatelessWidget {
+class _HomeView extends StatefulWidget {
   final StudentDashboardModel data;
   final BuildContext parentContext;
+  final int unreadNotifications;
+  final VoidCallback onRefreshNotifications;
+  final RefreshCallback onRefresh;
 
-  const _HomeView({required this.data, required this.parentContext});
+  const _HomeView({
+    required this.data,
+    required this.parentContext,
+    required this.unreadNotifications,
+    required this.onRefreshNotifications,
+    required this.onRefresh,
+  });
+
+  @override
+  State<_HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<_HomeView> {
+  bool _showAll = false;
 
   Future<void> _logout() async {
-    await parentContext.read<AuthProvider>().logout();
-    if (!parentContext.mounted) return;
+    await widget.parentContext.read<AuthProvider>().logout();
+    if (!mounted) return;
     Navigator.pushAndRemoveUntil(
-      parentContext,
+      widget.parentContext,
       MaterialPageRoute(builder: (_) => const LoginSelectionScreen()),
       (route) => false,
     );
   }
 
   void _go(BuildContext context, Widget screen) {
-    Navigator.push(parentContext, MaterialPageRoute(builder: (_) => screen));
+    Navigator.push(
+      widget.parentContext,
+      MaterialPageRoute(builder: (_) => screen),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Stack(
+    final data = widget.data;
+    final unreadNotifications = widget.unreadNotifications;
+    final onRefreshNotifications = widget.onRefreshNotifications;
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      displacement: 60,
+      color: const Color(0xFF4A00E0),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Stack(
         children: [
           // Background Color for Header
           Container(
@@ -339,96 +379,116 @@ class _HomeView extends StatelessWidget {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _StatItem(
-                              icon: Icons.check_circle,
-                              label: "Attendance (Month)",
-                              value: "${data.attendancePercentage}%",
-                              color: const Color(0xFF4A00E0),
-                            ),
-                            _VerticalDivider(),
-                            _StatItem(
-                              icon: Icons.assignment_turned_in,
-                              label: "Recent Result",
-                              value: data.recentResult ?? "Pending",
-                              color: Colors.orange,
-                            ),
-                          ],
-                        ),
-<<<<<<< HEAD
-                        const Spacer(),
-                        Consumer<SocketService>(
-                          builder: (context, socket, child) => Stack(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                      child: Stack(
+                        children: [
+                          Row(
                             children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.notifications_none,
-                                  color: Colors.white,
+                              Expanded(
+                                child: _StatItem(
+                                  icon: Icons.assignment_outlined,
+                                  label: "Homework",
+                                  value: "${data.pendingHomework}",
+                                  color: Colors.orange,
                                 ),
-                                onPressed: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) =>
-                                          const NotificationInboxScreen(),
-                                    ),
-                                  );
-                                  _fetchUnreadCount(); // Refresh badge count after returning
-                                },
                               ),
-                              if (unreadNotifications > 0)
-                                Positioned(
-                                  right: 8,
-                                  top: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red,
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    constraints: const BoxConstraints(
-                                      minWidth: 14,
-                                      minHeight: 14,
-                                    ),
-                                    child: Text(
-                                      unreadNotifications.toString(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                )
-                              else if (socket.isConnected)
-                                Positioned(
-                                  right: 8,
-                                  top: 8,
-                                  child: Container(
-                                    width: 10,
-                                    height: 10,
-                                    decoration: const BoxDecoration(
-                                      color: Colors.green,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
+                              const _VerticalDivider(),
+                              Expanded(
+                                child: _StatItem(
+                                  icon: Icons.event_busy_outlined,
+                                  label: "Leave %",
+                                  value: "${data.leavePercentage}%",
+                                  color: Colors.redAccent,
                                 ),
+                              ),
+                              const _VerticalDivider(),
+                              Expanded(
+                                child: _StatItem(
+                                  icon: Icons.check_circle_outline,
+                                  label: "Attendance",
+                                  value: "${data.attendancePercentage}%",
+                                  color: const Color(0xFF4A00E0),
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                      ],
-=======
+                          // Notification Icon at top right of the card
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: Consumer<SocketService>(
+                              builder: (context, socket, child) => Stack(
+                                children: [
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(
+                                      Icons.notifications_active_outlined,
+                                      color: Color(0xFF4A00E0),
+                                      size: 22,
+                                    ),
+                                    onPressed: () async {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const NotificationInboxScreen(),
+                                        ),
+                                      );
+                                      onRefreshNotifications();
+                                    },
+                                  ),
+                                  if (unreadNotifications > 0)
+                                    Positioned(
+                                      right: 0,
+                                      top: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 16,
+                                          minHeight: 16,
+                                        ),
+                                        child: Text(
+                                          unreadNotifications.toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    )
+                                  else if (socket.isConnected)
+                                    Positioned(
+                                      right: 2,
+                                      top: 2,
+                                      child: Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: Colors.green,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
+                    ),
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 30),
 
                 // Grid Content
@@ -450,115 +510,125 @@ class _HomeView extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 15),
-                      GridView.count(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 15,
-                        mainAxisSpacing: 15,
-                        childAspectRatio: 1.1,
-                        children: [
-                          _DashboardCard(
-                            title: "Attendance",
-                            subtitle: "View",
-                            icon: Icons.calendar_today_outlined,
-                            color: Colors.blue.shade50,
-                            iconColor: Colors.blue,
-                            onTap: () => _go(context, const AttendanceScreen()),
-                          ),
-                          _DashboardCard(
-                            title: "Doubts",
-                            subtitle: "Ask Teacher",
-                            icon: Icons.chat_bubble_outline,
-                            color: Colors.deepPurple.shade50,
-                            iconColor: Colors.deepPurple,
-                            onTap: () =>
-                                _go(context, const TeacherListScreen()),
-                          ),
-                          _DashboardCard(
-                            title: "Homework",
-                            subtitle: "View",
-                            icon: Icons.edit_outlined,
-                            color: Colors.orange.shade50,
-                            iconColor: Colors.orange,
-                            onTap: () =>
-                                _go(context, const StudentHomeworkScreen()),
-                          ),
-                          _DashboardCard(
-                            title: "Results",
-                            subtitle: "View",
-                            icon: Icons.assignment_outlined,
-                            color: Colors.purple.shade50,
-                            iconColor: Colors.purple,
-                            onTap: () => _go(context, const ResultsScreen()),
-                          ),
-                          _DashboardCard(
-                            title: "Fees",
-                            subtitle: "Pay",
-                            icon: Icons.payment,
-                            color: Colors.green.shade50,
-                            iconColor: Colors.green,
-                            onTap: () => _go(context, const FeesScreen()),
-                          ),
-                          _DashboardCard(
-                            title: "Time Table",
-                            subtitle: "Schedule",
-                            icon: Icons.schedule,
-                            color: Colors.teal.shade50,
-                            iconColor: Colors.teal,
-                            onTap: () =>
-                                _go(context, const StudentTimetableScreen()),
-                          ),
-                          _DashboardCard(
-                            title: "AI Hub",
-                            subtitle: "Ask AI",
-                            icon: Icons.auto_awesome,
-                            color: Colors.indigo.shade50,
-                            iconColor: Colors.indigo,
-                            onTap: () => _go(context, const AiHubScreen()),
-                          ),
-                          _DashboardCard(
-                            title: "Resources",
-                            subtitle: "Library",
-                            icon: Icons.menu_book_rounded,
-                            color: Colors.pink.shade50,
-                            iconColor: Colors.pink,
-                            onTap: () =>
-                                _go(context, const ResourceLibraryScreen()),
-                          ),
+                      Builder(
+                        builder: (context) {
+                          final List<Widget> modules = [
+                            _DashboardCard(
+                              title: "Attendance",
+                              subtitle: "View",
+                              imagePath: "assets/3d_icons/attendance.png",
+                              onTap: () => _go(context, const AttendanceScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Doubts",
+                              subtitle: "Ask Teacher",
+                              imagePath: "assets/3d_icons/doubts.png",
+                              onTap: () => _go(context, const TeacherListScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Homework",
+                              subtitle: "View",
+                              imagePath: "assets/3d_icons/homework.png",
+                              onTap: () => _go(context, const StudentHomeworkScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Results",
+                              subtitle: "View",
+                              imagePath: "assets/3d_icons/results.png",
+                              onTap: () => _go(context, const ResultsScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Fees",
+                              subtitle: "Pay",
+                              imagePath: "assets/3d_icons/fees.png",
+                              onTap: () => _go(context, const FeesScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Time Table",
+                              subtitle: "Schedule",
+                              imagePath: "assets/3d_icons/timetable.png",
+                              onTap: () => _go(context, const StudentTimetableScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "AI Hub",
+                              subtitle: "Ask AI",
+                              iconData: Icons.auto_awesome_rounded,
+                              onTap: () => _go(context, const AiHubScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Resources",
+                              subtitle: "Library",
+                              imagePath: "assets/3d_icons/resources.png",
+                              onTap: () => _go(context, const ResourceLibraryScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Class Notice",
+                              subtitle: "Updates",
+                              imagePath: "assets/3d_icons/notice.png",
+                              onTap: () => _go(context, const StudentAnnouncementsScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Leaves",
+                              subtitle: "Apply",
+                              imagePath: "assets/3d_icons/leaves.png",
+                              onTap: () => _go(context, const LeaveManagementScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Performance",
+                              subtitle: "View",
+                              imagePath: "assets/3d_icons/performance.png",
+                              onTap: () => _go(context, const StudentPerformanceScreen()),
+                            ),
+                            _DashboardCard(
+                              title: "Online Exam",
+                              subtitle: "Tests",
+                              imagePath: "assets/3d_icons/exam.png",
+                              onTap: () => _go(context, const StudentOnlineExamListScreen()),
+                            ),
+                          ];
 
-                          _DashboardCard(
-                            title: "Online Exam",
-                            subtitle: "Tests",
-                            icon: Icons.computer,
-                            color: Colors.cyan.shade50,
-                            iconColor: Colors.cyan,
-                            onTap: () => _go(
-                              context,
-                              const StudentOnlineExamListScreen(),
-                            ),
-                          ),
-                          _DashboardCard(
-                            title: "Class Notice",
-                            subtitle: "Updates",
-                            icon: Icons.campaign_outlined,
-                            color: Colors.amber.shade50,
-                            iconColor: Colors.amber.shade800,
-                            onTap: () => _go(
-                              context,
-                              const StudentAnnouncementsScreen(),
-                            ),
-                          ),
-                          _DashboardCard(
-                            title: "Leaves",
-                            subtitle: "Apply",
-                            icon: Icons.time_to_leave,
-                            color: Colors.red.shade50,
-                            iconColor: Colors.red,
-                            onTap: () =>
-                                _go(context, const LeaveManagementScreen()),
-                          ),
-                        ],
+                          final displayModules = _showAll ? modules : modules.take(9).toList();
+
+                          return Column(
+                            children: [
+                              GridView.count(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 25,
+                                childAspectRatio: 0.85,
+                                children: displayModules,
+                              ),
+                              const SizedBox(height: 20),
+                              if (modules.length > 9)
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _showAll = !_showAll;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    _showAll ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                                    color: const Color(0xFF4A00E0),
+                                  ),
+                                  label: Text(
+                                    _showAll ? "Show Less" : "Show More",
+                                    style: const TextStyle(
+                                      color: Color(0xFF4A00E0),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(color: Colors.transparent),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                    backgroundColor: Colors.white,
+                                    elevation: 2,
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 30),
                     ],
@@ -569,8 +639,9 @@ class _HomeView extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildHeader(StudentDashboardModel data) {
     // Deprecated
@@ -579,7 +650,7 @@ class _HomeView extends StatelessWidget {
 }
 
 class _VerticalDivider extends StatelessWidget {
-  const _VerticalDivider();
+  const _VerticalDivider({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -625,18 +696,16 @@ class _StatItem extends StatelessWidget {
 class _DashboardCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final IconData icon;
-  final Color color;
-  final Color iconColor;
+  final String? imagePath;
+  final IconData? iconData;
   final VoidCallback onTap;
 
   const _DashboardCard({
     super.key,
     required this.title,
     required this.subtitle,
-    required this.icon,
-    required this.color,
-    required this.iconColor,
+    this.imagePath,
+    this.iconData,
     required this.onTap,
   });
 
@@ -644,63 +713,46 @@ class _DashboardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-              child: Icon(icon, color: iconColor, size: 22),
-            ),
-<<<<<<< HEAD
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 65,
+            height: 65,
+            child: iconData != null
+                ? ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Icon(
+                      iconData,
+                      size: 50,
+                      color: Colors.white,
+                    ),
+                  )
+                : Image.asset(
+                    imagePath!,
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
                   ),
-                ),
-=======
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
-              ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+              letterSpacing: 0.2,
             ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

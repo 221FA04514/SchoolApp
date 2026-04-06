@@ -95,11 +95,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
     if (status == "present") return const Color(0xFF43CEA2);
     if (status == "absent") return const Color(0xFFFF5F6D);
     if (status == "late") return const Color(0xFFFFA726);
-<<<<<<< HEAD
     if (status == "holiday") return const Color(0xFFFBC02D);
-=======
-    if (status == "holiday") return const Color(0xFFFBC02D); // Yellow
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
     return null;
   }
 
@@ -109,28 +105,7 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       backgroundColor: const Color(0xFFF6F8FB),
       body: Stack(
         children: [
-<<<<<<< HEAD
           _buildHeaderBackground(),
-=======
-          // ================= HEADER =================
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 220, // Reduced height
-            child: Container(
-              decoration: const BoxDecoration(
-                color: const Color(0xFF4A00E0),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-            ),
-          ),
-
-          // ================= CONTENT =================
->>>>>>> 719d44b (Fix: Remove Quizzes module and update API configuration)
           SafeArea(
             child: Column(
               children: [
@@ -157,11 +132,11 @@ class _AttendanceScreenState extends State<AttendanceScreen>
       top: 0,
       left: 0,
       right: 0,
-      height: 280,
+      height: 160,
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF1A4DFF), Color(0xFF12D8FA)],
+            colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -258,12 +233,12 @@ class _AttendanceScreenState extends State<AttendanceScreen>
           leftChevronIcon: Icon(
             Icons.chevron_left_rounded,
             size: 24,
-            color: Color(0xFF1A4DFF),
+            color: Color(0xFF4A00E0),
           ),
           rightChevronIcon: Icon(
             Icons.chevron_right_rounded,
             size: 24,
-            color: Color(0xFF1A4DFF),
+            color: Color(0xFF4A00E0),
           ),
         ),
         calendarStyle: const CalendarStyle(

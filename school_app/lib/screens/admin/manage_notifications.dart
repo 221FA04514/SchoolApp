@@ -139,12 +139,12 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
       if (res["success"]) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Row(
-                children: const [
-                  Icon(Icons.check_circle, color: Colors.white),
-                  SizedBox(width: 10),
-                  Text("Notification Launched Successfully!"),
+                children: [
+                   Icon(Icons.check_circle, color: Colors.white),
+                   SizedBox(width: 10),
+                   Text("Notification Launched Successfully!"),
                 ],
               ),
               backgroundColor: Colors.green,
@@ -211,11 +211,11 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA), // Light grey bg
+      backgroundColor: const Color(0xFFF4F6FB), // Light grey bg matching screenshot
       appBar: AppBar(
         title: const Text(
           "Notify Hub",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
@@ -232,7 +232,7 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
+                boxShadow: const [
                   BoxShadow(
                     color: Colors.black12,
                     blurRadius: 10,
@@ -250,35 +250,42 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                       labelText: "Announcement Title",
                       labelStyle: TextStyle(color: primaryColor),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: primaryColor, width: 2),
                       ),
-                      filled: true,
-                      fillColor: const Color(0xFFF9F9F9),
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 16),
                   TextField(
                     controller: messageController,
                     maxLines: 4,
                     decoration: InputDecoration(
                       labelText: "Your message...",
+                      alignLabelWithHint: true,
                       labelStyle: TextStyle(color: primaryColor),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: primaryColor, width: 2),
                       ),
-                      filled: true,
-                      fillColor: const Color(0xFFF9F9F9),
                     ),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 16),
                   // Audience Dropdown
                   DropdownButtonFormField<String>(
                     value: targetAudience,
@@ -286,10 +293,15 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                       labelText: "Target Audience",
                       labelStyle: TextStyle(color: primaryColor),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: primaryColor, width: 2),
                       ),
                       prefixIcon: Icon(
@@ -325,7 +337,7 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                 color: Colors.grey,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
@@ -335,7 +347,7 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                     () => _formalizeMessage(),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildAIToolBtn(
                     "Telugu",
@@ -343,7 +355,7 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                     () => _translateMessage('telugu'),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: _buildAIToolBtn(
                     "Hindi",
@@ -353,7 +365,10 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                 ),
               ],
             ),
-            if (isGenerating) LinearProgressIndicator(color: primaryColor),
+            if (isGenerating) const Padding(
+              padding: EdgeInsets.only(top: 8.0),
+              child: LinearProgressIndicator(color: Color(0xFF673AB7)),
+            ),
 
             const SizedBox(height: 25),
 
@@ -363,11 +378,10 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.grey.shade200),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.timer_outlined, color: Colors.orange, size: 28),
+                  const Icon(Icons.timer_outlined, color: Colors.orange, size: 28),
                   const SizedBox(width: 15),
                   Expanded(
                     child: Column(
@@ -378,6 +392,7 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.grey.shade800,
+                            fontSize: 14,
                           ),
                         ),
                         Text(
@@ -399,6 +414,7 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: primaryColor,
+                        fontSize: 16,
                       ),
                     ),
                   ),
@@ -406,7 +422,7 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(height: 25),
 
             // Launch Button
             SizedBox(
@@ -417,10 +433,9 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 5,
-                  shadowColor: primaryColor.withOpacity(0.4),
+                  elevation: 0,
                 ),
                 onPressed: isSending ? null : _sendNotification,
                 icon: isSending
@@ -432,7 +447,7 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                           strokeWidth: 2,
                         ),
                       )
-                    : const Icon(Icons.send, size: 22),
+                    : const Icon(Icons.send, size: 20),
                 label: Text(
                   isSending ? "Launching..." : "Launch Announcement",
                   style: const TextStyle(
@@ -470,9 +485,15 @@ class _ManageNotificationsScreenState extends State<ManageNotificationsScreen> {
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.05),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: const [
+                       BoxShadow(
+                         color: Colors.black12,
+                         blurRadius: 4,
+                         offset: Offset(0, 2),
+                       ),
+                    ],
                   ),
                   child: Row(
                     children: [
