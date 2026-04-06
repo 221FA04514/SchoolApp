@@ -4,8 +4,7 @@ import '../../core/constants.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:io';
+
 
 class ResourceLibraryScreen extends StatefulWidget {
   const ResourceLibraryScreen({super.key});
@@ -31,22 +30,8 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen> {
 
   Future<void> _downloadAndOpenFile(Map<String, dynamic> resource) async {
     try {
-      // 1. Request Permissions (Android)
-      if (Platform.isAndroid) {
-        final status = await Permission.storage.request();
-        if (!status.isGranted) {
-          // Fallback check for Android 13+
-          final photoStatus = await Permission.photos.request();
-          if (!photoStatus.isGranted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Storage permission required to download files"),
-              ),
-            );
-            return;
-          }
-        }
-      }
+      // 1. No permissions needed for getApplicationDocumentsDirectory() on Android/iOS
+
 
       // 2. Show Progress Dialog
       showDialog(
