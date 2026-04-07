@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../core/auth/auth_provider.dart';
 import '../auth/login_selection_screen.dart';
 import '../../models/student_dashboard_model.dart';
 
-class StudentProfileScreen extends StatelessWidget {
+class StudentProfileScreen extends StatefulWidget {
   final StudentDashboardModel? studentData;
 
   const StudentProfileScreen({super.key, this.studentData});
+
+  @override
+  State<StudentProfileScreen> createState() => _StudentProfileScreenState();
+}
+
+class _StudentProfileScreenState extends State<StudentProfileScreen> {
+  File? _profileImage;
+  final ImagePicker _picker = ImagePicker();
 
   Future<void> _logout(BuildContext context) async {
     await context.read<AuthProvider>().logout();
@@ -19,13 +29,36 @@ class StudentProfileScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+      if (image != null) {
+        setState(() {
+          _profileImage = File(image.path);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Profile picture updated successfully!"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error picking image: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // If no data is passed (e.g. initial load), show placeholders or loading state
-    // In a real app, you might want to fetch profile specifically or use a state management store.
-    // For now, we assume data is passed from Dashboard or we use safe defaults.
-    final name = studentData?.name ?? "Test Student";
-    // Assuming we can derive class/section from data or it's static for now as per model
+    final name = widget.studentData?.name ?? "Test Student";
     final className = "Class 10-A";
     final rollNumber = "01";
     final section = "10 - A";
@@ -47,23 +80,58 @@ class StudentProfileScreen extends StatelessWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // Profile Image
-            Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF4A00E0).withOpacity(0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
+            // Profile Image with Edit Option
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4A00E0).withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-              child: const CircleAvatar(
-                radius: 60,
-                backgroundColor: Color(0xFF4A00E0),
-                child: Icon(Icons.person, size: 60, color: Colors.white),
-              ),
+                  child: CircleAvatar(
+                    radius: 70,
+                    backgroundColor: const Color(0xFF4A00E0),
+                    backgroundImage:
+                        _profileImage != null ? FileImage(_profileImage!) : null,
+                    child: _profileImage == null
+                        ? const Icon(Icons.person, size: 70, color: Colors.white)
+                        : null,
+                  ),
+                ),
+                Positioned(
+                  bottom: 5,
+                  right: 5,
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4A00E0),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                           BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 10,
+                            offset: Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.edit_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             // Name & Role

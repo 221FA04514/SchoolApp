@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // For context.read
-import 'dart:ui'; // For ImageFilter
-import '../../core/auth/auth_provider.dart';
-import '../auth/login_selection_screen.dart'; // For Logout navigation
 import '../../core/api/dashboard_service.dart';
 import '../../models/student_dashboard_model.dart';
 import '../alerts/student_alerts_screen.dart';
@@ -16,16 +12,14 @@ import '../homework/student_homework_screen.dart';
 import '../timetable/student_timetable_screen.dart';
 import '../ai/ai_hub_screen.dart';
 import '../resources/resource_library_screen.dart';
-
 import '../leaves/leave_management_screen.dart';
-
-import '../../core/socket/socket_service.dart';
 import '../notifications/notification_inbox_screen.dart';
 import '../../core/api/api_service.dart';
 import '../announcements/student_announcements_screen.dart';
 import '../messages/teacher_list_screen.dart';
 import '../performance/student_performance_screen.dart';
 import '../ai/student_online_exam_list.dart';
+import 'bus_tracking_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -36,20 +30,14 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   late Future<StudentDashboardModel> dashboardFuture;
-  bool minimized = false;
   int unreadNotifications = 0;
   int _selectedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _refreshData(); // Fetch initial data
-
+    _refreshData();
     _fetchUnreadCount();
-
-    Future.delayed(const Duration(milliseconds: 1200), () {
-      if (mounted) setState(() => minimized = true);
-    });
   }
 
   Future<void> _refreshData() async {
@@ -67,74 +55,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
       if (mounted) {
         setState(() {
           unreadNotifications = list
-              .where(
-                (n) =>
-                    n["receipt_status"] == 'pending' ||
-                    n["receipt_status"] == 'delivered',
-              )
+              .where((n) =>
+                  n["receipt_status"] == 'pending' ||
+                  n["receipt_status"] == 'delivered')
               .length;
         });
       }
     } catch (e) {}
-  }
-
-  Future<void> _logout() async {
-    await context.read<AuthProvider>().logout();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginSelectionScreen()),
-      (route) => false,
-    );
-  }
-
-  void _showProfileDialog(StudentDashboardModel data) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        contentPadding: const EdgeInsets.all(20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircleAvatar(
-              radius: 40,
-              backgroundColor: Color(0xFF1A4DFF),
-              child: Icon(Icons.school_rounded, size: 50, color: Colors.white),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              data.name,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              "Class ${data.className}-${data.section}",
-              style: const TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _logout();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red.shade50,
-                  foregroundColor: Colors.red,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                icon: const Icon(Icons.logout),
-                label: const Text("Logout"),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _onItemTapped(int index) {
@@ -146,15 +73,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: const Color(0xFFF0F4F8), // Soft Grayish Blue
       body: FutureBuilder<StudentDashboardModel>(
         future: dashboardFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF4F46E5)));
           }
-          if (snapshot.hasError) {
-            return _getCurrentPage(
+          final data = snapshot.data ??
               StudentDashboardModel(
                 name: "Student",
                 className: "N/A",
@@ -163,52 +89,41 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 attendancePercentage: 0,
                 feesDue: 0,
                 announcements: [],
-              ),
-            );
-          }
-
-          final data = snapshot.hasData
-              ? snapshot.data!
-              : StudentDashboardModel(
-                  name: "Student",
-                  className: "N/A",
-                  section: "N/A",
-                  roll: "N/A",
-                  attendancePercentage: 0,
-                  feesDue: 0,
-                  announcements: [],
-                );
+              );
 
           return _getCurrentPage(data);
         },
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _onItemTapped,
-          selectedItemColor: const Color(0xFF4A00E0),
-          unselectedItemColor: Colors.grey,
-          backgroundColor: Colors.white,
-          showUnselectedLabels: true,
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications),
-              label: "Alerts",
-            ),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-          ],
+      bottomNavigationBar: _buildSafeFooter(),
+    );
+  }
+
+  Widget _buildSafeFooter() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            selectedItemColor: const Color(0xFF4F46E5), // Indigo
+            unselectedItemColor: const Color(0xFF94A3B8),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: "Dashboard"),
+              BottomNavigationBarItem(icon: Icon(Icons.notification_important_rounded), label: "Alerts"),
+              BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: "Profile"),
+            ],
+          ),
         ),
       ),
     );
@@ -219,7 +134,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       case 0:
         return _HomeView(
           data: data,
-          parentContext: context,
           unreadNotifications: unreadNotifications,
           onRefreshNotifications: _fetchUnreadCount,
           onRefresh: _refreshData,
@@ -231,7 +145,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       default:
         return _HomeView(
           data: data,
-          parentContext: context,
           unreadNotifications: unreadNotifications,
           onRefreshNotifications: _fetchUnreadCount,
           onRefresh: _refreshData,
@@ -242,14 +155,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
 class _HomeView extends StatefulWidget {
   final StudentDashboardModel data;
-  final BuildContext parentContext;
   final int unreadNotifications;
   final VoidCallback onRefreshNotifications;
   final RefreshCallback onRefresh;
 
   const _HomeView({
     required this.data,
-    required this.parentContext,
     required this.unreadNotifications,
     required this.onRefreshNotifications,
     required this.onRefresh,
@@ -260,452 +171,189 @@ class _HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<_HomeView> {
-  bool _showAll = false;
-
-  Future<void> _logout() async {
-    await widget.parentContext.read<AuthProvider>().logout();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
-      widget.parentContext,
-      MaterialPageRoute(builder: (_) => const LoginSelectionScreen()),
-      (route) => false,
-    );
-  }
-
   void _go(BuildContext context, Widget screen) {
-    Navigator.push(
-      widget.parentContext,
-      MaterialPageRoute(builder: (_) => screen),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
   @override
   Widget build(BuildContext context) {
     final data = widget.data;
-    final unreadNotifications = widget.unreadNotifications;
-    final onRefreshNotifications = widget.onRefreshNotifications;
 
     return RefreshIndicator(
       onRefresh: widget.onRefresh,
-      displacement: 60,
-      color: const Color(0xFF4A00E0),
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Stack(
-        children: [
-          // Background Color for Header
-          Container(
-            height: 280, // Height of the purple background
-            decoration: const BoxDecoration(
-              color: Color(0xFF4A00E0),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // Header Content
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 20,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "Welcome Back,",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            data.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          const Text(
-                            "STUDENT",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                              letterSpacing: 1.0,
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: _logout,
-                        child: const CircleAvatar(
-                          radius: 25,
-                          backgroundColor: Colors.white24,
-                          child: Icon(Icons.person, color: Colors.white),
-                        ),
-                      ),
-                    ],
+      color: const Color(0xFF4F46E5),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+        slivers: [
+          _buildHeader(data),
+          SliverPadding(
+            padding: const EdgeInsets.all(20),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _buildFixedStats(data),
+                const SizedBox(height: 30),
+                const Text(
+                  "Learning Modules",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.5,
                   ),
                 ),
+                const SizedBox(height: 15),
+              ]),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            sliver: _buildVerticalModules(),
+          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        ],
+      ),
+    );
+  }
 
-                const SizedBox(height: 10),
-
-                // Stats Card
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF4A00E0).withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+  Widget _buildHeader(StudentDashboardModel data) {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      elevation: 0,
+       automaticallyImplyLeading: false,
+      backgroundColor: const Color(0xFF4F46E5),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 26,
+                    backgroundColor: Colors.white24,
+                    child: Icon(Icons.person, color: Colors.white, size: 30),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Good Day,", style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        Text(
+                          data.name,
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                      child: Stack(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _StatItem(
-                                  icon: Icons.assignment_outlined,
-                                  label: "Homework",
-                                  value: "${data.pendingHomework}",
-                                  color: Colors.orange,
-                                ),
-                              ),
-                              const _VerticalDivider(),
-                              Expanded(
-                                child: _StatItem(
-                                  icon: Icons.event_busy_outlined,
-                                  label: "Leave %",
-                                  value: "${data.leavePercentage}%",
-                                  color: Colors.redAccent,
-                                ),
-                              ),
-                              const _VerticalDivider(),
-                              Expanded(
-                                child: _StatItem(
-                                  icon: Icons.check_circle_outline,
-                                  label: "Attendance",
-                                  value: "${data.attendancePercentage}%",
-                                  color: const Color(0xFF4A00E0),
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Notification Icon at top right of the card
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Consumer<SocketService>(
-                              builder: (context, socket, child) => Stack(
-                                children: [
-                                  IconButton(
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                    icon: const Icon(
-                                      Icons.notifications_active_outlined,
-                                      color: Color(0xFF4A00E0),
-                                      size: 22,
-                                    ),
-                                    onPressed: () async {
-                                      await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              const NotificationInboxScreen(),
-                                        ),
-                                      );
-                                      onRefreshNotifications();
-                                    },
-                                  ),
-                                  if (unreadNotifications > 0)
-                                    Positioned(
-                                      right: 0,
-                                      top: 0,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(2),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        constraints: const BoxConstraints(
-                                          minWidth: 16,
-                                          minHeight: 16,
-                                        ),
-                                        child: Text(
-                                          unreadNotifications.toString(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    )
-                                  else if (socket.isConnected)
-                                    Positioned(
-                                      right: 2,
-                                      top: 2,
-                                      child: Container(
-                                        width: 8,
-                                        height: 8,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.green,
-                                          shape: BoxShape.circle,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ),
                   ),
-                ),
-                const SizedBox(height: 30),
-
-                // Grid Content
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text(
-                            "All Modules",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
-                      Builder(
-                        builder: (context) {
-                          final List<Widget> modules = [
-                            _DashboardCard(
-                              title: "Attendance",
-                              subtitle: "View",
-                              imagePath: "assets/3d_icons/attendance.png",
-                              onTap: () => _go(context, const AttendanceScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Doubts",
-                              subtitle: "Ask Teacher",
-                              imagePath: "assets/3d_icons/doubts.png",
-                              onTap: () => _go(context, const TeacherListScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Homework",
-                              subtitle: "View",
-                              imagePath: "assets/3d_icons/homework.png",
-                              onTap: () => _go(context, const StudentHomeworkScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Results",
-                              subtitle: "View",
-                              imagePath: "assets/3d_icons/results.png",
-                              onTap: () => _go(context, const ResultsScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Fees",
-                              subtitle: "Pay",
-                              imagePath: "assets/3d_icons/fees.png",
-                              onTap: () => _go(context, const FeesScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Time Table",
-                              subtitle: "Schedule",
-                              imagePath: "assets/3d_icons/timetable.png",
-                              onTap: () => _go(context, const StudentTimetableScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "AI Hub",
-                              subtitle: "Ask AI",
-                              iconData: Icons.auto_awesome_rounded,
-                              onTap: () => _go(context, const AiHubScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Resources",
-                              subtitle: "Library",
-                              imagePath: "assets/3d_icons/resources.png",
-                              onTap: () => _go(context, const ResourceLibraryScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Class Notice",
-                              subtitle: "Updates",
-                              imagePath: "assets/3d_icons/notice.png",
-                              onTap: () => _go(context, const StudentAnnouncementsScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Leaves",
-                              subtitle: "Apply",
-                              imagePath: "assets/3d_icons/leaves.png",
-                              onTap: () => _go(context, const LeaveManagementScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Performance",
-                              subtitle: "View",
-                              imagePath: "assets/3d_icons/performance.png",
-                              onTap: () => _go(context, const StudentPerformanceScreen()),
-                            ),
-                            _DashboardCard(
-                              title: "Online Exam",
-                              subtitle: "Tests",
-                              imagePath: "assets/3d_icons/exam.png",
-                              onTap: () => _go(context, const StudentOnlineExamListScreen()),
-                            ),
-                          ];
-
-                          final displayModules = _showAll ? modules : modules.take(9).toList();
-
-                          return Column(
-                            children: [
-                              GridView.count(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                crossAxisCount: 3,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 25,
-                                childAspectRatio: 0.85,
-                                children: displayModules,
-                              ),
-                              const SizedBox(height: 20),
-                              if (modules.length > 9)
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    setState(() {
-                                      _showAll = !_showAll;
-                                    });
-                                  },
-                                  icon: Icon(
-                                    _showAll ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                                    color: const Color(0xFF4A00E0),
-                                  ),
-                                  label: Text(
-                                    _showAll ? "Show Less" : "Show More",
-                                    style: const TextStyle(
-                                      color: Color(0xFF4A00E0),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Colors.transparent),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                    backgroundColor: Colors.white,
-                                    elevation: 2,
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 30),
-                    ],
+                  _NotificationBadge(
+                    unreadCount: widget.unreadNotifications,
+                    onRefresh: widget.onRefreshNotifications,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFixedStats(StudentDashboardModel data) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 20, offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _FixedStatItem(
+            label: "Attendance",
+            value: "${data.attendancePercentage}%",
+            icon: Icons.calendar_month_rounded,
+            color: Colors.blue,
+            onTap: () => _go(context, const AttendanceScreen()),
+          ),
+          _FixedStatItem(
+            label: "Homework",
+            value: "${data.homeworkCompletionPercentage}%",
+            icon: Icons.assignment_turned_in_rounded,
+            color: const Color(0xFF10B981),
+            onTap: () => _go(context, const StudentHomeworkScreen()),
+          ),
+          _FixedStatItem(
+            label: "Leave Request",
+            value: data.recentLeaveStatus,
+            icon: Icons.exit_to_app_rounded,
+            color: Colors.orange,
+            onTap: () => _go(context, const LeaveManagementScreen()),
           ),
         ],
       ),
-    ),
-  );
-}
-
-  Widget _buildHeader(StudentDashboardModel data) {
-    // Deprecated
-    return Container();
+    );
   }
-}
 
-class _VerticalDivider extends StatelessWidget {
-  const _VerticalDivider({super.key});
+  Widget _buildVerticalModules() {
+    final modules = [
+       _ModuleButton(title: "Attendance", icon: "assets/3d_icons/attendance.png", onTap: () => _go(context, const AttendanceScreen())),
+       _ModuleButton(title: "Homework", icon: "assets/3d_icons/homework.png", onTap: () => _go(context, const StudentHomeworkScreen())),
+       _ModuleButton(title: "Time Table", icon: "assets/3d_icons/timetable.png", onTap: () => _go(context, const StudentTimetableScreen())),
+       _ModuleButton(title: "Notice", icon: "assets/3d_icons/notice.png", onTap: () => _go(context, const StudentAnnouncementsScreen())),
+       _ModuleButton(title: "Exams", icon: "assets/3d_icons/exam.png", onTap: () => _go(context, const StudentOnlineExamListScreen())),
+       _ModuleButton(title: "Results", icon: "assets/3d_icons/results.png", onTap: () => _go(context, const ResultsScreen())),
+       _ModuleButton(title: "Library", icon: "assets/3d_icons/resources.png", onTap: () => _go(context, const ResourceLibraryScreen())),
+       _ModuleButton(title: "Fees", icon: "assets/3d_icons/fees.png", onTap: () => _go(context, const FeesScreen())),
+       _ModuleButton(title: "AI Helper", iconData: Icons.auto_awesome_rounded, onTap: () => _go(context, const AiHubScreen())),
+       _ModuleButton(title: "Leaves", icon: "assets/3d_icons/leaves.png", onTap: () => _go(context, const LeaveManagementScreen())),
+       _ModuleButton(title: "Tracking", iconData: Icons.directions_bus_rounded, onTap: () => _go(context, const BusTrackingScreen())),
+       _ModuleButton(title: "Analytics", icon: "assets/3d_icons/performance.png", onTap: () => _go(context, const StudentPerformanceScreen())),
+       _ModuleButton(title: "Messages", iconData: Icons.forum_rounded, onTap: () => _go(context, const TeacherListScreen())),
+    ];
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(height: 40, width: 1, color: Colors.grey.shade200);
-  }
-}
-
-class _StatItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatItem({
-    super.key,
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.color = Colors.black,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: color, size: 28),
-        const SizedBox(height: 5),
-        Text(
-          value,
-          style: const TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-      ],
+    return SliverGrid(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 15,
+        crossAxisSpacing: 15,
+        childAspectRatio: 0.85,
+      ),
+      delegate: SliverChildBuilderDelegate(
+        (context, index) => modules[index],
+        childCount: modules.length,
+      ),
     );
   }
 }
 
-class _DashboardCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String? imagePath;
-  final IconData? iconData;
+class _FixedStatItem extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
   final VoidCallback onTap;
 
-  const _DashboardCard({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    this.imagePath,
-    this.iconData,
+  const _FixedStatItem({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
     required this.onTap,
   });
 
@@ -714,81 +362,98 @@ class _DashboardCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 65,
-            height: 65,
-            child: iconData != null
-                ? ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ).createShader(bounds),
-                    child: Icon(
-                      iconData,
-                      size: 50,
-                      color: Colors.white,
-                    ),
-                  )
-                : Image.asset(
-                    imagePath!,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                  ),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-              letterSpacing: 0.2,
-            ),
-          ),
+          const SizedBox(height: 10),
+          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF1E293B))),
+          const SizedBox(height: 2),
+          Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 }
 
-class _WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 40);
+class _ModuleButton extends StatelessWidget {
+  final String title;
+  final String? icon;
+  final IconData? iconData;
+  final VoidCallback onTap;
 
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2.25, size.height - 30);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
+  const _ModuleButton({
+    required this.title,
+    this.icon,
+    this.iconData,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (icon != null)
+               Image.asset(icon!, height: 40, width: 40)
+            else
+               Icon(iconData, color: const Color(0xFF4F46E5), size: 35),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+            ),
+          ],
+        ),
+      ),
     );
-    var secondControlPoint = Offset(
-      size.width - (size.width / 3.25),
-      size.height - 80,
-    );
-    var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-    path.lineTo(size.width, size.height - 40);
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
   }
+}
+
+class _NotificationBadge extends StatelessWidget {
+  final int unreadCount;
+  final VoidCallback onRefresh;
+
+  const _NotificationBadge({required this.unreadCount, required this.onRefresh});
 
   @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationInboxScreen()));
+        onRefresh();
+      },
+      child: Stack(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(15)),
+            child: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 24),
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: 0,
+              top: 0,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                child: Text(unreadCount.toString(), style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }

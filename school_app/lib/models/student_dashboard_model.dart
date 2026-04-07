@@ -8,6 +8,8 @@ class StudentDashboardModel {
   final List announcements;
   final int pendingHomework;
   final int leavePercentage;
+  final int homeworkCompletionPercentage;
+  final String recentLeaveStatus;
 
   final String? recentResult;
 
@@ -21,6 +23,8 @@ class StudentDashboardModel {
     required this.announcements,
     this.pendingHomework = 0,
     this.leavePercentage = 0,
+    this.homeworkCompletionPercentage = 0,
+    this.recentLeaveStatus = 'None',
     this.recentResult,
   });
   factory StudentDashboardModel.fromJson(Map<String, dynamic> json) {
@@ -34,6 +38,8 @@ class StudentDashboardModel {
       announcements: json["announcements"] ?? [],
       pendingHomework: json["stats"]?["pendingHomework"] ?? 0,
       leavePercentage: json["stats"]?["leavePercentage"] ?? 0,
+      homeworkCompletionPercentage: json["stats"]?["homeworkCompletionPercentage"] ?? 0,
+      recentLeaveStatus: json["stats"]?["recentLeaveStatus"] ?? 'None',
       recentResult: json["student"]["recent_result"]?.toString(),
     );
   }
