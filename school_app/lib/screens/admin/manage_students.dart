@@ -418,9 +418,8 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
-    final classController = TextEditingController();
-    final sectionController = TextEditingController();
     final rollController = TextEditingController();
+    String? selectedSectionId;
 
     showModalBottomSheet(
       context: context,
@@ -428,29 +427,36 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => _buildStudentForm(
-        title: "New Student",
-        controllers: [
-          nameController,
-          emailController,
-          passwordController,
-          classController,
-          sectionController,
-          rollController,
-        ],
-        btnLabel: "Register Student",
-        onSave: () async {
-          await _api.post("/api/v1/admin/register", {
-            "role": "student",
-            "name": nameController.text,
-            "email": emailController.text,
-            "password": passwordController.text,
-            "class": classController.text,
-            "section": sectionController.text,
-            "roll_number": rollController.text,
-          });
-          fetchData();
-        },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => _buildStudentForm(
+          title: "New Student",
+          controllers: [
+            nameController,
+            emailController,
+            passwordController,
+            rollController,
+          ],
+          btnLabel: "Register Student",
+          sectionDropdown: _buildSectionDropdown(
+            selectedSectionId,
+            (val) => setModalState(() => selectedSectionId = val),
+          ),
+          onSave: () async {
+            if (selectedSectionId == null) throw "Please select a section";
+            final sec = sections.firstWhere((s) => s["id"].toString() == selectedSectionId);
+            
+            await _api.post("/api/v1/admin/register", {
+              "role": "student",
+              "name": nameController.text,
+              "email": emailController.text,
+              "password": passwordController.text,
+              "class": sec["class"].toString(),
+              "section": sec["section"],
+              "roll_number": rollController.text,
+            });
+            fetchData();
+          },
+        ),
       ),
     );
   }
@@ -459,11 +465,10 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     final nameController = TextEditingController(text: s["name"]);
     final emailController = TextEditingController(text: s["email"]);
     final passwordController = TextEditingController();
-    final classController = TextEditingController(text: s["class"].toString());
-    final sectionController = TextEditingController(text: s["section"]);
     final rollController = TextEditingController(
       text: s["roll_number"].toString(),
     );
+    String? selectedSectionId = s["section_id"]?.toString();
 
     showModalBottomSheet(
       context: context,
@@ -471,29 +476,61 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => _buildStudentForm(
-        title: "Edit Student",
-        controllers: [
-          nameController,
-          emailController,
-          passwordController,
-          classController,
-          sectionController,
-          rollController,
-        ],
-        btnLabel: "Update Details",
-        onSave: () async {
-          await _api.put("/api/v1/admin/users/${s["user_id"]}", {
-            "role": "student",
-            "name": nameController.text,
-            "email": emailController.text,
-            "password": passwordController.text,
-            "class": classController.text,
-            "section": sectionController.text,
-            "roll_number": rollController.text,
-          });
-          fetchData();
-        },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => _buildStudentForm(
+          title: "Edit Student",
+          controllers: [
+            nameController,
+            emailController,
+            passwordController,
+            rollController,
+          ],
+          btnLabel: "Update Details",
+          sectionDropdown: _buildSectionDropdown(
+            selectedSectionId,
+            (val) => setModalState(() => selectedSectionId = val),
+          ),
+          onSave: () async {
+            if (selectedSectionId == null) throw "Please select a section";
+             final sec = sections.firstWhere((s) => s["id"].toString() == selectedSectionId);
+
+            await _api.put("/api/v1/admin/users/${s["user_id"]}", {
+              "role": "student",
+              "name": nameController.text,
+              "email": emailController.text,
+              "password": passwordController.text,
+              "class": sec["class"].toString(),
+              "section": sec["section"],
+              "roll_number": rollController.text,
+            });
+            fetchData();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionDropdown(String? value, Function(String?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: DropdownButtonFormField<String>(
+        value: value,
+        items: sections.map((sec) {
+          return DropdownMenuItem<String>(
+            value: sec["id"].toString(),
+            child: Text("Class ${sec["class"]} - Section ${sec["section"]}"),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: "Select Section",
+          labelStyle: TextStyle(color: Colors.blueGrey.shade400, fontSize: 14),
+          prefixIcon: Icon(Icons.grid_view_rounded, size: 20, color: Colors.blueGrey.shade300),
+          filled: true,
+          fillColor: const Color(0xFFF4F6FB),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        ),
       ),
     );
   }
@@ -502,6 +539,7 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     required String title,
     required List<TextEditingController> controllers,
     required String btnLabel,
+    required Widget sectionDropdown,
     required Future<void> Function() onSave,
   }) {
     return Padding(
@@ -533,27 +571,9 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
               Icons.lock_outlined,
               obscure: true,
             ),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildField(
-                    controllers[3],
-                    "Class",
-                    Icons.class_outlined,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildField(
-                    controllers[4],
-                    "Section",
-                    Icons.grid_view_rounded,
-                  ),
-                ),
-              ],
-            ),
+            sectionDropdown,
             _buildField(
-              controllers[5],
+              controllers[3],
               "Roll Number",
               Icons.format_list_numbered_rounded,
             ),

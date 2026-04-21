@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
+import 'package:intl/intl.dart';
 
 class ResultsScreen extends StatefulWidget {
   const ResultsScreen({super.key});
@@ -8,374 +9,255 @@ class ResultsScreen extends StatefulWidget {
   State<ResultsScreen> createState() => _ResultsScreenState();
 }
 
-class _ResultsScreenState extends State<ResultsScreen>
-    with TickerProviderStateMixin {
-  final ApiService api = ApiService();
-
-  bool loading = true;
-  Map<String, List<dynamic>> groupedResults = {};
-
-  // Stats
-  int totalSubjects = 0;
-  int highestMark = 0;
-  double averageMark = 0.0;
-
-  late AnimationController _pageController;
-  late Animation<double> _fade;
+class _ResultsScreenState extends State<ResultsScreen> with SingleTickerProviderStateMixin {
+  final ApiService _api = ApiService();
+  bool _loading = true;
+  List<dynamic> _allResults = [];
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    fetchResults();
-
-    _pageController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    );
-
-    _fade = CurvedAnimation(parent: _pageController, curve: Curves.easeOut);
+    _tabController = TabController(length: 2, vsync: this);
+    _fetchResults();
   }
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  Future<void> fetchResults() async {
+  Future<void> _fetchResults() async {
     try {
-      final res = await api.get("/api/v1/results/my");
-      final List results = res["data"] ?? [];
-
-      if (results.isNotEmpty) {
-        // Grouping logic
-        Map<String, List<dynamic>> groups = {};
-        int max = 0;
-        int total = 0;
-        int count = 0;
-
-        for (var r in results) {
-          final examName = r["exam"] ?? "Other";
-          if (!groups.containsKey(examName)) {
-            groups[examName] = [];
-          }
-          groups[examName]!.add(r);
-
-          final marks = (r["marks"] as num).toInt();
-          if (marks > max) max = marks;
-          total += marks;
-          count++;
-        }
-
+      final res = await _api.get("/api/v1/results/my");
+      if (mounted) {
         setState(() {
-          groupedResults = groups;
-          highestMark = max;
-          totalSubjects = count;
-          averageMark = count > 0 ? total / count : 0.0;
-          loading = false;
+          _allResults = res["data"] ?? [];
+          _loading = false;
         });
-      } else {
-        setState(() => loading = false);
       }
     } catch (e) {
-      setState(() => loading = false);
+      if (mounted) setState(() => _loading = false);
     }
-    _pageController.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FB),
-      body: Stack(
-        children: [
-          // ================= HEADER =================
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 160,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: const Color(0xFF4A00E0),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-            ),
-          ),
+    final offlineResults = _allResults.where((r) => r['class'] != 'Online').toList();
+    final onlineResults = _allResults.where((r) => r['class'] == 'Online').toList();
 
-          // ================= CONTENT =================
-          SafeArea(
-            child: Column(
-              children: [
-                // APP BAR
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  child: Row(
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F5F9),
+      body: Column(
+        children: [
+          _buildHeader(),
+          _buildTabBar(),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+                : TabBarView(
+                    controller: _tabController,
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const BackButton(color: Colors.white),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        "My Results",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                      _buildResultsList(offlineResults, "Offline"),
+                      _buildResultsList(onlineResults, "Online Portal"),
                     ],
                   ),
-                ),
-
-                Expanded(
-                  child: loading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
-                      : groupedResults.isEmpty
-                      ? const Center(
-                          child: Text(
-                            "📭 No results available",
-                            style: TextStyle(color: Colors.white70),
-                          ),
-                        )
-                      : FadeTransition(
-                          opacity: _fade,
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-                            child: Column(
-                              children: [
-                                // ✨ SUMMARY CARD
-                                _buildSummaryCard(),
-                                const SizedBox(height: 24),
-
-                                // 📋 EXAM CARDS
-                                ...groupedResults.entries.map((entry) {
-                                  return _buildExamCard(entry.key, entry.value);
-                                }).toList(),
-                              ],
-                            ),
-                          ),
-                        ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+      padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 25),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF4F46E5), Color(0xFF6366F1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(35),
+          bottomRight: Radius.circular(35),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+                style: IconButton.styleFrom(backgroundColor: Colors.white12),
+              ),
+              const Expanded(
+                child: Center(
+                  child: Text(
+                    "RESULT HUB",
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 45), // Balance for back button
+            ],
           ),
+          const SizedBox(height: 25),
+          _buildStatsSummary(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatsSummary() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: Colors.white24),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _summaryStat("Total", totalSubjects.toString(), "📚", Colors.blue),
-          _divider(),
-          _summaryStat("Highest", highestMark.toString(), "🏆", Colors.amber),
-          _divider(),
-          _summaryStat(
-            "Average",
-            averageMark.toStringAsFixed(1),
-            "📈",
-            Colors.green,
-          ),
+          _summaryItem("Total Exams", _allResults.length.toString()),
+          _verticalDivider(),
+          _summaryItem("Avg Score", _calculateAvg()),
+          _verticalDivider(),
+          _summaryItem("Performance", "Excellent"),
         ],
       ),
     );
   }
 
-  Widget _divider() {
-    return Container(height: 40, width: 1, color: Colors.grey.withOpacity(0.2));
+  String _calculateAvg() {
+    if (_allResults.isEmpty) return "0%";
+    double sum = 0;
+    int count = 0;
+    for (var r in _allResults) {
+      if (r['marks'] != null && r['total_marks'] != null) {
+        sum += (r['marks'] / r['total_marks']) * 100;
+        count++;
+      }
+    }
+    return count > 0 ? "${(sum / count).toStringAsFixed(1)}%" : "N/A";
   }
 
-  Widget _summaryStat(String label, String value, String emoji, Color color) {
+  Widget _summaryItem(String label, String value) {
     return Column(
       children: [
-        Text(emoji, style: const TextStyle(fontSize: 22)),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(value, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 10, fontWeight: FontWeight.bold)),
       ],
     );
   }
 
-  Widget _buildExamCard(String examName, List<dynamic> subjects) {
+  Widget _verticalDivider() {
+    return Container(height: 30, width: 1, color: Colors.white24);
+  }
+
+  Widget _buildTabBar() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      height: 55,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          gradient: const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF6366F1)]),
+        ),
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.grey.shade400,
+        dividerColor: Colors.transparent,
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorPadding: const EdgeInsets.all(4),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+        tabs: const [
+          Tab(text: "OFFLINE EXAMS"),
+          Tab(text: "ONLINE PORTAL"),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    );
+  }
+
+  Widget _buildResultsList(List<dynamic> results, String type) {
+    if (results.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.assignment_turned_in_rounded, size: 60, color: Colors.grey.shade300),
+            const SizedBox(height: 15),
+            Text("No $type results found", style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+      );
+    }
+
+    // Group by exam name
+    Map<String, List<dynamic>> grouped = {};
+    for (var item in results) {
+      String exam = item["exam"] ?? "Standard Exam";
+      if (!grouped.containsKey(exam)) grouped[exam] = [];
+      grouped[exam]!.add(item);
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      itemCount: grouped.keys.length,
+      itemBuilder: (context, index) {
+        String examName = grouped.keys.elementAt(index);
+        List<dynamic> subjects = grouped[examName]!;
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 25),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15, offset: const Offset(0, 8))],
+          ),
+          child: Column(
+            children: [
+              _buildExamHeader(examName, subjects[0]),
+              ...subjects.map((s) => _buildSubjectRow(s)),
+              const SizedBox(height: 15),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildExamHeader(String name, dynamic info) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+      ),
+      child: Row(
         children: [
-          // Exam Header
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1fa2ff).withOpacity(0.05),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-            ),
-            child: Row(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: const Color(0xFF6366F1).withOpacity(0.1), borderRadius: BorderRadius.circular(15)),
+            child: const Icon(Icons.workspace_premium_rounded, color: Color(0xFF4F46E5), size: 24),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.assignment_turned_in_rounded,
-                  color: Color(0xFF1fa2ff),
-                  size: 20,
-                ),
-                const SizedBox(width: 10),
+                Text(name.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF1E293B))),
+                const SizedBox(height: 2),
                 Text(
-                  examName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  "${subjects.length} Subjects",
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  info["exam_date"] != null 
+                    ? DateFormat('MMMM dd, yyyy').format(DateTime.parse(info["exam_date"]))
+                    : "Published",
+                  style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ],
-            ),
-          ),
-
-          // Subject List
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: subjects.map((s) {
-                final double score = (s["marks"] as num).toDouble();
-                final isHighest = s["marks"] == highestMark;
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: _getScoreColor(score).withOpacity(0.1),
-                        child: Text(
-                          s["subject"][0].toUpperCase(),
-                          style: TextStyle(
-                            color: _getScoreColor(score),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              s["subject"],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            if (isHighest)
-                              const Text(
-                                "Top Scorer 🏆",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.amber,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            "${s["marks"]}",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: _getScoreColor(score),
-                            ),
-                          ),
-                          const Text(
-                            "Marks",
-                            style: TextStyle(fontSize: 10, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-
-          // Footer / Date
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12, right: 20),
-            child: Text(
-              _formatDate(subjects[0]),
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade400,
-                fontStyle: FontStyle.italic,
-              ),
             ),
           ),
         ],
@@ -383,19 +265,44 @@ class _ResultsScreenState extends State<ResultsScreen>
     );
   }
 
-  Color _getScoreColor(double score) {
-    if (score >= 80) return const Color(0xFF43CEA2); // High
-    if (score >= 40) return const Color(0xFF1fa2ff); // Average
-    return const Color(0xFFFF5F6D); // Low
-  }
+  Widget _buildSubjectRow(dynamic s) {
+    double perc = (s['marks'] ?? 0) / (s['total_marks'] ?? 100) * 100;
+    Color gradeColor = perc > 75 ? Colors.green : (perc > 50 ? Colors.blue : Colors.orange);
 
-  String _formatDate(dynamic subject) {
-    try {
-      String dateStr = subject["created_at"] ?? subject["exam_date"];
-      DateTime date = DateTime.parse(dateStr).toLocal();
-      return "Date: ${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-    } catch (e) {
-      return "";
-    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 12,
+            backgroundColor: gradeColor.withOpacity(0.1),
+            child: Icon(Icons.circle, size: 8, color: gradeColor),
+          ),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(s["subject"] ?? "General", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF334155))),
+                Text(s["remarks"] ?? "Good Effort", style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "${s['marks']}/${s['total_marks']}",
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Color(0xFF1E293B)),
+              ),
+              Text(
+                "${perc.toStringAsFixed(0)}%",
+                style: TextStyle(color: gradeColor, fontWeight: FontWeight.bold, fontSize: 10),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

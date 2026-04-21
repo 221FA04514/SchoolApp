@@ -27,20 +27,42 @@ class StudentDashboardModel {
     this.recentLeaveStatus = 'None',
     this.recentResult,
   });
+
   factory StudentDashboardModel.fromJson(Map<String, dynamic> json) {
+    // Robust fallbacks for attendance
+    int attendance = 0;
+    if (json["attendance"] != null && json["attendance"]["percentage"] != null) {
+      attendance = (json["attendance"]["percentage"] as num).toInt();
+    } else if (json["stats"] != null && json["stats"]["attendancePercentage"] != null) {
+      attendance = (json["stats"]["attendancePercentage"] as num).toInt();
+    } else if (json["attendance_percentage"] != null) {
+      attendance = (json["attendance_percentage"] as num).toInt();
+    }
+
+    // Robust fallbacks for homework stats
+    int pendingHw = 0;
+    int completion = 0;
+    if (json["stats"] != null) {
+      pendingHw = (json["stats"]["pendingHomework"] ?? 0).toInt();
+      completion = (json["stats"]["homeworkCompletionPercentage"] ?? 0).toInt();
+    } else if (json["homework"] != null) {
+      pendingHw = (json["homework"]["pending"] ?? 0).toInt();
+      completion = (json["homework"]["completion_percentage"] ?? 0).toInt();
+    }
+
     return StudentDashboardModel(
-      name: json["student"]["name"] ?? "Student",
-      className: json["student"]["class"] ?? "",
-      section: json["student"]["section"] ?? "",
-      roll: json["student"]["roll_number"] ?? "",
-      attendancePercentage: json["attendance"]["percentage"] ?? 0,
-      feesDue: json["fees"]["due"] ?? 0,
+      name: json["student"]?["name"] ?? "Student",
+      className: json["student"]?["class"] ?? "",
+      section: json["student"]?["section"] ?? "",
+      roll: json["student"]?["roll_number"] ?? "",
+      attendancePercentage: attendance,
+      feesDue: json["fees"]?["due"] ?? 0,
       announcements: json["announcements"] ?? [],
-      pendingHomework: json["stats"]?["pendingHomework"] ?? 0,
-      leavePercentage: json["stats"]?["leavePercentage"] ?? 0,
-      homeworkCompletionPercentage: json["stats"]?["homeworkCompletionPercentage"] ?? 0,
+      pendingHomework: pendingHw,
+      leavePercentage: (json["stats"]?["leavePercentage"] ?? 0).toInt(),
+      homeworkCompletionPercentage: completion,
       recentLeaveStatus: json["stats"]?["recentLeaveStatus"] ?? 'None',
-      recentResult: json["student"]["recent_result"]?.toString(),
+      recentResult: json["student"]?["recent_result"]?.toString(),
     );
   }
 }

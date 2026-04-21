@@ -49,24 +49,36 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
     }
   }
 
+  String _toTitleCase(String text) {
+    if (text.isEmpty) return text;
+    return text.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
+      backgroundColor: const Color(0xFFF7F3FF),
       body: Stack(
         children: [
-          // Curved Header Background
+          // Galaxy Header Style
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: 180, // Slightly taller for tabs
+            height: 200,
             child: Container(
               decoration: const BoxDecoration(
-                color: Color(0xFF4A00E0),
+                gradient: LinearGradient(
+                  colors: [Color(0xFF8A6FFF), Color(0xFFC08CFF)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
                 ),
               ),
             ),
@@ -77,24 +89,28 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
               children: [
                 // Custom App Bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                   child: Row(
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
                         ),
-                        child: const BackButton(color: Colors.white),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 20),
                       const Text(
-                        "My Timetable",
+                        "MY TIMETABLE",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ],
@@ -109,25 +125,22 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
                     isScrollable: true,
                     indicatorColor: Colors.white,
                     indicatorWeight: 4,
-                    indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    indicatorPadding: const EdgeInsets.symmetric(horizontal: 8),
                     indicatorSize: TabBarIndicatorSize.label,
                     labelColor: Colors.white,
-                    unselectedLabelColor: Colors.white.withOpacity(0.6),
+                    unselectedLabelColor: Colors.white.withOpacity(0.5),
                     dividerColor: Colors.transparent,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
-                    ),
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                     tabs: days.map((d) => Tab(text: d.toUpperCase())).toList(),
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 15),
 
                 // Main Content
                 Expanded(
                   child: loading
-                      ? const Center(child: CircularProgressIndicator())
+                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
                       : TabBarView(
                           controller: _tabController,
                           children: days.map((day) {
@@ -140,7 +153,8 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
                             }
 
                             return ListView.builder(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.fromLTRB(20, 0, 20, 30),
+                              physics: const BouncingScrollPhysics(),
                               itemCount: dayItems.length,
                               itemBuilder: (_, i) => _buildTimetableCard(dayItems[i]),
                             );
@@ -166,112 +180,111 @@ class _StudentTimetableScreenState extends State<StudentTimetableScreen>
     if (sub.contains("english")) emoji = "📖";
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFFC08CFF).withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: const Color(0xFF4A00E0).withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Center(
-            child: Text(
-              t.period.toString(),
-              style: const TextStyle(
-                color: Color(0xFF4A00E0),
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-              ),
+      child: Row(
+        children: [
+          Container(
+            width: 55,
+            height: 55,
+            decoration: BoxDecoration(
+              color: const Color(0xFF8A6FFF).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(20),
             ),
-          ),
-        ),
-        title: Row(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 16)),
-            const SizedBox(width: 8),
-            Text(
-              t.subject,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-                color: Color(0xFF1E263E),
-              ),
-            ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(
-              "👤 ${t.teacherName}",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.blueGrey.shade400,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(
-                  Icons.access_time_rounded,
-                  size: 14,
-                  color: Color(0xFF4A00E0),
+            child: Center(
+              child: Text(
+                t.period.toString(),
+                style: const TextStyle(
+                  color: Color(0xFF8A6FFF),
+                  fontWeight: FontWeight.w900,
+                  fontSize: 20,
                 ),
-                const SizedBox(width: 4),
+              ),
+            ),
+          ),
+          const SizedBox(width: 18),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(emoji, style: const TextStyle(fontSize: 16)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        t.subject.toUpperCase(), // All capital letters for subject
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          color: Color(0xFF2D3250),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
                 Text(
-                  "${t.startTime} - ${t.endTime}",
-                  style: const TextStyle(
+                  _toTitleCase(t.teacherName), // First letter capital for teacher
+                  style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF4A00E0),
+                    color: Colors.blueGrey.shade400,
                   ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.access_time_filled_rounded, size: 14, color: Color(0xFF8A6FFF)),
+                    const SizedBox(width: 6),
+                    Text(
+                      "${t.startTime} - ${t.endTime}",
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF8A6FFF),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.event_available_rounded,
-          size: 64,
-          color: Colors.grey.shade300,
-        ),
-        const SizedBox(height: 16),
-        const Text(
-          "No classes scheduled",
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.blueGrey,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(25),
+            decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20)]),
+            child: Icon(Icons.event_available_rounded, size: 64, color: const Color(0xFFC08CFF).withOpacity(0.5)),
           ),
-        ),
-        const Text(
-          "Enjoy your free time!",
-          style: TextStyle(color: Colors.grey),
-        ),
-      ],
+          const SizedBox(height: 25),
+          const Text(
+            "NO CLASSES SCHEDULED",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2D3250)),
+          ),
+          const SizedBox(height: 5),
+          const Text("Enjoy your free time!", style: TextStyle(color: Colors.black45, fontWeight: FontWeight.w600)),
+        ],
+      ),
     );
   }
 }

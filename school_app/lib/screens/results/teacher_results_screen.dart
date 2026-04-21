@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../core/auth/auth_provider.dart';
 import '../../core/api/api_service.dart';
 import 'teacher_marks_entry_screen.dart';
 
@@ -214,15 +216,18 @@ class _TeacherResultsScreenState extends State<TeacherResultsScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateExamDialog,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          "Create Exam",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF4A00E0),
-      ),
+      floatingActionButton: context.watch<AuthProvider>().role == 'admin'
+          ? FloatingActionButton.extended(
+              onPressed: _showCreateExamDialog,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                "Create Exam",
+                style:
+                    TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: const Color(0xFF4A00E0),
+            )
+          : null,
     );
   }
 

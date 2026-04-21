@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
 import '../../core/api/api_service.dart';
 import 'fees_summary_card.dart';
+import 'premium_payment_sheet.dart';
 
 class FeesScreen extends StatefulWidget {
   const FeesScreen({super.key});
@@ -10,8 +10,7 @@ class FeesScreen extends StatefulWidget {
   State<FeesScreen> createState() => _FeesScreenState();
 }
 
-class _FeesScreenState extends State<FeesScreen>
-    with SingleTickerProviderStateMixin {
+class _FeesScreenState extends State<FeesScreen> with SingleTickerProviderStateMixin {
   final ApiService api = ApiService();
 
   Map<String, dynamic> summary = {};
@@ -20,7 +19,6 @@ class _FeesScreenState extends State<FeesScreen>
 
   late AnimationController _pageController;
   late Animation<double> _fade;
-  late Animation<Offset> _slide;
 
   @override
   void initState() {
@@ -33,11 +31,6 @@ class _FeesScreenState extends State<FeesScreen>
     );
 
     _fade = CurvedAnimation(parent: _pageController, curve: Curves.easeOut);
-
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _pageController, curve: Curves.easeOut));
   }
 
   @override
@@ -47,178 +40,59 @@ class _FeesScreenState extends State<FeesScreen>
   }
 
   Future<void> fetchFees() async {
-    final res = await api.get("/api/v1/fees/my");
-
-    setState(() {
-      summary = res["data"]["summary"];
-      payments = res["data"]["payments"];
-      loading = false;
-    });
-
-    _pageController.forward();
+    try {
+      final res = await api.get("/api/v1/fees/my");
+      if (mounted) {
+        setState(() {
+          summary = res["data"]["summary"];
+          payments = res["data"]["payments"];
+          loading = false;
+        });
+        _pageController.forward();
+      }
+    } catch (e) {
+      if (mounted) setState(() => loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FB),
+      backgroundColor: const Color(0xFFF8FAFF),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // ================= HEADER =================
-                SlideTransition(
-                  position: _slide,
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF4A00E0)))
+          : CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                _buildHeader(),
+                SliverToBoxAdapter(
                   child: FadeTransition(
                     opacity: _fade,
-                    child: Container(
-                      height: size.height * 0.22,
-                      padding: const EdgeInsets.all(20),
-                      decoration: const BoxDecoration(
-                        color: const Color(0xFF4A00E0),
-                        borderRadius: BorderRadius.vertical(
-                          bottom: Radius.circular(28),
-                        ),
-                      ),
-                      child: SafeArea(
-                        child: Row(
-                          children: const [
-                            BackButton(color: Colors.white),
-                            SizedBox(width: 8),
-                            Text(
-                              "💸 Fees",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // ================= CONTENT =================
-                Expanded(
-                  child: FadeTransition(
-                    opacity: _fade,
-                    child: SlideTransition(
-                      position: _slide,
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 💰 SUMMARY CARD
-                            FeesSummaryCard(
-                              total: summary["total"],
-                              paid: summary["paid"],
-                              due: summary["due"],
-                            ),
-
-                            const SizedBox(height: 20),
-
-                            // 💳 Pay Now Button
-                            if (summary["due"] > 0)
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed: () => _showPaymentDialog(),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF4A00E0),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 16,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    elevation: 4,
-                                  ),
-                                  icon: const Icon(Icons.payment),
-                                  label: const Text(
-                                    "Pay Now",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ),
-
-                            const SizedBox(height: 26),
-
-                            // 📜 PAYMENT HISTORY TITLE
-                            const Text(
-                              "📜 Payment History",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            if (payments.isEmpty)
-                              const Text(
-                                "🎉 No payments found",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                ),
-                              ),
-
-                            // ================= PAYMENT LIST =================
-                            ...List.generate(payments.length, (index) {
-                              final p = payments[index];
-
-                              return TweenAnimationBuilder<double>(
-                                tween: Tween(begin: 0, end: 1),
-                                duration: Duration(
-                                  milliseconds: 500 + index * 120,
-                                ),
-                                builder: (context, value, child) {
-                                  return Opacity(
-                                    opacity: value,
-                                    child: Transform.translate(
-                                      offset: Offset(0, 30 * (1 - value)),
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 4,
-                                  child: ListTile(
-                                    leading: const CircleAvatar(
-                                      backgroundColor: Color(0xFF1A4DFF),
-                                      child: Text(
-                                        "💳",
-                                        style: TextStyle(fontSize: 18),
-                                      ),
-                                    ),
-                                    title: Text(
-                                      "₹${p["amount_paid"]}",
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      "${p["payment_mode"]} • ${p["payment_date"].toString().split('T')[0]}",
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ],
-                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildStatusRibbon(),
+                          const SizedBox(height: 20),
+                          FeesSummaryCard(
+                            total: summary["total"],
+                            paid: summary["paid"],
+                            due: summary["due"],
+                          ),
+                          const SizedBox(height: 30),
+                          _buildSectionLabel("ONLINE SERVICES"),
+                          const SizedBox(height: 15),
+                          _buildOnlineServicesGrid(),
+                          const SizedBox(height: 35),
+                          _buildSectionLabel("TRANSACTION HISTORY"),
+                          const SizedBox(height: 15),
+                          if (payments.isEmpty)
+                            _buildEmptyState()
+                          else
+                            ...List.generate(payments.length, (i) => _buildPaymentItem(payments[i])),
+                          const SizedBox(height: 50),
+                        ],
                       ),
                     ),
                   ),
@@ -228,140 +102,233 @@ class _FeesScreenState extends State<FeesScreen>
     );
   }
 
-  void _showPaymentDialog() {
-    final TextEditingController amountController = TextEditingController(
-      text: summary["due"].toString(),
+  Widget _buildSectionLabel(String label) {
+    return Text(
+      label,
+      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF64748B), letterSpacing: 1.2),
     );
+  }
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  Widget _buildStatusRibbon() {
+    bool isCleared = (summary["due"] ?? 0) <= 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isCleared ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: isCleared ? Colors.green.withOpacity(0.2) : Colors.orange.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(isCleared ? Icons.verified_rounded : Icons.pending_actions_rounded, color: isCleared ? Colors.green : Colors.orange, size: 18),
+          const SizedBox(width: 10),
+          Text(
+            isCleared ? "YOUR ACCOUNT IS FULLY CLEARED" : "YOU HAVE PENDING DUES",
+            style: TextStyle(color: isCleared ? Colors.green.shade700 : Colors.orange.shade800, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOnlineServicesGrid() {
+    return Row(
+      children: [
+         Expanded(
+           child: _buildServiceCard(
+             title: "Pay Fee\nOnline",
+             sub: "UPI/Card",
+             icon: Icons.bolt_rounded,
+             color: const Color(0xFF4A00E0),
+             onTap: summary["due"] > 0 ? () => _showPaymentSheet() : null,
+           ),
+         ),
+         const SizedBox(width: 15),
+         Expanded(
+           child: _buildServiceCard(
+             title: "Download\nReceipt",
+             sub: "PDF Format",
+             icon: Icons.file_download_rounded,
+             color: const Color(0xFF00C9FF),
+             onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Receipt generation is being processed...")));
+             },
+           ),
+         ),
+      ],
+    );
+  }
+
+  Widget _buildServiceCard({required String title, required String sub, required IconData icon, required Color color, VoidCallback? onTap}) {
+    bool isDisabled = onTap == null;
+    return Opacity(
+      opacity: isDisabled ? 0.6 : 1.0,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [BoxShadow(color: color.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 8))],
+            border: Border.all(color: color.withOpacity(0.1)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(15)),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(height: 15),
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, height: 1.2, color: Color(0xFF1E293B))),
+              const SizedBox(height: 4),
+              Text(sub, style: TextStyle(color: Colors.grey.shade500, fontSize: 10, fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
-        padding: EdgeInsets.fromLTRB(
-          24,
-          24,
-          24,
-          MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return SliverAppBar(
+      expandedHeight: 140,
+      pinned: true,
+      elevation: 0,
+      backgroundColor: const Color(0xFF4A00E0),
+      automaticallyImplyLeading: false,
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+          ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text(
-              "Make Payment",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2D3436),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              "Enter Amount",
-              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF4A00E0),
-              ),
-              decoration: InputDecoration(
-                prefixText: "₹ ",
-                prefixStyle: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A00E0),
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF4F6FB),
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () async {
-                  final amount = int.tryParse(amountController.text);
-                  if (amount == null || amount <= 0) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Invalid amount")),
-                    );
-                    return;
-                  }
-
-                  if (amount > summary["due"]) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Amount cannot exceed due fees"),
-                      ),
-                    );
-                    return;
-                  }
-
-                  Navigator.pop(context);
-                  _processPayment(amount);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4A00E0),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  "Confirm Payment",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
+            IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20)),
+            const Text("FEES PORTAL", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1)),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _processPayment(int amount) async {
-    setState(() => loading = true);
+  void _showPaymentSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => PremiumPaymentSheet(
+        dueAmount: (summary["due"] as num).toDouble(),
+        onPaymentConfirm: (amount, method) => _processPayment(amount.toInt(), method),
+      ),
+    );
+  }
 
+  Future<void> _processPayment(int amount, String method) async {
+    setState(() => loading = true);
     try {
       await api.post("/api/v1/fees/pay-online", {
         "amount_paid": amount,
-        "payment_mode": "Online",
+        "payment_mode": method,
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("✅ Payment Successful!"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        _showSuccessAnimation();
+        fetchFees();
       }
-      fetchFees();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("❌ Payment Failed: $e"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Payment Failed: $e"), backgroundColor: Colors.red));
         setState(() => loading = false);
       }
     }
+  }
+
+  void _showSuccessAnimation() {
+     showDialog(
+       context: context,
+       builder: (context) => AlertDialog(
+         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+         content: Column(
+           mainAxisSize: MainAxisSize.min,
+           children: [
+              const SizedBox(height: 20),
+              const CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.green,
+                child: Icon(Icons.check_rounded, color: Colors.white, size: 50),
+              ),
+              const SizedBox(height: 25),
+              const Text("PAYMENT SUCCESSFULL!", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
+              const SizedBox(height: 10),
+              const Text("Your fee record has been updated.", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              const SizedBox(height: 25),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15))),
+                  child: const Text("GREAT!", style: TextStyle(color: Colors.white)),
+                ),
+              ),
+           ],
+         ),
+       ),
+     );
+  }
+
+  Widget _buildPaymentItem(dynamic p) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.015), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Row(
+        children: [
+           Container(
+             padding: const EdgeInsets.all(10),
+             decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(15)),
+             child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF4A00E0)),
+           ),
+           const SizedBox(width: 15),
+           Expanded(
+             child: Column(
+               crossAxisAlignment: CrossAxisAlignment.start,
+               children: [
+                 Text("₹${p["amount_paid"]}", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: Color(0xFF1E293B))),
+                 Text(p["payment_mode"], style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
+               ],
+             ),
+           ),
+           Column(
+             crossAxisAlignment: CrossAxisAlignment.end,
+             children: [
+               Text(p["payment_date"].toString().split('T')[0], style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
+               const Text("SUCCESS", style: TextStyle(color: Colors.green, fontSize: 8, fontWeight: FontWeight.w900)),
+             ],
+           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+     return Center(
+       child: Column(
+         children: [
+            const SizedBox(height: 40),
+            Icon(Icons.history_rounded, size: 50, color: Colors.grey.shade100),
+            const SizedBox(height: 10),
+            const Text("No transactions yet", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+         ],
+       ),
+     );
   }
 }

@@ -22,7 +22,8 @@ class _TeacherMarksEntryScreenState extends State<TeacherMarksEntryScreen> {
   final ApiService _api = ApiService();
   List<dynamic> _students = [];
   bool _isLoading = true;
-  final String _subject = "General"; // Could be passed or selected
+  String? _selectedSubject;
+  List<String> _availableSubjects = [];
   final Map<int, TextEditingController> _marksControllers = {};
   final Map<int, TextEditingController> _remarksControllers = {};
 
@@ -30,6 +31,21 @@ class _TeacherMarksEntryScreenState extends State<TeacherMarksEntryScreen> {
   void initState() {
     super.initState();
     _loadStudents();
+    _loadSubjects();
+  }
+
+  Future<void> _loadSubjects() async {
+    try {
+      final res = await _api.get("/api/v1/results/teacher-subjects/${widget.sectionId}");
+      setState(() {
+        _availableSubjects = List<String>.from(res["data"] ?? []);
+        if (_availableSubjects.isNotEmpty) {
+          _selectedSubject = _availableSubjects.first;
+        }
+      });
+    } catch (e) {
+      debugPrint("Error loading subjects: $e");
+    }
   }
 
   Future<void> _loadStudents() async {
@@ -77,9 +93,15 @@ class _TeacherMarksEntryScreenState extends State<TeacherMarksEntryScreen> {
         return;
       }
 
+      if (_selectedSubject == null) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a subject first")));
+        return;
+      }
+
       await _api.post("/api/v1/results/bulk-marks", {
         "exam_id": widget.examId,
-        "subject": _subject,
+        "subject": _selectedSubject,
         "marks_list": marksList,
       });
 
@@ -114,14 +136,33 @@ class _TeacherMarksEntryScreenState extends State<TeacherMarksEntryScreen> {
           IconButton(onPressed: _submitMarks, icon: const Icon(Icons.save)),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _students.isEmpty
-          ? const Center(child: Text("No students found in this section"))
-          : ListView.builder(
+      body: Column(
+        children: [
+          if (_availableSubjects.isNotEmpty)
+            Padding(
               padding: const EdgeInsets.all(16),
-              itemCount: _students.length,
-              itemBuilder: (context, index) {
+              child: DropdownButtonFormField<String>(
+                value: _selectedSubject,
+                decoration: InputDecoration(
+                  labelText: "Subject",
+                  prefixIcon: const Icon(Icons.book_outlined),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                items: _availableSubjects.map((s) {
+                  return DropdownMenuItem(value: s, child: Text(s));
+                }).toList(),
+                onChanged: (val) => setState(() => _selectedSubject = val),
+              ),
+            ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _students.isEmpty
+                    ? const Center(child: Text("No students found in this section"))
+                    : ListView.builder(
+                        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                        itemCount: _students.length,
+                        itemBuilder: (context, index) {
                 final student = _students[index];
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -167,6 +208,9 @@ class _TeacherMarksEntryScreenState extends State<TeacherMarksEntryScreen> {
                 );
               },
             ),
+          ),
+        ],
+      ),
     );
   }
 }

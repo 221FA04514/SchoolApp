@@ -27,9 +27,7 @@ class _TeacherResourceLibraryScreenState
 
   Future<void> _fetchInitialData() async {
     try {
-      print("[LIBRARY] Fetching initial data...");
       setState(() => loading = true);
-
       final results = await Future.wait([
         _api.get("/api/v1/resources"),
         _api.get("/api/v1/sections"),
@@ -40,18 +38,11 @@ class _TeacherResourceLibraryScreenState
           resources = results[0]["data"] ?? [];
           sections = results[1]["data"] ?? [];
           loading = false;
-          print(
-            "[LIBRARY] Fetched ${resources.length} resources and ${sections.length} sections.",
-          );
         });
       }
     } catch (e) {
-      print("[LIBRARY] Error fetching data: $e");
       if (mounted) {
         setState(() => loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error loading library data: $e")),
-        );
       }
     }
   }
@@ -61,6 +52,38 @@ class _TeacherResourceLibraryScreenState
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _subjectController = TextEditingController();
+
+  Future<void> _deleteResource(int id, String title) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Resource?"),
+        content: Text("Are you sure you want to delete '$title'?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Delete", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _api.delete("/api/v1/resources/$id");
+        _fetchInitialData();
+      } catch (e) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to delete: $e")));
+      }
+    }
+  }
 
   Future<void> _uploadResource() async {
     _titleController.clear();
@@ -72,163 +95,162 @@ class _TeacherResourceLibraryScreenState
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
+        builder: (ctx, setModalState) => Container(
           padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            MediaQuery.of(ctx).viewInsets.bottom + 20,
+            24,
+            24,
+            24,
+            MediaQuery.of(ctx).viewInsets.bottom + 40,
+          ),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Upload Study Material",
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  labelText: "Title (e.g. Chapter 1 Notes)",
+                "Upload Chapter Notes",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
                 ),
               ),
-              TextField(
-                controller: _descController,
-                decoration: const InputDecoration(
-                  labelText: "Description (Optional)",
-                ),
+              const SizedBox(height: 5),
+              const Text(
+                "Files will be shared with targeted sections",
+                style: TextStyle(color: Colors.grey, fontSize: 13),
               ),
-              TextField(
-                controller: _subjectController,
-                decoration: const InputDecoration(labelText: "Subject"),
+              const SizedBox(height: 25),
+              _buildModernField(
+                _titleController,
+                "Chapter Title",
+                Icons.title_rounded,
               ),
-              const SizedBox(height: 12),
+              _buildModernField(
+                _subjectController,
+                "Subject Name",
+                Icons.auto_stories_rounded,
+              ),
+              _buildModernField(
+                _descController,
+                "Short Description",
+                Icons.description_rounded,
+              ),
+              const SizedBox(height: 10),
               DropdownButtonFormField<int>(
                 value: _selectedSecId,
-                hint: const Text("Select Targeted Section"),
-                items: sections
-                    .map<DropdownMenuItem<int>>(
-                      (s) => DropdownMenuItem(
-                        value: s["id"],
-                        child: Text("Section ${s["name"]}"),
-                      ),
-                    )
-                    .toList(),
+                items: sections.map<DropdownMenuItem<int>>((s) {
+                  return DropdownMenuItem(
+                    value: s["id"],
+                    child: Text("Section ${s["name"]}"),
+                  );
+                }).toList(),
                 onChanged: (v) => setModalState(() => _selectedSecId = v),
-                decoration: InputDecoration(
-                  labelText: "Target Section",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                decoration: _fieldDecoration(
+                  "Target Section",
+                  Icons.class_outlined,
                 ),
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: () async {
+              const SizedBox(height: 20),
+              InkWell(
+                onTap: () async {
                   final result = await FilePicker.platform.pickFiles();
                   if (result != null)
                     setModalState(() => _pickedFile = result.files.first);
                 },
-                icon: const Icon(Icons.attach_file),
-                label: Text(
-                  _pickedFile == null ? "Pick File" : _pickedFile!.name,
-                ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_pickedFile == null ||
-                      _selectedSecId == null ||
-                      _titleController.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Please fill all fields (Title, Section, File)",
-                        ),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 18,
+                    horizontal: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F4FA),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.cloud_upload_rounded,
+                        color: Colors.blue.shade700,
                       ),
-                    );
-                    return;
-                  }
-
-                  // Multipart upload
-                  try {
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (ctx) => const Center(
-                        child: Card(
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(height: 16),
-                                Text("Uploading file... Please wait."),
-                              ],
-                            ),
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Text(
+                          _pickedFile == null
+                              ? "Select File (PDF, Video, etc.)"
+                              : _pickedFile!.name,
+                          style: TextStyle(
+                            color: _pickedFile == null
+                                ? Colors.grey
+                                : Colors.blue.shade900,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                    );
-
-                    print(
-                      "[LIBRARY] Preparing upload: Title=${_titleController.text}, Section=$_selectedSecId",
-                    );
-                    print(
-                      "[LIBRARY] File: ${_pickedFile!.name}, Path: ${_pickedFile!.path}",
-                    );
-
-                    print("[LIBRARY] Uploading to /api/v1/resources/upload...");
-                    dio_lib.FormData formData = dio_lib.FormData.fromMap({
-                      "section_id": _selectedSecId,
-                      "subject": _subjectController.text,
-                      "title": _titleController.text,
-                      "description": _descController.text,
-                      "type": (_pickedFile!.extension ?? "file").toLowerCase(),
-                      "file": await dio_lib.MultipartFile.fromFile(
-                        _pickedFile!.path!,
-                        filename: _pickedFile!.name,
-                      ),
-                    });
-
-                    final res = await _api.postMultipart(
-                      "/api/v1/resources/upload",
-                      formData,
-                    );
-
-                    if (mounted) Navigator.pop(ctx); // Close loading dialog
-
-                    if (res["success"] == true) {
-                      Navigator.pop(ctx); // Close bottom sheet
-                      _fetchInitialData();
-                    } else {
-                      throw Exception(res["message"] ?? "Upload failed");
-                    }
-                  } catch (e) {
-                    if (mounted) Navigator.pop(ctx); // Close loading dialog
-                    print("[LIBRARY] Upload Error: $e");
-                    String msg = "Upload failed";
-                    if (e is dio_lib.DioException) {
-                      msg =
-                          "Upload failed: ${e.response?.data['message'] ?? e.message}";
-                    }
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(msg)));
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1A4DFF),
-                  foregroundColor: Colors.white,
+                    ],
+                  ),
                 ),
-                child: const Text("Upload Now"),
+              ),
+              const SizedBox(height: 30),
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4A00E0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  onPressed: () async {
+                    if (_pickedFile == null ||
+                        _selectedSecId == null ||
+                        _titleController.text.isEmpty) {
+                      return;
+                    }
+                    try {
+                      _showLoader();
+                      dio_lib.FormData formData = dio_lib.FormData.fromMap({
+                        "section_id": _selectedSecId,
+                        "subject": _subjectController.text,
+                        "title": _titleController.text,
+                        "description": _descController.text,
+                        "type": (_pickedFile!.extension ?? "file")
+                            .toLowerCase(),
+                        "file": await dio_lib.MultipartFile.fromFile(
+                          _pickedFile!.path!,
+                          filename: _pickedFile!.name,
+                        ),
+                      });
+                      await _api.postMultipart(
+                        "/api/v1/resources/upload",
+                        formData,
+                      );
+                      if (mounted) {
+                        Navigator.pop(context); // Close loader
+                        Navigator.pop(ctx); // Close sheet
+                        _fetchInitialData();
+                      }
+                    } catch (e) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: const Text(
+                    "Deploy Resource",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -237,123 +259,189 @@ class _TeacherResourceLibraryScreenState
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
-      body: Stack(
-        children: [
-          // Curved Header Background
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 160,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFF4A00E0),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // Custom App Bar
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const BackButton(color: Colors.white),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        "Digital Library",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                Expanded(
-                  child: loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : resources.isEmpty
-                          ? const Center(
-                              child: Text("No resources uploaded yet"))
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: resources.length,
-                              itemBuilder: (context, index) {
-                                final r = resources[index];
-                                return Card(
-                                  elevation: 2,
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  child: ListTile(
-                                    leading: _getIcon(r["type"]),
-                                    title: Text(
-                                      r["title"],
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                    subtitle: Text(
-                                      "${r["subject"]} • Section: ${r["section_name"] ?? 'All'}\n${r["description"] ?? ''}",
-                                    ),
-                                    isThreeLine: true,
-                                    trailing: IconButton(
-                                      icon: const Icon(Icons.delete_outline,
-                                          color: Colors.red),
-                                      onPressed: () async {
-                                        // TODO: Add delete functionality if needed
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _uploadResource,
-        backgroundColor: const Color(0xFF4A00E0),
-        child: const Icon(Icons.add, color: Colors.white),
+  void _showLoader() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFF4A00E0)),
       ),
     );
   }
 
-  Widget _getIcon(String? type) {
+  Widget _buildModernField(
+    TextEditingController controller,
+    String label,
+    IconData icon,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        decoration: _fieldDecoration(label, icon),
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: const Color(0xFF4A00E0), size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF1F4FA),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: const BorderSide(color: Color(0xFF4A00E0), width: 1.5),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F4FA),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [_buildPremiumHeader(), _buildResourceList()],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _uploadResource,
+        backgroundColor: const Color(0xFF4A00E0),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text(
+          "Add Chapter",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumHeader() {
+    return SliverAppBar(
+      expandedHeight: 180,
+      pinned: true,
+      backgroundColor: const Color(0xFF4A00E0),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF4A00E0), Color(0xFF6B11CB)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: const Stack(
+            children: [
+              Positioned(
+                bottom: 25,
+                left: 20,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Faculty Library",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      "Manage and share study materials",
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResourceList() {
+    if (loading)
+      return const SliverFillRemaining(
+        child: Center(child: CircularProgressIndicator()),
+      );
+    if (resources.isEmpty)
+      return const SliverFillRemaining(
+        child: Center(child: Text("Start uploading resources to the cloud")),
+      );
+
+    return SliverPadding(
+      padding: const EdgeInsets.all(20),
+      sliver: SliverList(
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final r = resources[index];
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4A00E0).withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  _getIcon(r["type"]),
+                  color: const Color(0xFF4A00E0),
+                  size: 28,
+                ),
+              ),
+              title: Text(
+                r["title"],
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              subtitle: Text(
+                "${r["subject"]} • Section ${r["section_name"] ?? 'All'}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              trailing: IconButton(
+                icon: const Icon(
+                  Icons.delete_sweep_rounded,
+                  color: Colors.redAccent,
+                ),
+                onPressed: () => _deleteResource(r["id"], r["title"]),
+              ),
+            ),
+          );
+        }, childCount: resources.length),
+      ),
+    );
+  }
+
+  IconData _getIcon(String? type) {
     type = type?.toLowerCase();
-    if (type == "pdf")
-      return const Icon(Icons.picture_as_pdf, color: Colors.red);
-    if (type == "doc" || type == "docx")
-      return const Icon(Icons.description, color: Colors.blue);
-    if (type == "mp4" || type == "mov")
-      return const Icon(Icons.video_library, color: Colors.purple);
-    if (type == "mp3" || type == "wav")
-      return const Icon(Icons.audiotrack, color: Colors.orange);
-    if (type == "jpg" || type == "png" || type == "jpeg")
-      return const Icon(Icons.image, color: Colors.green);
-    return const Icon(Icons.insert_drive_file, color: Colors.grey);
+    if (type == "pdf") return Icons.picture_as_pdf_rounded;
+    if (type == "mp4" || type == "mov") return Icons.video_library_rounded;
+    return Icons.insert_drive_file_rounded;
   }
 }
