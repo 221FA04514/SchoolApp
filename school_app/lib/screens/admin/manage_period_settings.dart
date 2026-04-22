@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import '../../core/api/api_service.dart';
 
 class ManagePeriodSettingsScreen extends StatefulWidget {
@@ -52,10 +53,12 @@ class _ManagePeriodSettingsScreenState
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Padding(
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
           left: 24,
@@ -66,11 +69,22 @@ class _ManagePeriodSettingsScreenState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
               setting == null ? "⏰ Add Timing" : "✏️ Edit Timing",
               style: const TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w900,
                 letterSpacing: -0.5,
               ),
             ),
@@ -85,34 +99,41 @@ class _ManagePeriodSettingsScreenState
             Row(
               children: [
                 Expanded(
-                  child: _buildTextField(
+                  child: _buildTimeField(
                     controller: startController,
                     label: "Start Time",
                     icon: Icons.login_rounded,
+                    onTap: () => _selectTime(context, startController),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: _buildTextField(
+                  child: _buildTimeField(
                     controller: endController,
                     label: "End Time",
                     icon: Icons.logout_rounded,
+                    onTap: () => _selectTime(context, endController),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
-              height: 54,
+              height: 56,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF673AB7),
+                  elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 onPressed: () async {
+                  if (periodController.text.isEmpty || startController.text.isEmpty || endController.text.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("All fields are required")));
+                    return;
+                  }
                   try {
                     await _api.post("/api/v1/admin/period-settings", {
                       "period_number": int.parse(periodController.text),
@@ -139,8 +160,79 @@ class _ManagePeriodSettingsScreenState
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _selectTime(BuildContext context, TextEditingController controller) {
+    DateTime initial = DateTime.now();
+    if (controller.text.isNotEmpty) {
+      final parts = controller.text.split(":");
+      if (parts.length == 2) {
+        initial = DateTime(initial.year, initial.month, initial.day, int.parse(parts[0]), int.parse(parts[1]));
+      }
+    }
+
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => Container(
+        height: 300,
+        color: Colors.white,
+        child: Column(
+          children: [
+            Container(
+              height: 50,
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  CupertinoButton(
+                    child: const Text("Cancel"),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  CupertinoButton(
+                    child: const Text("Done"),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: CupertinoDatePicker(
+                mode: CupertinoDatePickerMode.time,
+                use24hFormat: true,
+                initialDateTime: initial,
+                onDateTimeChanged: (DateTime newDate) {
+                  final hh = newDate.hour.toString().padLeft(2, '0');
+                  final mm = newDate.minute.toString().padLeft(2, '0');
+                  controller.text = "$hh:$mm";
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AbsorbPointer(
+        child: _buildTextField(
+          controller: controller,
+          label: label,
+          icon: icon,
         ),
       ),
     );

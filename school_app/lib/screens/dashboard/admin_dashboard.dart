@@ -13,6 +13,7 @@ import '../admin/manage_notifications.dart';
 import '../admin/manage_exams.dart';
 import '../leaves/leave_management_screen.dart';
 import '../../core/api/api_service.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -33,6 +34,11 @@ class _AdminDashboardState extends State<AdminDashboard>
     "totalSections": 0
   };
   bool _isLoadingStats = true;
+  
+  // Analytics State
+  Map<String, dynamic> _analytics = {"attendance": [], "fees": []};
+  bool _isAttendanceMode = true;
+  bool _isLoadingAnalytics = true;
 
   final List<Color> _dynamicColors = [
     const Color(0xFF673AB7),
@@ -59,6 +65,7 @@ class _AdminDashboardState extends State<AdminDashboard>
     );
 
     _fetchStats();
+    _fetchAnalytics();
   }
 
   Future<void> _fetchStats() async {
@@ -72,6 +79,20 @@ class _AdminDashboardState extends State<AdminDashboard>
       }
     } catch (e) {
       if (mounted) setState(() => _isLoadingStats = false);
+    }
+  }
+
+  Future<void> _fetchAnalytics() async {
+    try {
+      final response = await ApiService().get("/api/v1/admin/analytics");
+      if (mounted) {
+        setState(() {
+          _analytics = response["data"];
+          _isLoadingAnalytics = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingAnalytics = false);
     }
   }
 
@@ -165,7 +186,7 @@ class _AdminDashboardState extends State<AdminDashboard>
                     ),
                   ),
                   const SizedBox(height: 15),
-                  _buildInsightsCard(),
+                  _buildAnalyticsChart(),
                   const SizedBox(height: 100),
                 ],
               ),
@@ -255,7 +276,7 @@ class _AdminDashboardState extends State<AdminDashboard>
     );
   }
 
-  Widget _buildInsightsCard() {
+  Widget _buildAnalyticsChart() {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -263,54 +284,172 @@ class _AdminDashboardState extends State<AdminDashboard>
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.purple.shade50,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.auto_awesome_rounded,
-              color: Colors.purple.shade700,
-              size: 28,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Text(
+                    _isAttendanceMode ? "Section Attendance" : "Fee Collection",
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF1E263E),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _isAttendanceMode ? "Monthly averages per section" : "Paid vs Pending status",
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(4),
+                child: Row(
+                  children: [
+                    _buildToggleBtn(true, Icons.percent_rounded),
+                    _buildToggleBtn(false, Icons.payments_rounded),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 15),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "System Health Check",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: Color(0xFF1E263E),
+          const SizedBox(height: 30),
+          _isLoadingAnalytics
+              ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()))
+              : SizedBox(
+                  height: 220,
+                  child: BarChart(
+                    BarChartData(
+                      alignment: BarChartAlignment.spaceAround,
+                      maxY: _isAttendanceMode ? 100 : _getMaxFeeValue(),
+                      barTouchData: BarTouchData(enabled: true),
+                      titlesData: FlTitlesData(
+                        show: true,
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            getTitlesWidget: (value, meta) {
+                              final data = _isAttendanceMode ? _analytics["attendance"] : _analytics["fees"];
+                              if (value.toInt() >= data.length) return const SizedBox();
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  data[value.toInt()]["section"],
+                                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      ),
+                      gridData: FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      barGroups: _buildBarGroups(),
+                    ),
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  "Database and API services are running optimally. No critical failures detected.",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
+  }
+
+  Widget _buildToggleBtn(bool mode, IconData icon) {
+    final active = _isAttendanceMode == mode;
+    return GestureDetector(
+      onTap: () => setState(() => _isAttendanceMode = mode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: active ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)] : [],
+        ),
+        child: Icon(icon, size: 16, color: active ? Colors.purple.shade700 : Colors.grey),
+      ),
+    );
+  }
+
+  double _getMaxFeeValue() {
+    double max = 0;
+    for (var item in _analytics["fees"]) {
+      double val = (item["paid"] ?? 0) + (item["pending"] ?? 0);
+      if (val > max) max = val;
+    }
+    return max == 0 ? 100 : max * 1.1;
+  }
+
+  List<BarChartGroupData> _buildBarGroups() {
+    if (_isAttendanceMode) {
+      final List data = _analytics["attendance"];
+      return List.generate(data.length, (i) {
+        return BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: data[i]["percentage"].toDouble(),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+              ),
+              width: 16,
+              borderRadius: BorderRadius.circular(4),
+              backDrawRodData: BackgroundBarChartRodData(
+                show: true,
+                toY: 100,
+                color: Colors.purple.shade50.withOpacity(0.5),
+              ),
+            ),
+          ],
+        );
+      });
+    } else {
+      final List data = _analytics["fees"];
+      return List.generate(data.length, (i) {
+        return BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: (data[i]["paid"] ?? 0).toDouble(),
+              color: Colors.greenAccent.shade700,
+              width: 14,
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+            ),
+            BarChartRodData(
+              toY: (data[i]["pending"] ?? 0).toDouble(),
+              color: Colors.orangeAccent.shade700.withOpacity(0.6),
+              width: 14,
+              borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+            ),
+          ],
+        );
+      });
+    }
+  }
+
+  Widget _buildInsightsCard() {
+    // Keep this as fallback or remove if not needed, but plan says replace it
+    return const SizedBox();
   }
 
   Widget _buildAnimatingShrinkHeader() {

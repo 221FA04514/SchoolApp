@@ -323,17 +323,20 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
                   Expanded(
                     child: TextField(
                       controller: startController,
+                      readOnly: true,
                       decoration: _fieldDecoration(
                         "Start",
                         Icons.access_time_filled_rounded,
-                      ),
+                      ).copyWith(fillColor: Colors.grey.shade100),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: TextField(
                       controller: endController,
-                      decoration: _fieldDecoration("End", Icons.update_rounded),
+                      readOnly: true,
+                      decoration: _fieldDecoration("End", Icons.update_rounded)
+                          .copyWith(fillColor: Colors.grey.shade100),
                     ),
                   ),
                 ],
@@ -410,19 +413,36 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
       if (e is ApiException && e.statusCode == 409) {
         final suggestions = (e.data["data"]?["suggestions"] as List?)
             ?.cast<String>();
-        _showConflictDialog(context, e.message, suggestions, () {
-          _saveSlot(
-            context,
-            sectionId: sectionId,
-            day: day,
-            period: period,
-            subject: subject,
-            teacher: teacher,
-            start: start,
-            end: end,
-            force: true,
-          );
-        });
+        final pickedSuggestion = await _showConflictDialog(context, e.message, suggestions);
+        
+        if (pickedSuggestion != null) {
+          if (pickedSuggestion == "FORCE_ASSIGN") {
+             _saveSlot(
+              context,
+              sectionId: sectionId,
+              day: day,
+              period: period,
+              subject: subject,
+              teacher: teacher,
+              start: start,
+              end: end,
+              force: true,
+            );
+          } else {
+            // Re-run with suggested teacher
+            _saveSlot(
+              context,
+              sectionId: sectionId,
+              day: day,
+              period: period,
+              subject: subject,
+              teacher: pickedSuggestion, 
+              start: start,
+              end: end,
+              force: false,
+            );
+          }
+        }
       } else {
         if (context.mounted)
           ScaffoldMessenger.of(
@@ -432,46 +452,74 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
     }
   }
 
-  void _showConflictDialog(
+  Future<String?> _showConflictDialog(
     BuildContext context,
     String error,
     List<String>? suggestions,
-    VoidCallback onConfirm,
   ) {
-    showDialog(
+    return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("⚠️ Schedule Overlap"),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            SizedBox(width: 12),
+            Text("Schedule Conflict"),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(error, style: const TextStyle(fontWeight: FontWeight.w500)),
+            Text(error, style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87)),
             if (suggestions != null && suggestions.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               const Text(
-                "Available Teachers:",
+                "Available Alternatives:",
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
                   color: Colors.blue,
+                  letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                children: suggestions
-                    .map(
-                      (s) => Chip(
-                        label: Text(s, style: const TextStyle(fontSize: 12)),
-                        backgroundColor: Colors.blue.withOpacity(0.05),
-                      ),
-                    )
-                    .toList(),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.maxFinite,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: suggestions
+                      .map(
+                        (s) => InkWell(
+                          onTap: () => Navigator.pop(ctx, s),
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                            ),
+                            child: Text(
+                              s,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
               ),
             ],
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             const Text(
-              "You can either double-book or choose someone else.",
+              "You can choose a suggested teacher above or override the conflict below.",
               style: TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
@@ -482,14 +530,15 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
             child: const Text("Cancel"),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            onPressed: () {
-              Navigator.pop(ctx);
-              onConfirm();
-            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange.shade800,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () => Navigator.pop(ctx, "FORCE_ASSIGN"),
             child: const Text(
               "Assign anyway",
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ],

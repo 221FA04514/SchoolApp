@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
+import '../../core/widgets/success_feedback_overlay.dart';
 
 class ManageStudentsScreen extends StatefulWidget {
   const ManageStudentsScreen({super.key});
@@ -38,6 +39,9 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   }
 
   Future<void> fetchData() async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       final sRes = await _api.get("/api/v1/admin/students");
       final secRes = await _api.get("/api/v1/admin/sections");
@@ -454,7 +458,11 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
               "section": sec["section"],
               "roll_number": rollController.text,
             });
-            fetchData();
+            if (context.mounted) {
+              Navigator.pop(context);
+              SuccessFeedbackOverlay.show(context, message: "${nameController.text} has been registered.");
+              await fetchData();
+            }
           },
         ),
       ),
@@ -503,7 +511,11 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
               "section": sec["section"],
               "roll_number": rollController.text,
             });
-            fetchData();
+            if (context.mounted) {
+              Navigator.pop(context);
+              SuccessFeedbackOverlay.show(context, message: "Student profile updated.");
+              await fetchData();
+            }
           },
         ),
       ),
@@ -592,7 +604,6 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
                 onPressed: () async {
                   try {
                     await onSave();
-                    if (mounted) Navigator.pop(context);
                   } catch (e) {
                     ScaffoldMessenger.of(
                       context,

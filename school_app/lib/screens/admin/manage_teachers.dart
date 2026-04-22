@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
+import '../../core/widgets/success_feedback_overlay.dart';
 
 class ManageTeachersScreen extends StatefulWidget {
   const ManageTeachersScreen({super.key});
@@ -43,6 +44,9 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
   }
 
   Future<void> fetchTeachers() async {
+    setState(() {
+      isLoading = true;
+    });
     try {
       final res = await _api.get("/api/v1/admin/teachers");
       setState(() {
@@ -404,7 +408,8 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                         });
                         if (!mounted) return;
                         Navigator.pop(context);
-                        fetchTeachers();
+                        SuccessFeedbackOverlay.show(context, message: "${nameController.text} has been registered.");
+                        await fetchTeachers();
                       } catch (e) {
                         if (!mounted) return;
                         ScaffoldMessenger.of(
@@ -515,7 +520,8 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                         });
                         if (!mounted) return;
                         Navigator.pop(context);
-                        fetchTeachers();
+                        SuccessFeedbackOverlay.show(context, message: "Profile updated successfully.");
+                        await fetchTeachers();
                       } catch (e) {
                         if (!mounted) return;
                         ScaffoldMessenger.of(

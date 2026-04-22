@@ -31,7 +31,8 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
     try {
       final response = await ApiService().get("/api/v1/results/sections");
       setState(() {
-        _sections = response["data"] ?? [];
+        final List raw = (response["data"] as List?) ?? [];
+        _sections = raw;
       });
     } catch (e) {
       print("Error loading sections: $e");
@@ -263,11 +264,11 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
         "duration_mins": int.tryParse(_durationController.text) ?? 30,
         "total_marks": _questions.length,
         "allow_copy": _allowCopy,
-        "questions": _questions
+        "questions": (_questions ?? [])
             .map(
               (q) => {
-                "question_text": q["question"],
-                "answer_text": q["answer"],
+                "question_text": q["question"] ?? "",
+                "answer_text": q["answer"] ?? "",
                 "options_json": q["options"],
                 "marks": 1,
               },
@@ -367,7 +368,7 @@ class _TeacherHomeworkGenScreenState extends State<TeacherHomeworkGenScreen> {
                 labelText: "Select Section",
                 prefixIcon: Icon(Icons.class_outlined),
               ),
-              items: _sections.map((s) {
+              items: _sections.map<DropdownMenuItem<String>>((s) {
                 return DropdownMenuItem<String>(
                   value: s["id"].toString(),
                   child: Text(

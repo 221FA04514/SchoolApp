@@ -40,7 +40,11 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
 
   Future<void> fetchSections() async {
     final res = await _api.get("/api/v1/sections");
-    setState(() => sections = res["data"]);
+    if (mounted) {
+      setState(() {
+        sections = (res["data"] as List?) ?? [];
+      });
+    }
   }
 
   Future<void> fetchStudents() async {
@@ -48,23 +52,38 @@ class _TeacherAttendanceScreenState extends State<TeacherAttendanceScreen> {
 
     setState(() => loading = true);
 
-    final res = await _api.get(
-      "/api/v1/attendance/students?section_id=$selectedSectionId",
-    );
+    try {
+      final res = await _api.get(
+        "/api/v1/attendance/students?section_id=$selectedSectionId",
+      );
 
-    students = res["data"]
-        .map<AttendanceItem>(
-          (s) => AttendanceItem(
-            studentId: s["student_id"],
-            name: s["name"],
-            rollNumber: s["roll_number"],
-          ),
-        )
-        .toList();
+      if (mounted) {
+        setState(() {
+          final List rawList = (res["data"] as List?) ?? [];
+          students = rawList.map<AttendanceItem>((s) {
+            return AttendanceItem(
+              studentId: (s["student_id"] is String)
+                  ? int.parse(s["student_id"])
+                  : s["student_id"] ?? 0,
+              name: s["name"] ?? "Unknown Student",
+              rollNumber: (s["roll_number"] ?? s["roll_no"] ?? "").toString(),
+            );
+          }).toList();
 
-    filteredStudents = List.from(students);
-
-    setState(() => loading = false);
+          filteredStudents = List.from(students);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error loading students: $e"), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => loading = false);
+      }
+    }
   }
 
   /* ------------------ DATE PICKER ------------------ */
