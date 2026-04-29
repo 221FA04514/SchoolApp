@@ -5,6 +5,9 @@ class Homework {
   final String subject;
   final DateTime dueDate;
   bool isCompleted;
+  final int? marks;
+  final String? feedback;
+  final String? submissionStatus;
 
   Homework({
     required this.id,
@@ -13,6 +16,9 @@ class Homework {
     required this.subject,
     required this.dueDate,
     this.isCompleted = false,
+    this.marks,
+    this.feedback,
+    this.submissionStatus,
   });
 
   factory Homework.fromJson(Map<String, dynamic> json) {
@@ -23,6 +29,9 @@ class Homework {
       subject: json["subject"],
       dueDate: DateTime.parse(json["due_date"]),
       isCompleted: (json["is_completed"] == 1 || json["is_completed"] == true),
+      marks: json["marks"],
+      feedback: json["feedback"],
+      submissionStatus: json["submission_status"],
     );
   }
 }

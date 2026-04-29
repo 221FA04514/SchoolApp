@@ -3,6 +3,7 @@ import '../../core/api/api_service.dart';
 import '../../models/homework_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:dio/dio.dart' as dio_lib;
+import '../../core/utils/date_time_utils.dart';
 
 class StudentHomeworkScreen extends StatefulWidget {
   const StudentHomeworkScreen({super.key});
@@ -359,7 +360,30 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
               context: context,
               builder: (_) => AlertDialog(
                 title: Text(hw.title),
-                content: Text(hw.description),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(hw.description),
+                    if (hw.submissionStatus != null) ...[
+                      const Divider(height: 30),
+                      Text("Submission Status: ${(hw.submissionStatus!).toUpperCase()}", 
+                        style: TextStyle(fontWeight: FontWeight.bold, 
+                          color: hw.submissionStatus == 'graded' ? Colors.green : (hw.submissionStatus == 'rejected' ? Colors.red : Colors.blue)
+                        )
+                      ),
+                      const SizedBox(height: 8),
+                      if (hw.marks != null) Text("Marks: ${hw.marks}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                      if (hw.feedback != null && hw.feedback!.isNotEmpty) Text("Feedback: ${hw.feedback}"),
+                    ],
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("Close"),
+                  ),
+                ],
               ),
             );
           },
@@ -466,7 +490,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        "Due: ${hw.dueDate.toIso8601String().split('T')[0]}",
+                        "Due: ${DateTimeUtils.formatDate(hw.dueDate.toIso8601String())}",
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,

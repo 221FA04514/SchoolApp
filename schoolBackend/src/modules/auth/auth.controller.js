@@ -124,3 +124,66 @@ exports.resendOtp = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.getProfile = async (req, res, next) => {
+  try {
+    const { userId, role } = req.user;
+    const pool = require("../../config/db");
+
+    let profileData = {};
+
+    if (role === 'student') {
+      const [rows] = await pool.query(`
+        SELECT s.name, s.class as class_name, s.roll_number, sec.name as section_name,
+               s.class as raw_class, s.section as raw_section,
+               s.parent_name, s.phone, s.address
+        FROM students s
+        LEFT JOIN sections sec ON s.section_id = sec.id
+        WHERE s.user_id = ?
+      `, [userId]);
+      profileData = rows[0] || {};
+    } else if (role === 'teacher') {
+      const [rows] = await pool.query(`
+        SELECT name, subject, phone FROM teachers WHERE user_id = ?
+      `, [userId]);
+      profileData = rows[0] || {};
+    } else {
+      profileData = { name: 'Administrator', role: 'admin' };
+    }
+
+    // Add profile picture from users table
+    const [userRows] = await pool.query("SELECT profile_picture FROM users WHERE id = ?", [userId]);
+    profileData.profile_picture = userRows[0]?.profile_picture;
+
+    return success(res, profileData, "Profile fetched");
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.uploadAvatar = async (req, res, next) => {
+    try {
+        const { userId } = req.user;
+        const pool = require("../../config/db");
+
+        if (!req.file) {
+            return error(res, "No image uploaded", 400);
+        }
+
+        let imageUrl = req.file.location; // S3 storage returns location
+        
+        if (!imageUrl) {
+            // Local storage fallback
+            const protocol = req.protocol;
+            const host = req.get('host');
+            const folder = req.file.destination.split(require('path').sep).pop(); // Get 'profile_pics'
+            imageUrl = `${protocol}://${host}/uploads/${folder}/${req.file.filename}`;
+        }
+
+        await pool.query("UPDATE users SET profile_picture = ? WHERE id = ?", [imageUrl, userId]);
+
+        return success(res, { imageUrl }, "Profile picture updated");
+    } catch (err) {
+        next(err);
+    }
+};

@@ -11,7 +11,13 @@ const {
     listPeriodSettings,
     savePeriodSetting,
     removePeriodSetting,
-    removeUser
+    removeUser,
+    getDashboardStats,
+    archiveTimetable,
+    getTimetableSuggestion,
+    checkTimetableStatus,
+    listArchives,
+    viewArchive
 } = require("./admin.controller");
 
 const adminOnly = (req, res, next) => {
@@ -23,6 +29,8 @@ const adminOnly = (req, res, next) => {
 
 router.use(authMiddleware, adminOnly);
 
+router.get("/stats", getDashboardStats);
+router.get("/analytics", require("./admin.controller").getAnalytics);
 router.get("/teachers", getTeachers);
 router.get("/students", getStudents);
 router.get("/sections", getSections);
@@ -36,5 +44,10 @@ router.delete("/users/:id", removeUser);
 router.get("/period-settings", listPeriodSettings);
 router.post("/period-settings", savePeriodSetting);
 router.delete("/period-settings/:id", removePeriodSetting);
+router.post("/archive-timetable", archiveTimetable);
+router.get("/timetable/suggestion", getTimetableSuggestion);
+router.get("/timetable/status", checkTimetableStatus);
+router.get("/archive/list", listArchives);
+router.get("/archive/view/:tag", viewArchive);
 
 module.exports = router;

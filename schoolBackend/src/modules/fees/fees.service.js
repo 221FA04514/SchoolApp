@@ -4,7 +4,7 @@ const pool = require("../../config/db");
  * Get fee summary for student
  */
 exports.getFeeSummary = async (student_id) => {
-  const [[fee]] = await pool.query(
+  const [feeRows] = await pool.query(
     `
     SELECT total_amount
     FROM fees
@@ -12,10 +12,11 @@ exports.getFeeSummary = async (student_id) => {
     `,
     [student_id]
   );
+  const fee = feeRows[0];
 
   const [payments] = await pool.query(
     `
-    SELECT IFNULL(SUM(amount_paid), 0) AS paid
+    SELECT COALESCE(SUM(amount_paid), 0) AS paid
     FROM fee_payments
     WHERE student_id = ?
     `,
@@ -23,7 +24,7 @@ exports.getFeeSummary = async (student_id) => {
   );
 
   const total = fee ? Number(fee.total_amount) : 0;
-  const paid = Number(payments[0].paid);
+  const paid = (payments && payments.length > 0) ? Number(payments[0].paid) : 0;
   const due = total - paid;
 
   return { total, paid, due };
@@ -66,6 +67,6 @@ exports.recordFeePayment = async ({
       (student_id, amount_paid, payment_date, payment_mode)
     VALUES (?, ?, ?, ?)
     `,
-    [student_id, amount_paid, payment_date, payment_mode]
+    [student_id, amount_paid, payment_date, payment_mode.toLowerCase()]
   );
 };

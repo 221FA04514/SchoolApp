@@ -8,7 +8,7 @@ exports.createOnlineExam = async ({ title, subject, section_id, start_time, end_
         // 1. Create entry in primary exams table for visibility in Results module
         const [primaryResult] = await connection.query(
             `INSERT INTO exams (name, class, exam_date, section_id, total_marks, passing_marks, created_by, is_published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, TRUE)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
             [title, "Online", start_time, section_id, total_marks, Math.floor(total_marks * 0.35), created_by]
         );
         const linkedExamId = primaryResult.insertId;
@@ -22,7 +22,8 @@ exports.createOnlineExam = async ({ title, subject, section_id, start_time, end_
 
         const examId = examResult.insertId;
 
-        for (const q of questions) {
+        // Safety check for questions
+        for (const q of (questions || [])) {
             await connection.query(
                 `INSERT INTO online_exam_questions(exam_id, question_text, answer_text, options_json, marks)
          VALUES(?, ?, ?, ?, ?)`,
@@ -42,17 +43,65 @@ exports.createOnlineExam = async ({ title, subject, section_id, start_time, end_
 
 exports.getAvailableExams = async (studentId, sectionId) => {
     const [rows] = await pool.query(
-        `SELECT e.*,
-            (SELECT status FROM online_exam_attempts WHERE exam_id = e.id AND student_id = ?) as attempt_status
+        `SELECT e.*, ex.is_published,
+            (SELECT status FROM online_exam_attempts WHERE exam_id = e.id AND student_id = ? ORDER BY id DESC LIMIT 1) as attempt_status
      FROM online_exams e
-     WHERE e.section_id = ? AND NOW() <= e.end_time
+     JOIN exams ex ON e.linked_exam_id = ex.id
+     WHERE e.section_id = ?
      ORDER BY e.start_time DESC`,
         [studentId, sectionId]
     );
     return rows;
 };
 
+exports.getTeacherExams = async (teacherId) => {
+    const [rows] = await pool.query(
+        `SELECT oe.*, 
+            ex.is_published,
+            s.name as section_name,
+            (SELECT COUNT(*) FROM online_exam_attempts WHERE exam_id = oe.id AND status = 'submitted') as attempt_count,
+            (SELECT COUNT(*) FROM students WHERE section_id = oe.section_id) as total_students
+         FROM online_exams oe
+         JOIN exams ex ON oe.linked_exam_id = ex.id
+         LEFT JOIN sections s ON oe.section_id = s.id
+         WHERE oe.created_by = ?
+         ORDER BY oe.start_time DESC`,
+        [teacherId]
+    );
+    return rows;
+};
 
+exports.deleteOnlineExam = async (examId) => {
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // Get linked exam
+        const [rows] = await connection.query('SELECT linked_exam_id FROM online_exams WHERE id = ?', [examId]);
+        const linkedExamId = rows[0]?.linked_exam_id;
+
+        // Delete all attempts and answers 
+        const [attempts] = await connection.query('SELECT id FROM online_exam_attempts WHERE exam_id = ?', [examId]);
+        for (let attempt of attempts) {
+            await connection.query('DELETE FROM online_exam_answers WHERE attempt_id = ?', [attempt.id]);
+        }
+        await connection.query('DELETE FROM online_exam_attempts WHERE exam_id = ?', [examId]);
+        await connection.query('DELETE FROM online_exam_questions WHERE exam_id = ?', [examId]);
+        await connection.query('DELETE FROM online_exams WHERE id = ?', [examId]);
+
+        if (linkedExamId) {
+            await connection.query('DELETE FROM results WHERE exam_id = ?', [linkedExamId]);
+            await connection.query('DELETE FROM exams WHERE id = ?', [linkedExamId]);
+        }
+
+        await connection.commit();
+    } catch (err) {
+        await connection.rollback();
+        throw err;
+    } finally {
+        connection.release();
+    }
+};
 
 exports.getExamQuestions = async (examId) => {
     const [rows] = await pool.query(
@@ -72,7 +121,7 @@ exports.getExamQuestions = async (examId) => {
 exports.startAttempt = async (examId, studentId) => {
     const [result] = await pool.query(
         `INSERT INTO online_exam_attempts(exam_id, student_id, start_time, status)
-        VALUES(?, ?, NOW(), 'started')`,
+        VALUES(?, ?, CURRENT_TIMESTAMP, 'started')`,
         [examId, studentId]
     );
     return result.insertId;
@@ -84,7 +133,7 @@ exports.submitAttempt = async (attemptId, answers) => {
         await connection.beginTransaction();
 
         let totalMarks = 0;
-        for (const ans of answers) {
+        for (const ans of (answers || [])) {
             const [qRow] = await connection.query(`SELECT answer_text, marks FROM online_exam_questions WHERE id = ? `, [ans.question_id]);
 
             // Normalize for comparison: keep ONLY alphanumeric chars (lowercase)
@@ -103,7 +152,7 @@ exports.submitAttempt = async (attemptId, answers) => {
         }
 
         await connection.query(
-            `UPDATE online_exam_attempts SET submit_time = NOW(), marks_obtained = ?, status = 'submitted' WHERE id = ? `,
+            `UPDATE online_exam_attempts SET submit_time = CURRENT_TIMESTAMP, marks_obtained = ?, status = 'submitted' WHERE id = ? `,
             [totalMarks, attemptId]
         );
 
@@ -123,11 +172,11 @@ exports.submitAttempt = async (attemptId, answers) => {
 
         const [exRow] = await connection.query(`SELECT title, subject, linked_exam_id FROM online_exams WHERE id = ?`, [attRow[0].exam_id]);
 
-        // Check if result already exists to avoid duplicate
+        // PostgreSQL standard ON CONFLICT
         await connection.query(
             `INSERT INTO results (student_id, subject, marks, remarks, exam_id)
              VALUES (?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE marks = VALUES(marks)`,
+             ON CONFLICT (exam_id, student_id, subject) DO UPDATE SET marks = EXCLUDED.marks`,
             [actualStudentId, exRow[0].subject, totalMarks, "Online Exam: " + exRow[0].title, exRow[0].linked_exam_id]
         );
 
@@ -153,7 +202,6 @@ exports.getAttemptDetails = async (examId, userId) => {
     const attempt = attempts[0];
 
     // 2. Get questions and user answers
-    // We join online_exam_questions with online_exam_answers
     const [rows] = await pool.query(
         `SELECT
         q.id as question_id,

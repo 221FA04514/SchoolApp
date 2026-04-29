@@ -71,11 +71,12 @@ exports.upsertTimetable = async ({
     INSERT INTO timetable
       (section_id, day, period, subject, teacher_name, start_time, end_time)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE
-      subject = VALUES(subject),
-      teacher_name = VALUES(teacher_name),
-      start_time = VALUES(start_time),
-      end_time = VALUES(end_time)
+    ON CONFLICT (section_id, day, period) DO UPDATE
+    SET
+      subject = EXCLUDED.subject,
+      teacher_name = EXCLUDED.teacher_name,
+      start_time = EXCLUDED.start_time,
+      end_time = EXCLUDED.end_time
     `,
     [
       section_id,
@@ -95,12 +96,20 @@ exports.upsertTimetable = async ({
 exports.getTimetableBySection = async (sectionId) => {
   const [rows] = await pool.query(
     `
-    SELECT id, day, period, subject, teacher_name, start_time, end_time
+    SELECT id, day, period, subject, teacher_name, 
+           TO_CHAR(start_time, 'HH24:MI') as start_time, 
+           TO_CHAR(end_time, 'HH24:MI') as end_time
     FROM timetable
     WHERE section_id = ?
-    ORDER BY FIELD(day,
-      'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'
-    ), period
+    ORDER BY CASE LOWER(day)
+      WHEN 'monday' THEN 1
+      WHEN 'tuesday' THEN 2
+      WHEN 'wednesday' THEN 3
+      WHEN 'thursday' THEN 4
+      WHEN 'friday' THEN 5
+      WHEN 'saturday' THEN 6
+      ELSE 7
+    END, period
     `,
     [sectionId]
   );
@@ -118,12 +127,29 @@ exports.getTeacherPersonalTimetable = async (userId) => {
 
   const [rows] = await pool.query(
     `
-    SELECT id, day, period, subject, teacher_name, start_time, end_time, section_id
-    FROM timetable
-    WHERE teacher_name = ?
-    ORDER BY FIELD(day,
-      'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'
-    ), period
+    SELECT
+           tt.id,
+           tt.day,
+           tt.period,
+           tt.subject,
+           tt.teacher_name,
+           TO_CHAR(tt.start_time, 'HH24:MI') as start_time,
+           TO_CHAR(tt.end_time,   'HH24:MI') as end_time,
+           tt.section_id,
+           s.class   AS class_name,
+           s.section AS section_name
+    FROM timetable tt
+    LEFT JOIN sections s ON s.id = tt.section_id
+    WHERE TRIM(tt.teacher_name) = TRIM(?)
+    ORDER BY CASE LOWER(tt.day)
+      WHEN 'monday'    THEN 1
+      WHEN 'tuesday'   THEN 2
+      WHEN 'wednesday' THEN 3
+      WHEN 'thursday'  THEN 4
+      WHEN 'friday'    THEN 5
+      WHEN 'saturday'  THEN 6
+      ELSE 7
+    END, tt.period
     `,
     [teacher.name]
   );
@@ -131,18 +157,27 @@ exports.getTeacherPersonalTimetable = async (userId) => {
   return rows;
 };
 
+
 /**
  * Student: get timetable (section-wise)
  */
 exports.getStudentTimetable = async (sectionId) => {
   const [rows] = await pool.query(
     `
-    SELECT id, day, period, subject, teacher_name, start_time, end_time
+    SELECT id, day, period, subject, teacher_name, 
+           TO_CHAR(start_time, 'HH24:MI') as start_time, 
+           TO_CHAR(end_time, 'HH24:MI') as end_time
     FROM timetable
     WHERE section_id = ?
-    ORDER BY FIELD(day,
-      'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'
-    ), period
+    ORDER BY CASE LOWER(day)
+      WHEN 'monday' THEN 1
+      WHEN 'tuesday' THEN 2
+      WHEN 'wednesday' THEN 3
+      WHEN 'thursday' THEN 4
+      WHEN 'friday' THEN 5
+      WHEN 'saturday' THEN 6
+      ELSE 7
+    END, period
     `,
     [sectionId]
   );

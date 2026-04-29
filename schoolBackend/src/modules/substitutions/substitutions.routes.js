@@ -10,11 +10,17 @@ const adminOnly = (req, res, next) => {
     next();
 };
 
+// Teacher-accessible route — must be placed BEFORE the adminOnly middleware
+router.get("/my-today", authMiddleware, controller.getMyTodaySubstitution);
+
 router.use(authMiddleware, adminOnly);
 
 router.post("/absent", controller.markAbsent);
 router.get("/suggestions", controller.getSuggestions);
+router.get("/teacher-timetable", controller.getTeacherTimetable);
 router.post("/assign", controller.assign);
 router.get("/list", controller.listDaySubstitutions);
+router.delete("/:id", controller.deleteSubstitution);
 
 module.exports = router;
+

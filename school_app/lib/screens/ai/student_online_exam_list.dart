@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/api/api_service.dart';
 import 'student_exam_portal_screen.dart';
 import 'student_exam_review_screen.dart';
@@ -23,6 +24,38 @@ class _StudentOnlineExamListScreenState
     _loadExams();
   }
 
+  /// Helper to safely parse potentially timezone-less dates from DB as UTC
+  DateTime? _parseUtcToLocal(dynamic raw) {
+    if (raw == null) return null;
+    try {
+      String rawStr = raw.toString();
+      // If no timezone indicator, assume UTC
+      if (!rawStr.endsWith('Z') && !rawStr.contains('+')) {
+        rawStr = rawStr.replaceAll(' ', 'T') + 'Z';
+      }
+      return DateTime.parse(rawStr).toLocal();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Parses a raw ISO-8601 UTC string and formats it as local time.
+  String _formatDateTime(dynamic raw) {
+    final dt = _parseUtcToLocal(raw);
+    if (dt == null) return raw?.toString() ?? '—';
+    return DateFormat('dd MMM yyyy, hh:mm a').format(dt);
+  }
+
+  /// Returns a color based on how close the deadline is.
+  Color _deadlineColor(dynamic raw) {
+    final dt = _parseUtcToLocal(raw);
+    if (dt == null) return Colors.grey;
+    final diff = dt.difference(DateTime.now());
+    if (diff.isNegative) return Colors.red.shade700;
+    if (diff.inMinutes <= 30) return Colors.orange.shade700;
+    return Colors.grey.shade700;
+  }
+
   Future<void> _loadExams() async {
     try {
       final response = await _api.get("/api/v1/online-exams/list");
@@ -45,6 +78,14 @@ class _StudentOnlineExamListScreenState
         const SnackBar(content: Text("You have already attempted this exam.")),
       );
       return;
+    }
+
+    final dt = _parseUtcToLocal(exam['end_time']);
+    if (dt != null && dt.difference(DateTime.now()).isNegative) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("This exam has already ended and was missed.")),
+        );
+        return;
     }
 
     // Confirm start
@@ -159,6 +200,28 @@ class _StudentOnlineExamListScreenState
                               itemBuilder: (context, index) {
                                 final exam = _exams[index];
                                 bool isAttempted = exam["attempt_status"] != null;
+                                bool isPublished = exam["is_published"] == 1 || exam["is_published"] == true;
+                                final dt = _parseUtcToLocal(exam['end_time']);
+                                bool isMissed = !isAttempted && dt != null && dt.difference(DateTime.now()).isNegative;
+
+                                String buttonText = "Start";
+                                Color buttonColor = const Color(0xFF4A00E0);
+                                
+                                if (exam["attempt_status"] == 'submitted') {
+                                  if (isPublished) {
+                                    buttonText = "Review";
+                                    buttonColor = Colors.green;
+                                  } else {
+                                    buttonText = "Pending Result";
+                                    buttonColor = Colors.orange;
+                                  }
+                                } else if (isAttempted) {
+                                  buttonText = "Attempted";
+                                  buttonColor = Colors.grey;
+                                } else if (isMissed) {
+                                  buttonText = "Missed";
+                                  buttonColor = Colors.red;
+                                }
 
                                 return Card(
                                   elevation: 2,
@@ -182,49 +245,80 @@ class _StudentOnlineExamListScreenState
                                         Text("Subject: ${exam['subject']}"),
                                         Text(
                                             "Duration: ${exam['duration_mins']} mins"),
-                                        Text("Deadline: ${exam['end_time']}"),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.play_circle_outline,
+                                                size: 14,
+                                                color: Colors.green.shade600),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                "Starts: ${_formatDateTime(exam['start_time'])}",
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color:
+                                                        Colors.green.shade700),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          children: [
+                                            Icon(Icons.schedule,
+                                                size: 14,
+                                                color: _deadlineColor(
+                                                    exam['end_time'])),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                "Deadline: ${_formatDateTime(exam['end_time'])}",
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: _deadlineColor(
+                                                        exam['end_time']),
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ],
                                     ),
                                     trailing: ElevatedButton(
                                       onPressed: () {
                                         if (exam["attempt_status"] ==
                                             'submitted') {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  StudentExamReviewScreen(
-                                                examId: exam["id"],
-                                                title: exam["title"],
+                                          if (isPublished) {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    StudentExamReviewScreen(
+                                                  examId: exam["id"],
+                                                  title: exam["title"],
+                                                ),
                                               ),
-                                            ),
-                                          );
-                                        } else if (isAttempted) {
+                                            );
+                                          } else {
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Result not published yet")));
+                                          }
+                                        } else if (isAttempted || isMissed) {
                                           return;
                                         } else {
                                           _startExam(exam);
                                         }
                                       },
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            exam["attempt_status"] == 'submitted'
-                                                ? Colors.green
-                                                : isAttempted
-                                                    ? Colors.grey
-                                                    : const Color(0xFF4A00E0),
+                                        backgroundColor: buttonColor,
                                         foregroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
                                       ),
-                                      child: Text(
-                                        exam["attempt_status"] == 'submitted'
-                                            ? "Review"
-                                            : isAttempted
-                                                ? "Attempted"
-                                                : "Start",
-                                      ),
+                                      child: Text(buttonText),
                                     ),
                                   ),
                                 );

@@ -1,6 +1,8 @@
 class TeacherDashboardModel {
   final String name;
   final String subject;
+  final String phone;
+  final String email;
   final int totalStudents;
   final int pendingDoubts;
   final List todaySchedule;
@@ -8,6 +10,8 @@ class TeacherDashboardModel {
   TeacherDashboardModel({
     required this.name,
     required this.subject,
+    required this.phone,
+    required this.email,
     required this.totalStudents,
     required this.pendingDoubts,
     required this.todaySchedule,
@@ -15,11 +19,14 @@ class TeacherDashboardModel {
 
   factory TeacherDashboardModel.fromJson(Map<String, dynamic> json) {
     return TeacherDashboardModel(
-      name: json["teacher"]?["name"] ?? "Anonymous",
-      subject: json["teacher"]?["subject"] ?? "General",
+      name:          json["teacher"]?["name"]    ?? "Unknown",
+      subject:       json["teacher"]?["subject"] ?? "General",
+      phone:         json["teacher"]?["phone"]   ?? "",
+      email:         json["teacher"]?["email"]   ?? "",
       totalStudents: json["stats"]?["total_students"] ?? 0,
       pendingDoubts: json["stats"]?["pending_doubts"] ?? 0,
       todaySchedule: json["today_schedule"] ?? [],
     );
   }
 }
+

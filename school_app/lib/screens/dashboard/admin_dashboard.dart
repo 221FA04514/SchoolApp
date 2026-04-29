@@ -11,6 +11,7 @@ import '../admin/manage_mappings.dart';
 import '../admin/manage_substitutions.dart';
 import '../admin/manage_notifications.dart';
 import '../admin/manage_exams.dart';
+import '../admin/manage_settings.dart';
 import '../leaves/leave_management_screen.dart';
 import '../../core/api/api_service.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -345,12 +346,15 @@ class _AdminDashboardState extends State<AdminDashboard>
                           sideTitles: SideTitles(
                             showTitles: true,
                             getTitlesWidget: (value, meta) {
-                              final data = _isAttendanceMode ? _analytics["attendance"] : _analytics["fees"];
-                              if (value.toInt() >= data.length) return const SizedBox();
+                              final data = (_isAttendanceMode
+                                  ? _analytics["attendance"]
+                                  : _analytics["fees"]) ?? [];
+                              final idx = value.toInt();
+                              if (idx < 0 || idx >= data.length) return const SizedBox();
                               return Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
-                                  data[value.toInt()]["section"],
+                                  data[idx]["section"] ?? "",
                                   style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey),
                                 ),
                               );
@@ -391,8 +395,11 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   double _getMaxFeeValue() {
     double max = 0;
-    for (var item in _analytics["fees"]) {
-      double val = (item["paid"] ?? 0) + (item["pending"] ?? 0);
+    final fees = _analytics["fees"] ?? [];
+    for (var item in fees) {
+      final p = item["paid"] ?? 0;
+      final pe = item["pending"] ?? 0;
+      double val = (p is num ? p.toDouble() : 0.0) + (pe is num ? pe.toDouble() : 0.0);
       if (val > max) max = val;
     }
     return max == 0 ? 100 : max * 1.1;
@@ -400,13 +407,15 @@ class _AdminDashboardState extends State<AdminDashboard>
 
   List<BarChartGroupData> _buildBarGroups() {
     if (_isAttendanceMode) {
-      final List data = _analytics["attendance"];
+      final List data = _analytics["attendance"] ?? [];
+      if (data.isEmpty) return [];
       return List.generate(data.length, (i) {
+        final pct = (data[i]["percentage"] ?? 0);
         return BarChartGroupData(
           x: i,
           barRods: [
             BarChartRodData(
-              toY: data[i]["percentage"].toDouble(),
+              toY: (pct is num ? pct.toDouble() : 0.0),
               gradient: const LinearGradient(
                 colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
                 begin: Alignment.bottomCenter,
@@ -424,22 +433,27 @@ class _AdminDashboardState extends State<AdminDashboard>
         );
       });
     } else {
-      final List data = _analytics["fees"];
+      final List data = _analytics["fees"] ?? [];
+      if (data.isEmpty) return [];
       return List.generate(data.length, (i) {
+        final paid = (data[i]["paid"] ?? 0);
+        final pending = (data[i]["pending"] ?? 0);
         return BarChartGroupData(
           x: i,
           barRods: [
             BarChartRodData(
-              toY: (data[i]["paid"] ?? 0).toDouble(),
+              toY: (paid is num ? paid.toDouble() : 0.0),
               color: Colors.greenAccent.shade700,
               width: 14,
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+              borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4), topRight: Radius.circular(4)),
             ),
             BarChartRodData(
-              toY: (data[i]["pending"] ?? 0).toDouble(),
+              toY: (pending is num ? pending.toDouble() : 0.0),
               color: Colors.orangeAccent.shade700.withOpacity(0.6),
               width: 14,
-              borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+              borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(4), topRight: Radius.circular(4)),
             ),
           ],
         );
@@ -464,6 +478,11 @@ class _AdminDashboardState extends State<AdminDashboard>
       automaticallyImplyLeading: false,
       backgroundColor: const Color(0xFF1E293B),
       actions: [
+        IconButton(
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ManageSettingsScreen())),
+          icon: const Icon(Icons.settings_suggest_rounded, color: Colors.white70),
+          tooltip: "Settings",
+        ),
         IconButton(
           onPressed: () => _logout(context),
           icon: const Icon(Icons.logout_rounded, color: Colors.white70),

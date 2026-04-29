@@ -101,7 +101,8 @@ exports.getNotificationsForUser = async (userId) => {
         SELECT mn.*, nr.status as receipt_status
         FROM mass_notifications mn
         JOIN notification_receipts nr ON mn.id = nr.notification_id
-        WHERE nr.user_id = ? 
+        WHERE nr.user_id = ?
+        AND nr.status != 'dismissed'
         AND (mn.expires_at IS NULL OR mn.expires_at > CURRENT_TIMESTAMP)
         ORDER BY mn.created_at DESC
     `, [userId]);
@@ -115,6 +116,16 @@ exports.updateStatus = async (notificationId, userId, status) => {
     );
 };
 
+/**
+ * Student dismisses a mass notification (hides from their view only)
+ */
+exports.dismissForUser = async (notificationId, userId) => {
+    await pool.query(
+        "UPDATE notification_receipts SET status = 'dismissed' WHERE notification_id = ? AND user_id = ?",
+        [notificationId, userId]
+    );
+};
+
 exports.getAllNotifications = async () => {
     const [rows] = await pool.query("SELECT * FROM mass_notifications ORDER BY created_at DESC");
     return rows;
@@ -124,6 +135,18 @@ exports.deleteNotification = async (id) => {
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
+
+        // Find notification details to find synced announcement
+        const [notif] = await connection.query("SELECT title, body, created_by FROM mass_notifications WHERE id = ?", [id]);
+        if (notif.length > 0) {
+            const { title, body, created_by } = notif[0];
+            // Delete from announcements if matches title, description, created_by and role was admin
+            await connection.query(
+                "DELETE FROM announcements WHERE title = ? AND description = ? AND created_by = ? AND role = 'admin'",
+                [title, body, created_by]
+            );
+        }
+
         await connection.query("DELETE FROM notification_receipts WHERE notification_id = ?", [id]);
         await connection.query("DELETE FROM mass_notifications WHERE id = ?", [id]);
         await connection.commit();

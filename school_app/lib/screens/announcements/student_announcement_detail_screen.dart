@@ -142,7 +142,7 @@ class _StudentAnnouncementDetailScreenState
 
     String postDate = "";
     try {
-      final date = DateTime.parse(announcement["created_at"]);
+      final date = DateTime.parse(announcement["created_at"]).toLocal();
       postDate = DateFormat('EEEE, MMMM d, yyyy').format(date);
     } catch (e) {}
 

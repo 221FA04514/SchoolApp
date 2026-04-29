@@ -27,4 +27,9 @@ router.get("/exam-marks/:examId/:sectionId", authMiddleware, (req, res, next) =>
   getExamMarks(req, res, next);
 });
 
+router.get("/teacher-subjects/:sectionId", authMiddleware, (req, res, next) => {
+  const { getTeacherSubjects } = require("./results.controller");
+  getTeacherSubjects(req, res, next);
+});
+
 module.exports = router;

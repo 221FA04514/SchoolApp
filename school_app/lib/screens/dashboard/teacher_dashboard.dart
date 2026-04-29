@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/api/teacher_dashboard_service.dart';
 import '../../models/teacher_dashboard_model.dart';
@@ -18,6 +20,7 @@ import '../../core/api/api_service.dart';
 import '../resources/teacher_resource_library_screen.dart';
 import '../leaves/leave_management_screen.dart';
 import '../performance/teacher_performance_screen.dart';
+import '../../widgets/substitution_banner.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -30,11 +33,14 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   late Future<TeacherDashboardModel> dashboardFuture;
   int _selectedIndex = 0;
   int unreadNotifications = 0;
+  List<Map<String, dynamic>> _mySubstitutions = [];
+  bool _bannerDismissed = false;
 
   @override
   void initState() {
     super.initState();
     _refreshData();
+    _fetchMySubstitutions();
   }
 
   void _refreshData() {
@@ -42,6 +48,24 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       dashboardFuture = TeacherDashboardService().fetchTeacherDashboard();
     });
     _fetchUnreadCount();
+  }
+
+  Future<void> _fetchMySubstitutions() async {
+    // Always fetch on login — banner shows every time.
+    // Dismiss is session-only (in-memory _bannerDismissed flag).
+    try {
+      final res = await ApiService()
+          .get('/api/v2/admin/substitutions/my-today');
+      final list = res['data'] as List? ?? [];
+      if (mounted) {
+        setState(() {
+          _mySubstitutions =
+              list.map((e) => Map<String, dynamic>.from(e)).toList();
+        });
+      }
+    } catch (e) {
+      // Silent fail — banner simply won't show
+    }
   }
 
   Future<void> _fetchUnreadCount() async {
@@ -75,37 +99,64 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF1F4FA),
-      body: FutureBuilder<TeacherDashboardModel>(
-        future: dashboardFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF4A00E0)),
-            );
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Error loading dashboard"),
-                  const SizedBox(height: 10),
-                  ElevatedButton(
-                    onPressed: _refreshData,
-                    child: const Text("Retry"),
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: const Color(0xFFF1F4FA),
+          body: FutureBuilder<TeacherDashboardModel>(
+            future: dashboardFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF4A00E0)),
+                );
+              }
+              if (snapshot.hasError || !snapshot.hasData) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text("Error loading dashboard"),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: _refreshData,
+                        child: const Text("Retry"),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }
+                );
+              }
 
-          final data = snapshot.data!;
-          return _getCurrentPage(data);
-        },
-      ),
-      bottomNavigationBar: _buildBottomNav(),
+              final data = snapshot.data!;
+              return _getCurrentPage(data);
+            },
+          ),
+          bottomNavigationBar: _buildBottomNav(),
+        ),
+
+        // ── Floating substitution banner overlay ──────────────────────
+        if (!_bannerDismissed && _mySubstitutions.isNotEmpty && _selectedIndex == 0)
+          Positioned.fill(
+            top: MediaQuery.of(context).padding.top + 100,
+            bottom: 100, // allow space to move
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: SubstitutionBanner(
+                assignments: _mySubstitutions,
+                onDismiss: () async {
+                  // Wait for the fly-to-alerts animation to finish
+                  await Future.delayed(const Duration(milliseconds: 800));
+                  if (mounted) {
+                    setState(() {
+                      _bannerDismissed = true;
+                      _selectedIndex = 1; // fly to Alerts
+                    });
+                  }
+                },
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -180,13 +231,22 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   Widget _getCurrentPage(TeacherDashboardModel data) {
     switch (_selectedIndex) {
       case 0:
-        return _HomeView(data: data, onRefresh: _refreshData);
+        return _HomeView(
+          data: data,
+          onRefresh: _refreshData,
+          // Pass banner height offset so content isn't hidden under float
+          bannerVisible: !_bannerDismissed && _mySubstitutions.isNotEmpty,
+        );
       case 1:
         return const NotificationInboxScreen();
       case 2:
         return _ProfileView(data: data, parentContext: context);
       default:
-        return _HomeView(data: data, onRefresh: _refreshData);
+        return _HomeView(
+          data: data,
+          onRefresh: _refreshData,
+          bannerVisible: false,
+        );
     }
   }
 }
@@ -194,8 +254,13 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 class _HomeView extends StatefulWidget {
   final TeacherDashboardModel data;
   final VoidCallback onRefresh;
+  final bool bannerVisible;
 
-  const _HomeView({required this.data, required this.onRefresh});
+  const _HomeView({
+    required this.data,
+    required this.onRefresh,
+    required this.bannerVisible,
+  });
 
   @override
   State<_HomeView> createState() => _HomeViewState();
@@ -278,7 +343,8 @@ class _HomeViewState extends State<_HomeView>
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  const SizedBox(height: 20),
+                  // Extra top space when floating banner is visible
+                  SizedBox(height: widget.bannerVisible ? 96 : 20),
                   _buildStatsRow(data),
                   const SizedBox(height: 30),
                   _buildSectionTitle("Quick Actions"),
@@ -959,40 +1025,271 @@ class _ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircleAvatar(
-            radius: 50,
-            backgroundColor: Color(0xFF4A00E0),
-            child: Icon(Icons.person, size: 60, color: Colors.white),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            data.name,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            data.subject,
-            style: const TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-          const SizedBox(height: 30),
-          ElevatedButton.icon(
-            onPressed: _logout,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF1F4FA),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            // ── Header gradient ─────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 30,
+                bottom: 40,
+              ),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF4A00E0), Color(0xFF2D31FA)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(36),
+                  bottomRight: Radius.circular(36),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Avatar
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white38, width: 3),
+                    ),
+                    child: CircleAvatar(
+                      radius: 46,
+                      backgroundColor: Colors.white.withOpacity(0.18),
+                      child: Text(
+                        data.name.isNotEmpty ? data.name[0].toUpperCase() : 'T',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 38,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    data.name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.18),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.school_rounded, color: Colors.amber, size: 14),
+                        const SizedBox(width: 6),
+                        Text(
+                          data.subject.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            icon: const Icon(Icons.logout),
-            label: const Text("Logout"),
+
+            const SizedBox(height: 24),
+
+            // ── Stats row ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _statTile(Icons.people_rounded, data.totalStudents.toString(), 'Students', Colors.blue),
+                  const SizedBox(width: 14),
+                  _statTile(Icons.help_outline_rounded, data.pendingDoubts.toString(), 'Pending Doubts', Colors.orange),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Info card ───────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _infoTile(Icons.badge_rounded, 'Full Name', data.name, const Color(0xFF4A00E0)),
+                    _divider(),
+                    _infoTile(Icons.auto_stories_rounded, 'Subject', data.subject, Colors.indigo),
+                    if (data.phone.isNotEmpty) ...[
+                      _divider(),
+                      _infoTile(Icons.phone_rounded, 'Phone', data.phone, Colors.green),
+                    ],
+                    if (data.email.isNotEmpty) ...[
+                      _divider(),
+                      _infoTile(Icons.email_rounded, 'Email', data.email, Colors.blueGrey),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            // ── Logout ──────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton.icon(
+                  onPressed: _logout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFEEEE),
+                    foregroundColor: Colors.red.shade700,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Colors.red.shade100),
+                    ),
+                  ),
+                  icon: Icon(Icons.logout_rounded, color: Colors.red.shade600),
+                  label: Text(
+                    'Sign Out',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.red.shade700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 60),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statTile(IconData icon, String value, String label, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(value,
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: color)),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoTile(IconData icon, String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                        fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E293B))),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _divider() => Divider(
+        height: 1,
+        thickness: 1,
+        indent: 18,
+        endIndent: 18,
+        color: Colors.grey.shade100,
+      );
 }
+
 
 class _DashboardCard extends StatelessWidget {
   final String title;

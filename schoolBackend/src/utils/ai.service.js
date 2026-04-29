@@ -121,7 +121,7 @@ exports.analyzeHomework = async (prompt, imageBase64 = null) => {
 
         const chatCompletion = await groq.chat.completions.create({
             messages,
-            model: "llama-3.2-11b-vision-preview",
+            model: "llama-3.2-11b-vision",
             temperature: 0.1,
         });
 

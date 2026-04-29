@@ -5,6 +5,8 @@ import 'dart:io';
 import '../../core/auth/auth_provider.dart';
 import '../auth/login_selection_screen.dart';
 import '../../models/student_dashboard_model.dart';
+import '../../core/api/api_service.dart';
+import 'package:dio/dio.dart' as dio;
 
 class StudentProfileScreen extends StatefulWidget {
   final StudentDashboardModel? studentData;
@@ -18,6 +20,29 @@ class StudentProfileScreen extends StatefulWidget {
 class _StudentProfileScreenState extends State<StudentProfileScreen> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
+  final ApiService _api = ApiService();
+  Map<String, dynamic> _profileData = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final res = await _api.get("/api/v1/auth/profile");
+      if (mounted) {
+        setState(() {
+          _profileData = res["data"] ?? {};
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _logout(BuildContext context) async {
     await context.read<AuthProvider>().logout();
@@ -39,20 +64,30 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
         setState(() {
           _profileImage = File(image.path);
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Profile picture updated successfully!"),
-            backgroundColor: Colors.green,
-          ),
-        );
+
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Uploading...")));
+
+        final formData = dio.FormData.fromMap({
+          "avatar": await dio.MultipartFile.fromFile(image.path, filename: "avatar_${DateTime.now().millisecondsSinceEpoch}.jpg"),
+        });
+
+        await _api.postMultipart("/api/v1/auth/upload-avatar", formData);
+
+        // Reload profile so the stored URL is fetched and networkImage updates
+        await _fetchProfile();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Profile picture updated!"), backgroundColor: Colors.green),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error picking image: $e"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Upload failed: $e"), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -98,9 +133,12 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   child: CircleAvatar(
                     radius: 70,
                     backgroundColor: const Color(0xFF4A00E0),
-                    backgroundImage:
-                        _profileImage != null ? FileImage(_profileImage!) : null,
-                    child: _profileImage == null
+                    backgroundImage: _profileImage != null 
+                        ? FileImage(_profileImage!) 
+                        : (_profileData["profile_picture"] != null 
+                            ? NetworkImage(_profileData["profile_picture"]) as ImageProvider
+                            : null),
+                    child: (_profileImage == null && _profileData["profile_picture"] == null)
                         ? const Icon(Icons.person, size: 70, color: Colors.white)
                         : null,
                   ),
@@ -151,6 +189,9 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
             const SizedBox(height: 40),
 
             // Details Cards
+            if (_isLoading)
+               const CircularProgressIndicator()
+            else
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
@@ -158,23 +199,15 @@ class _StudentProfileScreenState extends State<StudentProfileScreen> {
                   _ProfileCard(
                     icon: Icons.badge_outlined,
                     label: "Roll Number",
-                    value: rollNumber,
+                    value: _profileData["roll_number"]?.toString() ?? "N/A",
                   ),
                   const SizedBox(height: 15),
                   const Divider(height: 1),
                   const SizedBox(height: 15),
                   _ProfileCard(
                     icon: Icons.class_outlined,
-                    label: "Section",
-                    value: section,
-                  ),
-                  const SizedBox(height: 15),
-                  const Divider(height: 1),
-                  const SizedBox(height: 15),
-                  _ProfileCard(
-                    icon: Icons.school_outlined,
-                    label: "Current Term",
-                    value: term,
+                    label: "Class & Section",
+                    value: "${_profileData["class_name"] ?? ""} - ${_profileData["section_name"] ?? ""}",
                   ),
                 ],
               ),

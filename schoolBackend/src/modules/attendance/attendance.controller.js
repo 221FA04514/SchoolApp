@@ -19,8 +19,10 @@ exports.getStudentsForAttendance = async (req, res, next) => {
     }
 
     const { section_id } = req.query;
+    // Cast to Number for PostgreSQL compatibility
+    const numericSectionId = section_id ? Number(section_id) : null;
 
-    const students = await getStudentsForTeacher(section_id || null);
+    const students = await getStudentsForTeacher(numericSectionId);
     return success(res, students, "Students fetched");
   } catch (err) {
     next(err);

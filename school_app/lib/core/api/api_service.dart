@@ -32,6 +32,38 @@ class ApiService {
     };
   }
 
+  // ================= GLOBAL DATA CAPITALIZATION =================
+  dynamic _capitalizeData(dynamic data) {
+    if (data is String) {
+      if (data.isEmpty) return data;
+      // Skip strings that look like URLs, emails, dates, times, file paths
+      if (data.startsWith('http') || data.contains('@') || data.contains('://') || data.contains(RegExp(r'\d{4}-\d{2}-\d{2}'))) {
+        return data;
+      }
+      // Skip known lowercase constants/enums
+      final lower = data.toLowerCase();
+      const skipValues = {'student', 'teacher', 'admin', 'pdf', 'mp4', 'mov', 'file', 'paid', 'pending', 'present', 'absent', 'late', 'half_day', 'holiday', 'seen', 'delivered', 'dismissed'};
+      if (skipValues.contains(lower)) return data;
+
+      // Capitalize first letter
+      return data[0].toUpperCase() + data.substring(1);
+    } else if (data is List) {
+      return data.map((e) => _capitalizeData(e)).toList();
+    } else if (data is Map<String, dynamic>) {
+      final Map<String, dynamic> capitalizedMap = {};
+      const skipKeys = {'id', '_id', 'file_url', 'image_url', 'attachment_url', 'email', 'password', 'token', 'status', 'type', 'role', 'created_at', 'updated_at', 'deleted_at', 'scheduled_at', 'deadline', 'date', 'time', 'receipt_status'};
+      data.forEach((key, value) {
+        if (skipKeys.contains(key.toLowerCase()) || key.toLowerCase().endsWith('id')) {
+          capitalizedMap[key] = value;
+        } else {
+          capitalizedMap[key] = _capitalizeData(value);
+        }
+      });
+      return capitalizedMap;
+    }
+    return data;
+  }
+
   // ================= POST =================
   Future<dynamic> post(String endpoint, Map<String, dynamic> body) async {
     try {
@@ -46,7 +78,7 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return data;
+        return _capitalizeData(data);
       } else {
         throw ApiException(
           data["message"] ?? "API error",
@@ -75,7 +107,7 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return data;
+        return _capitalizeData(data);
       } else {
         throw ApiException(
           data["message"] ?? "API error",
@@ -104,7 +136,7 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return data;
+        return _capitalizeData(data);
       } else {
         throw ApiException(
           data["message"] ?? "API error",
@@ -134,7 +166,7 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        return data;
+        return _capitalizeData(data);
       } else {
         throw ApiException(
           data["message"] ?? "API error",
@@ -146,6 +178,36 @@ class ApiService {
       throw Exception("Server timeout. Please try again.");
     } catch (e) {
       print("PUT API ERROR [$endpoint]: $e");
+      rethrow;
+    }
+  }
+
+  // ================= PATCH =================
+  Future<dynamic> patch(String endpoint, Map<String, dynamic> body) async {
+    try {
+      final response = await http
+          .patch(
+            Uri.parse("${AppConstants.baseUrl}$endpoint"),
+            headers: await _headers(),
+            body: jsonEncode(body),
+          )
+          .timeout(_timeout);
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return _capitalizeData(data);
+      } else {
+        throw ApiException(
+          data["message"] ?? "API error",
+          response.statusCode,
+          data,
+        );
+      }
+    } on TimeoutException {
+      throw Exception("Server timeout. Please try again.");
+    } catch (e) {
+      print("PATCH API ERROR [$endpoint]: $e");
       rethrow;
     }
   }
@@ -182,7 +244,7 @@ class ApiService {
       );
 
       if (response.statusCode! >= 200 && response.statusCode! < 300) {
-        return response.data;
+        return _capitalizeData(response.data);
       } else {
         throw ApiException(
           response.data["message"] ?? "Upload error",

@@ -15,6 +15,7 @@ router.use(authMiddleware);
 // User-accessible routes
 router.get("/my", controller.getMyNotifications);
 router.post("/mark-read/:id", controller.markRead);
+router.delete("/my/:id", controller.dismissForUser);
 
 // Admin-only routes
 router.get("/", adminOnly, controller.listAll);

@@ -68,6 +68,7 @@ app.use("/api/v1/leaves", require("./modules/leaves/leaves.routes"));
 app.use("/api/v2/admin/mappings", require("./modules/mapping/mapping.routes"));
 app.use("/api/v2/admin/substitutions", require("./modules/substitutions/substitutions.routes"));
 app.use("/api/v2/admin/notifications", require("./modules/mass_notifications/mass_notifications.routes"));
+app.use("/api/v1/settings", require("./modules/settings/settings.routes"));
 
 // Health check (already created in Phase 0)
 app.use("/api/v1/health", require("./modules/health/health.routes"));

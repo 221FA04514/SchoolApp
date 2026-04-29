@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/socket/socket_service.dart';
 import '../../core/api/api_service.dart';
+import '../../core/utils/date_time_utils.dart';
 
 class StudentAlertsScreen extends StatefulWidget {
   const StudentAlertsScreen({super.key});
@@ -50,9 +51,10 @@ class _StudentAlertsScreenState extends State<StudentAlertsScreen> {
           final List data = notifRes["data"];
           for (var item in data) {
             _notifications.add({
+              "id": item["id"]?.toString() ?? "",
               "title": item["title"] ?? "Notification",
               "message": item["body"] ?? item["message"] ?? "",
-              "date": item["created_at"]?.toString().split('T')[0] ?? "Recent",
+              "date": DateTimeUtils.formatDate(item["created_at"]?.toString()),
               "type": "admin",
             });
           }
@@ -76,19 +78,16 @@ class _StudentAlertsScreenState extends State<StudentAlertsScreen> {
       if (mounted && response["data"] != null) {
         setState(() {
           final List data = response["data"];
-          // Optional: Deduplicate if needed, assuming distinct sources
           for (var ann in data) {
-            // Only add if not already present (naive check or just append)
             _notifications.add({
+              "id": ann["id"]?.toString() ?? "",
               "title": ann["title"] ?? "Announcement",
               "message": ann["description"] ?? ann["message"] ?? "",
               "date":
-                  ann["date"] ??
-                  ann["created_at"]?.toString().split('T')[0] ??
+                  ann["date"] != null ? DateTimeUtils.formatDate(ann["date"].toString()) :
+                  ann["created_at"] != null ? DateTimeUtils.formatDate(ann["created_at"].toString()) :
                   "Recent",
-              "type":
-                  ann["type"] ??
-                  "teacher", // Default to teacher for class announcements
+              "type": ann["type"] ?? "teacher",
             });
           }
         });
@@ -131,21 +130,34 @@ class _StudentAlertsScreenState extends State<StudentAlertsScreen> {
                 itemCount: _notifications.length,
                 itemBuilder: (context, index) {
                   final notif = _notifications[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    // ... (rest of the card content)
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                  return Dismissible(
+                    key: Key(notif['id'] ?? index.toString()),
+                    direction: DismissDirection.endToStart,
+                    onDismissed: (dir) => _deleteNotification(notif, index),
+                    background: Container(
+                      alignment: Alignment.centerRight,
+                      padding: const EdgeInsets.only(right: 20),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Icon(Icons.delete, color: Colors.white),
                     ),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -204,11 +216,44 @@ class _StudentAlertsScreenState extends State<StudentAlertsScreen> {
                         ),
                       ],
                     ),
-                  );
+                  ),
+                );
                 },
               ),
       ),
     );
+  }
+
+  Future<void> _deleteNotification(Map<String, String> notif, int index) async {
+    final originalNotif = Map<String, String>.from(notif);
+    setState(() {
+      _notifications.removeAt(index);
+    });
+
+    try {
+      final ApiService api = ApiService();
+      if (notif["type"] == "admin") {
+        await api.delete("/api/v2/admin/notifications/my/${notif["id"]}");
+      } else {
+        await api.post("/api/v1/announcements/${notif["id"]}/dismiss", {});
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Notification dismissed")),
+        );
+      }
+    } catch (e) {
+      // Rollback on failure
+      if (mounted) {
+        setState(() {
+          _notifications.insert(index, originalNotif);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to delete: $e"), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   Color _getColor(String type) {

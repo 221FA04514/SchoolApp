@@ -102,6 +102,9 @@ exports.registerUser = async (req, res, next) => {
         return success(res, { userId }, "User registered successfully");
     } catch (err) {
         await connection.rollback();
+        if (err.code === '23505') {
+            return error(res, "Email already exists. Please use a different email.", 409);
+        }
         next(err);
     } finally {
         connection.release();
@@ -163,6 +166,9 @@ exports.updateUser = async (req, res, next) => {
         return success(res, null, "User updated successfully");
     } catch (err) {
         await connection.rollback();
+        if (err.code === '23505') {
+            return error(res, "Email already exists. Please use a different email.", 409);
+        }
         next(err);
     } finally {
         connection.release();
@@ -200,12 +206,87 @@ exports.removePeriodSetting = async (req, res, next) => {
     }
 };
 
+exports.archiveTimetable = async (req, res, next) => {
+    try {
+        const result = await adminService.archiveCurrentTimetable();
+        return success(res, result, "Timetable archived and reset successfully");
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getTimetableSuggestion = async (req, res, next) => {
+    try {
+        const { sectionId, day, period } = req.query;
+        if (!sectionId || !day || !period) {
+            return error(res, "Missing required parameters", 400);
+        }
+        const suggestion = await adminService.getTimetableSuggestion(sectionId, day, period);
+        return success(res, suggestion, "Suggestion fetched");
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.checkTimetableStatus = async (req, res, next) => {
+    try {
+        const isEmpty = await adminService.isTimetableEmpty();
+        return success(res, { isEmpty }, "Status checked");
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.listArchives = async (req, res, next) => {
+    try {
+        const list = await adminService.getArchiveList();
+        return success(res, list, "Archive list fetched");
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.viewArchive = async (req, res, next) => {
+    try {
+        const { tag } = req.params;
+        const data = await adminService.getArchiveByTag(tag);
+        return success(res, data, "Archive data fetched");
+    } catch (err) {
+        next(err);
+    }
+};
+
 exports.removeUser = async (req, res, next) => {
     try {
         const { id } = req.params;
         // Delete from users table - ON DELETE CASCADE should handle related tables
         await pool.query("DELETE FROM users WHERE id = ?", [id]);
         return success(res, null, "User deleted successfully");
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getDashboardStats = async (req, res, next) => {
+    try {
+        const [teachers] = await pool.query("SELECT COUNT(*) as count FROM teachers");
+        const [students] = await pool.query("SELECT COUNT(*) as count FROM students");
+        const [sections] = await pool.query("SELECT COUNT(*) as count FROM sections");
+        
+        return success(res, {
+            totalTeachers: Number(teachers[0].count),
+            totalStudents: Number(students[0].count),
+            totalSections: Number(sections[0].count)
+        }, "Admin stats fetched");
+    } catch (err) {
+        next(err);
+    }
+};
+
+exports.getAnalytics = async (req, res, next) => {
+    try {
+        const data = await adminService.getSectionWiseAnalytics();
+        return success(res, data, "Analytics fetched");
     } catch (err) {
         next(err);
     }

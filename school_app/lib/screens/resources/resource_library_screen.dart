@@ -3,7 +3,7 @@ import '../../core/api/api_service.dart';
 import '../../core/constants.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:open_filex/open_filex.dart';
 
 class ResourceLibraryScreen extends StatefulWidget {
   const ResourceLibraryScreen({super.key});
@@ -75,8 +75,11 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen> {
         ),
       );
 
-      final fileName = resource["file_url"].split('/').last;
-      final fullUrl = "${AppConstants.baseUrl}${resource["file_url"]}";
+      final fileUrl = resource["file_url"]?.toString() ?? "";
+      final fileName = fileUrl.split('/').last;
+      final fullUrl = fileUrl.startsWith("http")
+          ? fileUrl
+          : "${AppConstants.baseUrl}$fileUrl";
       final directory = await getApplicationDocumentsDirectory();
       final filePath = "${directory.path}/$fileName";
 
@@ -84,8 +87,6 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen> {
       await dio.download(fullUrl, filePath);
 
       if (mounted) Navigator.pop(context);
-
-      final Uri fileUri = Uri.file(filePath);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -106,9 +107,7 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen> {
             label: "OPEN",
             textColor: Colors.blueAccent,
             onPressed: () async {
-              if (await canLaunchUrl(fileUri)) {
-                await launchUrl(fileUri);
-              }
+              await OpenFilex.open(filePath);
             },
           ),
         ),

@@ -72,6 +72,17 @@ exports.markRead = async (req, res, next) => {
     }
 };
 
+exports.dismissForUser = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.userId;
+        await service.dismissForUser(id, userId);
+        return success(res, null, "Notification dismissed");
+    } catch (err) {
+        next(err);
+    }
+};
+
 exports.listAll = async (req, res, next) => {
     try {
         const notifications = await service.getAllNotifications();

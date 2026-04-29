@@ -36,7 +36,7 @@ exports.createMapping = async ({ teacher_id, section_id, subject_name, role, aca
 exports.getMappings = async (filters = {}) => {
     let query = "SELECT m.*, t.name as teacher_name, s.class, s.section as section_name FROM teacher_subject_mappings m " +
         "JOIN teachers t ON m.teacher_id = t.id " +
-        "JOIN sections s ON m.section_id = s.id WHERE m.is_active = TRUE";
+        "JOIN sections s ON m.section_id = s.id WHERE m.is_active = 1";
     const params = [];
 
     if (filters.section_id) {
@@ -59,7 +59,7 @@ exports.deactivateMapping = async (id, performedBy) => {
 
         const [oldValue] = await connection.query("SELECT * FROM teacher_subject_mappings WHERE id = ?", [id]);
 
-        await connection.query("UPDATE teacher_subject_mappings SET is_active = FALSE WHERE id = ?", [id]);
+        await connection.query("UPDATE teacher_subject_mappings SET is_active = 0 WHERE id = ?", [id]);
 
         await logAudit(connection, id, 'DEACTIVATE', performedBy, oldValue[0], { is_active: false });
 

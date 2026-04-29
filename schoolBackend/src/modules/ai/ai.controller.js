@@ -85,7 +85,7 @@ exports.getStudyPlan = async (req, res) => {
 
         // Check if plan exists for this week
         const [existing] = await pool.query(
-            "SELECT * FROM study_plans WHERE student_id = ? AND week_start_date >= CURDATE() - INTERVAL 7 DAY",
+            "SELECT * FROM study_plans WHERE student_id = ? AND week_start_date >= CURRENT_DATE - INTERVAL '7 days'",
             [studentId]
         );
 
@@ -110,7 +110,7 @@ exports.getStudyPlan = async (req, res) => {
         }
 
         const [insert] = await pool.query(
-            "INSERT INTO study_plans (student_id, week_start_date, plan_json) VALUES (?, CURDATE(), ?)",
+            "INSERT INTO study_plans (student_id, week_start_date, plan_json) VALUES (?, CURRENT_DATE, ?)",
             [studentId, planJson]
         );
 
@@ -209,12 +209,12 @@ exports.getInsightDetails = async (req, res) => {
             // Find students with attendance < 75% in the last 30 days
             const [students] = await pool.query(`
                 SELECT s.user_id as id, s.name, s.roll_number, 
-                ROUND((COUNT(CASE WHEN a.status = 'present' THEN 1 END) * 100.0 / COUNT(a.id)), 1) as percentage
+                ROUND((COUNT(CASE WHEN a.status = 'present' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 1) as percentage
                 FROM students s
                 JOIN attendance a ON s.user_id = a.student_id
-                WHERE a.date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                GROUP BY s.user_id
-                HAVING percentage < 75
+                WHERE a.date >= CURRENT_DATE - INTERVAL '30 days'
+                GROUP BY s.user_id, s.name, s.roll_number
+                HAVING ROUND((COUNT(CASE WHEN a.status = 'present' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 1) < 75
                 ORDER BY percentage ASC
             `);
             return success(res, { students }, "Attendance alerts fetched");

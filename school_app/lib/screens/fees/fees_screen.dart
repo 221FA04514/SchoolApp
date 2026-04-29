@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
+import '../../core/utils/date_time_utils.dart';
 import 'fees_summary_card.dart';
 import 'premium_payment_sheet.dart';
 
@@ -310,7 +311,7 @@ class _FeesScreenState extends State<FeesScreen> with SingleTickerProviderStateM
            Column(
              crossAxisAlignment: CrossAxisAlignment.end,
              children: [
-               Text(p["payment_date"].toString().split('T')[0], style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
+               Text(DateTimeUtils.formatDate(p["payment_date"].toString()), style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold)),
                const Text("SUCCESS", style: TextStyle(color: Colors.green, fontSize: 8, fontWeight: FontWeight.w900)),
              ],
            ),

@@ -6,7 +6,7 @@ exports.findUserByEmail = async (email) => {
      FROM users u 
      LEFT JOIN students s ON u.id = s.user_id 
      LEFT JOIN admins a ON u.id = a.user_id
-     WHERE u.email = ? AND (u.status = 1 OR u.status = true)`,
+     WHERE u.email = ? AND u.status = 1`,
     [email]
   );
   return rows[0];

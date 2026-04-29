@@ -371,7 +371,7 @@ class _HistoryItemTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isHomework = item['type'] == 'homework';
-    final date = DateTime.parse(item['created_at']);
+    final date = DateTime.parse(item['created_at']).toLocal();
     final timeStr = DateFormat('MMM d, h:mm a').format(date);
     final color = isHomework ? const Color(0xFF6366F1) : const Color(0xFFEC4899);
 

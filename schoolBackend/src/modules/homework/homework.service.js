@@ -56,14 +56,17 @@ exports.getStudentHomework = async (sectionId, studentId) => {
   const [rows] = await pool.query(
     `
     SELECT h.id, h.title, h.description, h.subject, h.due_date, h.created_at,
-           COALESCE(shs.is_completed, 0) as is_completed
+           COALESCE(shs.is_completed, 0) as is_completed,
+           hs.marks, hs.feedback, hs.status as submission_status
     FROM homework h
     LEFT JOIN student_homework_status shs 
            ON shs.homework_id = h.id AND shs.student_id = ?
+    LEFT JOIN homework_submissions hs
+           ON hs.homework_id = h.id AND hs.student_id = ?
     WHERE h.section_id = ?
-    ORDER BY h.due_date
+    ORDER BY h.created_at DESC
     `,
-    [studentId, sectionId]
+    [studentId, studentId, sectionId]
   );
 
   return rows;
@@ -88,6 +91,26 @@ exports.getPendingHomeworkCount = async (sectionId, studentId) => {
 };
 
 /**
+ * Student: get homework completion percentage
+ */
+exports.getHomeworkCompletion = async (sectionId, studentId) => {
+  const [[total]] = await pool.query(
+    "SELECT COUNT(*) as count FROM homework WHERE section_id = ?",
+    [sectionId]
+  );
+  const [[completed]] = await pool.query(
+    `SELECT COUNT(*) as count 
+     FROM student_homework_status shs
+     JOIN homework h ON shs.homework_id = h.id
+     WHERE shs.student_id = ? AND h.section_id = ? AND shs.is_completed = 1`,
+    [studentId, sectionId]
+  );
+
+  if (total.count === 0) return 0;
+  return Math.round((completed.count / total.count) * 100);
+};
+
+/**
  * Student: update homework status
  */
 exports.updateHomeworkStatus = async (studentId, homeworkId, isCompleted) => {
@@ -95,7 +118,8 @@ exports.updateHomeworkStatus = async (studentId, homeworkId, isCompleted) => {
     `
     INSERT INTO student_homework_status (student_id, homework_id, is_completed)
     VALUES (?, ?, ?)
-    ON DUPLICATE KEY UPDATE is_completed = VALUES(is_completed)
+    ON CONFLICT (student_id, homework_id) DO UPDATE
+    SET is_completed = EXCLUDED.is_completed
     `,
     [studentId, homeworkId, isCompleted]
   );
@@ -142,4 +166,13 @@ exports.gradeSubmission = async (submissionId, { marks, feedback, status = 'grad
     `UPDATE homework_submissions SET marks = ?, feedback = ?, status = ? WHERE id = ?`,
     [marks, feedback, status, submissionId]
   );
+};
+
+/**
+ * Delete Homework
+ */
+exports.deleteHomework = async (homeworkId, teacherId) => {
+  await pool.query(`DELETE FROM homework_submissions WHERE homework_id = ?`, [homeworkId]);
+  await pool.query(`DELETE FROM student_homework_status WHERE homework_id = ?`, [homeworkId]);
+  await pool.query(`DELETE FROM homework WHERE id = ? AND created_by = ?`, [homeworkId, teacherId]);
 };

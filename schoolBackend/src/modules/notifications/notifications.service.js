@@ -29,12 +29,22 @@ exports.createNotification = async (userId, title, body, type = 'general') => {
 
 exports.getUserNotifications = async (userId) => {
     const [rows] = await pool.query(
-        "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50",
+        "SELECT * FROM notifications WHERE user_id = ? AND is_deleted = 0 ORDER BY created_at DESC LIMIT 50",
         [userId]
     );
     return rows;
 };
 
 exports.markAsRead = async (notifId) => {
-    await pool.query("UPDATE notifications SET is_read = TRUE WHERE id = ?", [notifId]);
+    await pool.query("UPDATE notifications SET is_read = 1 WHERE id = ?", [notifId]);
+};
+
+/**
+ * Soft delete: mark as deleted for this user only, not permanent DB removal
+ */
+exports.deleteNotification = async (notifId, userId) => {
+    await pool.query(
+        "UPDATE notifications SET is_deleted = 1 WHERE id = ? AND user_id = ?",
+        [notifId, userId]
+    );
 };

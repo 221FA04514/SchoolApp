@@ -11,7 +11,8 @@ exports.uploadResource = async (req, res) => {
         }
 
         const { section_id, subject, title, type, description } = req.body;
-        const file_url = `/uploads/resources/${req.file.filename}`;
+        // Use S3 URL if available, otherwise construct local URL
+        const file_url = req.file.location || `/uploads/resources/${req.file.filename}`;
         const uploaded_by = req.user.userId;
 
         const [result] = await pool.query(

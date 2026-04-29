@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
 import 'package:intl/intl.dart';
+import '../../core/utils/date_time_utils.dart';
 
 class ResultsScreen extends StatefulWidget {
   const ResultsScreen({super.key});
@@ -38,8 +39,8 @@ class _ResultsScreenState extends State<ResultsScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final offlineResults = _allResults.where((r) => r['class'] != 'Online').toList();
-    final onlineResults = _allResults.where((r) => r['class'] == 'Online').toList();
+    final offlineResults = _allResults.where((r) => r['source'] == 'Offline').toList();
+    final onlineResults = _allResults.where((r) => r['source'] == 'Online').toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -253,7 +254,7 @@ class _ResultsScreenState extends State<ResultsScreen> with SingleTickerProvider
                 const SizedBox(height: 2),
                 Text(
                   info["exam_date"] != null 
-                    ? DateFormat('MMMM dd, yyyy').format(DateTime.parse(info["exam_date"]))
+                    ? DateTimeUtils.formatDate(info["exam_date"])
                     : "Published",
                   style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
                 ),

@@ -33,6 +33,8 @@ exports.getStudentDashboard = async (req, res, next) => {
     }
 
     const studentInfo = await getStudentInfo(userId);
+    console.log(`[DEBUG] Dashboard Fetch - UserID: ${userId}, Role: ${role}`);
+    console.log(`[DEBUG] Student Info Found:`, studentInfo);
     const announcements = await getLatestAnnouncements();
 
     let attendance = { present: 0, absent: 0, percentage: 0 };
@@ -42,29 +44,36 @@ exports.getStudentDashboard = async (req, res, next) => {
       attendance = await attendanceService.getOverallAttendanceSummary(userId);
       recentResults = await resultsService.getStudentResults(studentInfo.id);
       
-      const pendingHomework = await homeworkService.getPendingHomeworkCount(studentInfo.section_id || 0, userId);
+      const pendingHw = await homeworkService.getPendingHomeworkCount(studentInfo.section_id || 0, userId);
+      const hwCompletion = await homeworkService.getHomeworkCompletion(studentInfo.section_id || 0, userId);
       
       const [[leaves]] = await pool.query(
         "SELECT COUNT(*) as count FROM leaves WHERE student_id = ? AND status = 'approved'",
         [userId]
       );
       
-      // Calculate leave percentage (dummy total days of 100 for percentage calculation, or use specific logic)
-      // If we don't have total days, we can just return the count as requested "leave percentage" might mean just count if not refined.
-      // But let's assume it's leave percentage of attendance.
-      const totalDays = 100; // Placeholder
-      const leavePercentage = Math.round((leaves.count / totalDays) * 100);
+      const [[recentLeave]] = await pool.query(
+        "SELECT status FROM leaves WHERE student_id = ? ORDER BY applied_at DESC LIMIT 1",
+        [userId]
+      );
+
+      const stats = {
+        pendingHomework: pendingHw || 0,
+        homeworkCompletionPercentage: hwCompletion || 0,
+        leavePercentage: 0, 
+        approvedLeaves: leaves.count,
+        recentLeaveStatus: recentLeave ? recentLeave.status : 'None'
+      };
+
+      console.log(`[DEBUG] Collected Stats for User ${userId}:`, stats);
+      // Removed duplicate results fetch
 
       return success(res, {
         student: studentInfo,
         announcements,
         attendance,
         recentExam: recentResults.length > 0 ? recentResults[0] : null,
-        stats: {
-          pendingHomework,
-          leavePercentage: leavePercentage || 0,
-          approvedLeaves: leaves.count
-        },
+        stats: stats,
         fees: {
           total: 0,
           paid: 0,

@@ -17,4 +17,7 @@ router.post("/attempt", authMiddleware, startAttempt);
 router.get("/attempt/:examId", authMiddleware, getAttemptDetails);
 router.post("/submit", authMiddleware, submitAttempt);
 
+router.get("/teacher/list", authMiddleware, require("./online_exams.controller").getTeacherExams);
+router.delete("/teacher/:examId", authMiddleware, require("./online_exams.controller").deleteExam);
+
 module.exports = router;

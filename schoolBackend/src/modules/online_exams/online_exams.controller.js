@@ -35,9 +35,30 @@ exports.listAvailableExams = async (req, res, next) => {
     }
 };
 
+exports.getTeacherExams = async (req, res, next) => {
+    try {
+        const { role, userId } = req.user;
+        if (role !== "teacher") return error(res, "Access denied", 403);
 
+        const exams = await onlineExamsService.getTeacherExams(userId);
+        return success(res, exams, "Teacher exams fetched");
+    } catch (err) {
+        next(err);
+    }
+};
 
-exports.getQuestions = async (req, res, next) => {
+exports.deleteExam = async (req, res, next) => {
+    try {
+        const { role } = req.user;
+        if (role !== "teacher") return error(res, "Access denied", 403);
+        const { examId } = req.params;
+
+        await onlineExamsService.deleteOnlineExam(examId);
+        return success(res, null, "Online exam deleted");
+    } catch (err) {
+        next(err);
+    }
+};exports.getQuestions = async (req, res, next) => {
     try {
         const { examId } = req.params;
         const questions = await onlineExamsService.getExamQuestions(examId);
@@ -55,7 +76,7 @@ exports.startAttempt = async (req, res, next) => {
         const attemptId = await onlineExamsService.startAttempt(examId, userId);
         return success(res, { attemptId }, "Attempt started");
     } catch (err) {
-        if (err.code === 'ER_DUP_ENTRY') {
+        if (err.code === '23505') {
             return error(res, "You have already attempted this exam", 400);
         }
         next(err);

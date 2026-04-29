@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
+import '../../core/utils/date_time_utils.dart';
 
 class ManageExamsScreen extends StatefulWidget {
   const ManageExamsScreen({super.key});
@@ -142,7 +143,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoItem(Icons.calendar_today_rounded, exam["exam_date"]?.toString().split('T')[0] ?? 'N/A'),
+                _buildInfoItem(Icons.calendar_today_rounded, DateTimeUtils.formatDate(exam["exam_date"]?.toString())),
                 _buildInfoItem(Icons.star_rounded, "Pass: ${exam["passing_marks"]}/${exam["total_marks"]}"),
                 Text(
                   isPublished ? "PUBLISHED" : "DRAFT",

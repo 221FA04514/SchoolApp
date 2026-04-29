@@ -162,6 +162,45 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen>
     );
   }
 
+  Future<void> _deleteHomework(int id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Homework"),
+        content: const Text("Are you sure you want to delete this homework? This will also remove it for all students."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await _api.delete("/api/v1/homework/$id");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Homework deleted")),
+        );
+      }
+      fetchHomework(); // Refresh
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to delete: $e")),
+        );
+      }
+    }
+  }
+
   Widget _buildHomeworkCard(dynamic h) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -232,7 +271,7 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen>
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        "Due: ${h["due_date"] ?? 'N/A'}",
+                        "Due: ${h["due_date"] != null ? h["due_date"].toString().split('T')[0] : 'N/A'}",
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -261,10 +300,19 @@ class _TeacherHomeworkScreenState extends State<TeacherHomeworkScreen>
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
                   ),
                 ),
-                trailing: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: Colors.grey,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                      onPressed: () => _deleteHomework(h["id"]),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 16,
+                      color: Colors.grey,
+                    ),
+                  ],
                 ),
               ),
             ],

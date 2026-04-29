@@ -53,8 +53,8 @@ try {
 try {
     if (fs.existsSync(flutterConstantsFile)) {
         let content = fs.readFileSync(flutterConstantsFile, 'utf8');
-        // Regex to replace http://<old-ip>:5000 with http://<new-ip>:5000
-        const newContent = content.replace(/http:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:5000/, `http://${localIp}:5000`);
+        // Regex to replace any baseUrl string with http://<new-ip>:5000
+        const newContent = content.replace(/static const String baseUrl = ".*?";/, `static const String baseUrl = "http://${localIp}:5000";`);
 
         if (content !== newContent) {
             fs.writeFileSync(flutterConstantsFile, newContent);

@@ -4,8 +4,10 @@ const app = require("./src/app");
 const { initSocket } = require("./src/config/socket");
 const { updateFrontendIp } = require("./src/utils/ipManager");
 
-// Auto-update frontend IP on startup
-updateFrontendIp();
+// Auto-update frontend IP on startup (Local Development Only)
+if (process.env.NODE_ENV !== 'production') {
+  updateFrontendIp();
+}
 
 const PORT = process.env.PORT || 8080;
 const server = http.createServer(app);

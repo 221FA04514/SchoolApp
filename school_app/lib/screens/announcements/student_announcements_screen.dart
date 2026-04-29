@@ -25,15 +25,38 @@ class _StudentAnnouncementsScreenState
   Future<void> fetchAnnouncements() async {
     try {
       final res = await _api.get("/api/v1/announcements");
-      setState(() {
-        announcements = res["data"];
-        loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          announcements = res["data"] ?? [];
+          loading = false;
+        });
+      }
     } catch (e) {
-      setState(() => loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to load announcements")),
-      );
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> _dismissAnnouncement(int id) async {
+    try {
+      await _api.post("/api/v1/announcements/$id/dismiss", {});
+      if (mounted) {
+        setState(() {
+          announcements.removeWhere((a) => a["id"] == id);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Announcement dismissed"),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Could not dismiss announcement")),
+        );
+      }
     }
   }
 
@@ -101,7 +124,46 @@ class _StudentAnnouncementsScreenState
                               itemCount: announcements.length,
                               itemBuilder: (_, i) {
                                 final a = announcements[i];
-                                return _buildAnnouncementCard(a);
+                                return Dismissible(
+                                  key: Key("ann_${a['id']}"),
+                                  direction: DismissDirection.endToStart,
+                                  background: Container(
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange.shade400,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 20),
+                                    child: const Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.visibility_off_rounded, color: Colors.white, size: 28),
+                                        SizedBox(height: 4),
+                                        Text("Hide", style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                  confirmDismiss: (direction) async {
+                                    return await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        title: const Text("Hide Announcement?"),
+                                        content: const Text("This will hide it from your view. The announcement still exists for others."),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(ctx, true),
+                                            child: const Text("Hide", style: TextStyle(color: Colors.orange)),
+                                          ),
+                                        ],
+                                      ),
+                                    ) ?? false;
+                                  },
+                                  onDismissed: (_) => _dismissAnnouncement(a["id"]),
+                                  child: _buildAnnouncementCard(a),
+                                );
                               },
                             ),
                 ),

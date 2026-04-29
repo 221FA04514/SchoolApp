@@ -127,9 +127,7 @@ exports.submitHomework = async (req, res, next) => {
     let file_url = null;
 
     if (req.file) {
-      // Store relative path or full URL depending on your preference.
-      // Usually storing relative path like "uploads/filename.ext" is better.
-      file_url = req.file.path.replace(/\\/g, "/"); // Normalize slashes
+      file_url = req.file.location || `/uploads/homework/${req.file.filename}`;
     }
     await submitHomework({
       homework_id,
@@ -169,6 +167,21 @@ exports.gradeHomework = async (req, res, next) => {
 
     await gradeSubmission(submission_id, { marks, feedback, status });
     return success(res, null, "Homework graded");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Teacher: delete homework
+ */
+exports.deleteHomework = async (req, res, next) => {
+  try {
+    if (req.user.role !== "teacher") return error(res, "Access denied", 403);
+    const { id } = req.params;
+
+    await require("./homework.service").deleteHomework(id, req.user.userId);
+    return success(res, null, "Homework deleted");
   } catch (err) {
     next(err);
   }

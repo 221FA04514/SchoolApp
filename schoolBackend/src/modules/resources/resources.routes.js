@@ -6,21 +6,10 @@ const fs = require("fs");
 const resourceController = require("./resources.controller");
 const authMiddleware = require("../../middlewares/auth.middleware");
 
-// Configure Storage
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const dir = "uploads/resources";
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
-});
+const { uploadToS3 } = require("../../utils/s3_storage");
 
-const upload = multer({ storage });
+const upload = uploadToS3("resources");
+
 
 router.post("/upload", authMiddleware, upload.single("file"), resourceController.uploadResource);
 router.get("/", authMiddleware, resourceController.getResources);

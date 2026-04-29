@@ -291,7 +291,10 @@ class _TeacherHomeworkAssessmentScreenState
 
   Future<void> _openAttachment(String fileUrl) async {
     // Normalize path just in case
-    final cleanPath = fileUrl.replaceAll('\\', '/');
+    String cleanPath = fileUrl.replaceAll('\\', '/');
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
     final fullUrl = "${AppConstants.baseUrl}/$cleanPath";
     final uri = Uri.parse(fullUrl);
 

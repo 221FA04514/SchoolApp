@@ -55,9 +55,10 @@ exports.upsertAttendance = async ({
     `
     INSERT INTO attendance (student_id, date, status, marked_by)
     VALUES (?, ?, ?, ?)
-    ON DUPLICATE KEY UPDATE
-      status = VALUES(status),
-      marked_by = VALUES(marked_by)
+    ON CONFLICT (student_id, date) DO UPDATE
+    SET
+      status = EXCLUDED.status,
+      marked_by = EXCLUDED.marked_by
     `,
     [student_id, date, status, marked_by]
   );
@@ -115,8 +116,8 @@ exports.getStudentAttendance = async (student_id, month, year) => {
     SELECT date, status
     FROM attendance
     WHERE student_id = ?
-      AND MONTH(date) = ?
-      AND YEAR(date) = ?
+      AND EXTRACT(MONTH FROM date) = ?
+      AND EXTRACT(YEAR FROM date) = ?
     ORDER BY date
     `,
     [student_id, month, year]
@@ -131,14 +132,14 @@ exports.getAttendanceSummary = async (student_id, month, year) => {
   const [rows] = await pool.query(
     `
     SELECT
-      SUM(status = 'present') AS present,
-      SUM(status = 'absent') AS absent,
-      SUM(status = 'holiday') AS holiday,
+      COALESCE(SUM(CASE WHEN LOWER(status) = 'present' THEN 1 ELSE 0 END), 0) AS present,
+      COALESCE(SUM(CASE WHEN LOWER(status) = 'absent' THEN 1 ELSE 0 END), 0) AS absent,
+      COALESCE(SUM(CASE WHEN LOWER(status) = 'holiday' THEN 1 ELSE 0 END), 0) AS holiday,
       COUNT(*) AS total
     FROM attendance
     WHERE student_id = ?
-      AND MONTH(date) = ?
-      AND YEAR(date) = ?
+      AND EXTRACT(MONTH FROM date) = ?
+      AND EXTRACT(YEAR FROM date) = ?
     `,
     [student_id, month, year]
   );
@@ -166,9 +167,9 @@ exports.getOverallAttendanceSummary = async (student_id) => {
   const [rows] = await pool.query(
     `
     SELECT
-      SUM(status = 'present') AS present,
-      SUM(status = 'absent') AS absent,
-      SUM(status = 'holiday') AS holiday,
+      COALESCE(SUM(CASE WHEN LOWER(status) = 'present' THEN 1 ELSE 0 END), 0) AS present,
+      COALESCE(SUM(CASE WHEN LOWER(status) = 'absent' THEN 1 ELSE 0 END), 0) AS absent,
+      COALESCE(SUM(CASE WHEN LOWER(status) = 'holiday' THEN 1 ELSE 0 END), 0) AS holiday,
       COUNT(*) AS total
     FROM attendance
     WHERE student_id = ?
@@ -177,10 +178,10 @@ exports.getOverallAttendanceSummary = async (student_id) => {
   );
 
   const s = rows[0];
-  const workingDays = s.total - s.holiday;
+  const workingDays = s.total - (s.holiday || 0);
   const percentage =
     workingDays > 0
-      ? Math.round((s.present / workingDays) * 100)
+      ? Math.round(((s.present || 0) / workingDays) * 100)
       : 0;
 
   return {
@@ -201,8 +202,8 @@ exports.getAttendanceCalendarMap = async (student_id, month, year) => {
     SELECT date, status
     FROM attendance
     WHERE student_id = ?
-      AND MONTH(date) = ?
-      AND YEAR(date) = ?
+      AND EXTRACT(MONTH FROM date) = ?
+      AND EXTRACT(YEAR FROM date) = ?
     `,
     [student_id, month, year]
   );
