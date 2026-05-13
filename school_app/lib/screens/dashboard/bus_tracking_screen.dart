@@ -75,26 +75,40 @@ class _BusTrackingScreenState extends State<BusTrackingScreen>
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 300,
+      expandedHeight: 280,
       pinned: true,
+      stretch: true,
       backgroundColor: const Color(0xFF4A00E0),
+      elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          child: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+          ),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
+        centerTitle: false,
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
+        title: const Text(
+          "Bus Tracking",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
+        ),
         background: Stack(
+          fit: StackFit.expand,
           children: [
             // Mock Map Background
-            Container(
-              decoration: const BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(
-                    'https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop',
-                  ),
-                  fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black26,
-                    BlendMode.darken,
-                  ),
-                ),
-              ),
+            Image.network(
+              'https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=2074&auto=format&fit=crop',
+              fit: BoxFit.cover,
             ),
             // Custom Gradient Overlay
             Container(
@@ -103,7 +117,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen>
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.4),
+                    Colors.black.withOpacity(0.6),
                     Colors.transparent,
                     const Color(0xFFF4F6FB).withOpacity(0.8),
                     const Color(0xFFF4F6FB),
@@ -155,11 +169,6 @@ class _BusTrackingScreenState extends State<BusTrackingScreen>
             ),
           ],
         ),
-        title: const Text(
-          "Bus Tracking",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
       ),
     );
   }

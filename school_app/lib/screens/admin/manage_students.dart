@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
 import '../../core/widgets/success_feedback_overlay.dart';
+import '../dashboard/student_detail_screen.dart';
+
 
 class ManageStudentsScreen extends StatefulWidget {
   const ManageStudentsScreen({super.key});
@@ -99,18 +101,25 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 180,
+      expandedHeight: 200,
       pinned: true,
       stretch: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF673AB7),
       elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          child: const BackButton(color: Colors.white),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 20),
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
         title: const Text(
           "Manage Students",
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
             fontSize: 22,
             color: Colors.white,
             letterSpacing: -0.5,
@@ -119,24 +128,26 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            ClipPath(
-              clipper: _HeaderClipper(),
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
-                  ),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
                 ),
               ),
             ),
+            // Abstract elements
             Positioned(
-              right: -50,
-              top: -50,
-              child: CircleAvatar(
-                radius: 100,
-                backgroundColor: Colors.white.withOpacity(0.05),
+              right: -40,
+              top: -20,
+              child: Container(
+                width: 150,
+                height: 150,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.05),
+                ),
               ),
             ),
           ],
@@ -317,89 +328,105 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
   }
 
   Widget _buildStudentCard(Map s) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Styled Avatar
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFF673AB7).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Icon(Icons.school, color: Color(0xFF673AB7), size: 28),
-              ),
-            ),
-            const SizedBox(width: 16),
-            // Main Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    s["name"],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  _buildInfoRow(
-                    Icons.class_outlined,
-                    "Class ${s["class"]} ${s["section"]} | Roll No: ${s["roll_number"]}",
-                  ),
-                  const SizedBox(height: 4),
-                  _buildInfoRow(Icons.email_outlined, s["email"]),
-                ],
-              ),
-            ),
-            // Actions
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                    color: Color(0xFF673AB7),
-                    size: 22,
-                  ),
-                  onPressed: () => _showEditStudentDialog(s),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
-                    size: 22,
-                  ),
-                  onPressed: () => _deleteStudent(s),
-                ),
-              ],
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StudentDetailScreen(student: s))),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Styled Avatar
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF673AB7).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.school, color: Color(0xFF673AB7), size: 28),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  // Main Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          s["name"],
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        _buildInfoRow(
+                          Icons.class_outlined,
+                          "Class ${s["class"]} ${s["section"]} | Roll No: ${s["roll_number"]}",
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Small Detail Arrow
+                  const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => StudentDetailScreen(student: s))),
+                    icon: const Icon(Icons.visibility_outlined, size: 16, color: Color(0xFF673AB7)),
+                    label: const Text("See Details", style: TextStyle(color: Color(0xFF673AB7), fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: Color(0xFF673AB7), size: 20),
+                        onPressed: () => _showEditStudentDialog(s),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                        onPressed: () => _deleteStudent(s),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
 
   Widget _buildInfoRow(IconData icon, String text) {
     return Row(
@@ -423,7 +450,14 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     final emailController = TextEditingController();
     final passwordController = TextEditingController();
     final rollController = TextEditingController();
+    final dobController = TextEditingController();
+    final admissionController = TextEditingController();
+    final parentNameController = TextEditingController();
+    final addressController = TextEditingController();
+    final parentPhoneController = TextEditingController();
+    final studentPhoneController = TextEditingController();
     String? selectedSectionId;
+
 
     showModalBottomSheet(
       context: context,
@@ -439,12 +473,19 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
             emailController,
             passwordController,
             rollController,
+            dobController,
+            admissionController,
+            parentNameController,
+            addressController,
+            parentPhoneController,
+            studentPhoneController,
           ],
           btnLabel: "Register Student",
           sectionDropdown: _buildSectionDropdown(
             selectedSectionId,
             (val) => setModalState(() => selectedSectionId = val),
           ),
+
           onSave: () async {
             if (selectedSectionId == null) throw "Please select a section";
             final sec = sections.firstWhere((s) => s["id"].toString() == selectedSectionId);
@@ -457,7 +498,14 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
               "class": sec["class"].toString(),
               "section": sec["section"],
               "roll_number": rollController.text,
+              "dob": dobController.text,
+              "admission_number": admissionController.text,
+              "parent_name": parentNameController.text,
+              "address": addressController.text,
+              "parent_phone": parentPhoneController.text,
+              "phone": studentPhoneController.text,
             });
+
             if (context.mounted) {
               Navigator.pop(context);
               SuccessFeedbackOverlay.show(context, message: "${nameController.text} has been registered.");
@@ -473,10 +521,15 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     final nameController = TextEditingController(text: s["name"]);
     final emailController = TextEditingController(text: s["email"]);
     final passwordController = TextEditingController();
-    final rollController = TextEditingController(
-      text: s["roll_number"].toString(),
-    );
+    final rollController = TextEditingController(text: s["roll_number"].toString());
+    final dobController = TextEditingController(text: s["dob"]?.toString() ?? "");
+    final admissionController = TextEditingController(text: s["admission_number"]?.toString() ?? "");
+    final parentNameController = TextEditingController(text: s["parent_name"]?.toString() ?? "");
+    final addressController = TextEditingController(text: s["address"]?.toString() ?? "");
+    final parentPhoneController = TextEditingController(text: s["parent_phone"]?.toString() ?? "");
+    final studentPhoneController = TextEditingController(text: s["phone"]?.toString() ?? "");
     String? selectedSectionId = s["section_id"]?.toString();
+
 
     showModalBottomSheet(
       context: context,
@@ -492,12 +545,19 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
             emailController,
             passwordController,
             rollController,
+            dobController,
+            admissionController,
+            parentNameController,
+            addressController,
+            parentPhoneController,
+            studentPhoneController,
           ],
           btnLabel: "Update Details",
           sectionDropdown: _buildSectionDropdown(
             selectedSectionId,
             (val) => setModalState(() => selectedSectionId = val),
           ),
+
           onSave: () async {
             if (selectedSectionId == null) throw "Please select a section";
              final sec = sections.firstWhere((s) => s["id"].toString() == selectedSectionId);
@@ -510,7 +570,14 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
               "class": sec["class"].toString(),
               "section": sec["section"],
               "roll_number": rollController.text,
+              "dob": dobController.text,
+              "admission_number": admissionController.text,
+              "parent_name": parentNameController.text,
+              "address": addressController.text,
+              "parent_phone": parentPhoneController.text,
+              "phone": studentPhoneController.text,
             });
+
             if (context.mounted) {
               Navigator.pop(context);
               SuccessFeedbackOverlay.show(context, message: "Student profile updated.");
@@ -589,6 +656,14 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
               "Roll Number",
               Icons.format_list_numbered_rounded,
             ),
+            _buildDateField(context, controllers[4], "Date of Birth", Icons.calendar_today_rounded),
+            _buildField(controllers[5], "Admission Number", Icons.fingerprint_rounded),
+
+            _buildField(controllers[6], "Parent/Guardian Name", Icons.person_pin_rounded),
+            _buildField(controllers[7], "Complete Address", Icons.home_rounded),
+            _buildField(controllers[8], "Parent Phone Number", Icons.phone_enabled_rounded),
+            _buildField(controllers[9], "Student Phone Number", Icons.phone_android_rounded),
+
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -627,7 +702,60 @@ class _ManageStudentsScreenState extends State<ManageStudentsScreen> {
     );
   }
 
+  Widget _buildDateField(BuildContext context, TextEditingController controller, String label, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: controller,
+        readOnly: true,
+        onTap: () async {
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+            builder: (context, child) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: const ColorScheme.light(
+                    primary: Color(0xFF673AB7),
+                    onPrimary: Colors.white,
+                    onSurface: Colors.black,
+                  ),
+                ),
+                child: child!,
+              );
+            },
+          );
+          if (picked != null) {
+            controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+          }
+        },
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.blueGrey.shade400,
+            fontWeight: FontWeight.w500,
+          ),
+          prefixIcon: Icon(icon, size: 20, color: const Color(0xFF673AB7)),
+          filled: true,
+          fillColor: const Color(0xFFF4F6FB),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.blueGrey.shade50),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFF673AB7), width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildField(
+
     TextEditingController controller,
     String label,
     IconData icon, {

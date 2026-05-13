@@ -21,6 +21,12 @@ import '../resources/teacher_resource_library_screen.dart';
 import '../leaves/leave_management_screen.dart';
 import '../performance/teacher_performance_screen.dart';
 import '../../widgets/substitution_banner.dart';
+import './student_detail_screen.dart';
+import './teacher_student_directory_screen.dart';
+import './teacher_faculty_directory_screen.dart';
+
+
+
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -103,33 +109,36 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       children: [
         Scaffold(
           backgroundColor: const Color(0xFFF1F4FA),
-          body: FutureBuilder<TeacherDashboardModel>(
-            future: dashboardFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Color(0xFF4A00E0)),
-                );
-              }
-              if (snapshot.hasError || !snapshot.hasData) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("Error loading dashboard"),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        onPressed: _refreshData,
-                        child: const Text("Retry"),
-                      ),
-                    ],
-                  ),
-                );
-              }
+          body: SafeArea(
+            top: false,
+            child: FutureBuilder<TeacherDashboardModel>(
+              future: dashboardFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF4A00E0)),
+                  );
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Error loading dashboard"),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: _refreshData,
+                          child: const Text("Retry"),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-              final data = snapshot.data!;
-              return _getCurrentPage(data);
-            },
+                final data = snapshot.data!;
+                return _getCurrentPage(data);
+              },
+            ),
           ),
           bottomNavigationBar: _buildBottomNav(),
         ),
@@ -274,6 +283,14 @@ class _HomeViewState extends State<_HomeView>
   late Animation<Color?> _headerColorAnimation;
   late Animation<double> _circleAnimation;
 
+  // Student Directory State
+  final ApiService _api = ApiService();
+  List sections = [];
+  List students = [];
+  int? selectedSectionId;
+  bool isLoadingSections = true;
+  bool isLoadingStudents = false;
+
   final List<Color> _dynamicColors = [
     const Color(0xFF4A00E0),
     const Color(0xFF1E293B),
@@ -314,6 +331,41 @@ class _HomeViewState extends State<_HomeView>
         });
       }
     });
+
+    _initDirectory();
+  }
+
+  Future<void> _initDirectory() async {
+    try {
+      final res = await _api.get("/api/v1/admin/sections");
+      if (mounted) {
+        setState(() {
+          sections = res["data"] ?? [];
+          isLoadingSections = false;
+          if (sections.isNotEmpty) {
+            selectedSectionId = sections[0]["id"];
+            _fetchStudentsForSection(selectedSectionId!);
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => isLoadingSections = false);
+    }
+  }
+
+  Future<void> _fetchStudentsForSection(int sectionId) async {
+    setState(() => isLoadingStudents = true);
+    try {
+      final res = await _api.get("/api/v1/admin/students?section_id=$sectionId");
+      if (mounted) {
+        setState(() {
+          students = res["data"] ?? [];
+          isLoadingStudents = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => isLoadingStudents = false);
+    }
   }
 
   @override
@@ -322,6 +374,7 @@ class _HomeViewState extends State<_HomeView>
     _animationController.dispose();
     super.dispose();
   }
+
 
   void _nav(Widget screen) {
     Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
@@ -348,6 +401,8 @@ class _HomeViewState extends State<_HomeView>
                   _buildStatsRow(data),
                   const SizedBox(height: 30),
                   _buildSectionTitle("Quick Actions"),
+
+
                   const SizedBox(height: 15),
                   _buildQuickActionsGrid(),
                   const SizedBox(height: 30),
@@ -358,7 +413,7 @@ class _HomeViewState extends State<_HomeView>
                   _buildSectionTitle("Smart Insights"),
                   const SizedBox(height: 15),
                   _buildInsightsCard(),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
@@ -384,33 +439,17 @@ class _HomeViewState extends State<_HomeView>
   }
 
   Widget _buildStatsRow(TeacherDashboardModel data) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSmallStatCard(
-            title: "Students",
-            subtitle: "Total Enrolled",
-            icon: Icons.people_rounded,
-            value: data.totalStudents.toString(),
-            color: Colors.blue.shade50,
-            iconColor: Colors.blue.shade700,
-          ),
-        ),
-        const SizedBox(width: 15),
-        Expanded(
-          child: _buildSmallStatCard(
-            title: "Doubts",
-            subtitle: "Pending Now",
-            icon: Icons.help_outline_rounded,
-            value: data.pendingDoubts.toString(),
-            color: Colors.orange.shade50,
-            iconColor: Colors.orange.shade700,
-            onTap: () => _nav(const TeacherStudentListScreen()),
-          ),
-        ),
-      ],
+    return _buildSmallStatCard(
+      title: "Students Directory",
+      subtitle: "Click to view all sections and classes",
+      icon: Icons.people_alt_rounded,
+      value: data.totalStudents.toString(),
+      color: const Color(0xFF4A00E0).withOpacity(0.1),
+      iconColor: const Color(0xFF4A00E0),
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TeacherStudentDirectoryScreen())),
     );
   }
+
 
   Widget _buildSmallStatCard({
     required String title,
@@ -546,12 +585,15 @@ class _HomeViewState extends State<_HomeView>
           children: [
             _buildCompactActionCard("Results", Icons.assessment_rounded, Colors.amber.shade700, () => _nav(const TeacherResultsScreen())),
             _buildCompactActionCard("Announce", Icons.campaign_rounded, Colors.pink.shade600, () => _nav(const TeacherAnnouncementsScreen())),
+            _buildCompactActionCard("Students", Icons.people_alt_rounded, const Color(0xFF4A00E0), () => _nav(const TeacherStudentDirectoryScreen())),
+            _buildCompactActionCard("Faculty", Icons.assignment_ind_rounded, Colors.teal, () => _nav(const TeacherFacultyDirectoryScreen())),
             _buildCompactActionCard("Library", Icons.library_books_rounded, Colors.lightBlue.shade700, () => _nav(const TeacherResourceLibraryScreen())),
             _buildCompactActionCard("Leaves", Icons.event_note_rounded, Colors.indigo.shade600, () => _nav(const LeaveManagementScreen())),
             _buildCompactActionCard("Reports", Icons.show_chart_rounded, Colors.green.shade700, () => _nav(const TeacherPerformanceScreen())),
             _buildCompactActionCard("AI Suite", Icons.auto_awesome_rounded, Colors.deepPurple.shade600, () => _nav(const TeacherAiAssistantPortal())),
           ],
         ),
+
       ],
     );
   }
@@ -763,8 +805,8 @@ class _HomeViewState extends State<_HomeView>
   }
 
   Widget _buildAnimatingShrinkHeader(TeacherDashboardModel data) {
-    const double maxHeight = 260.0;
-    const double minHeight = 110.0;
+    const double maxHeight = 200.0;
+    const double minHeight = 85.0;
 
     return SliverAppBar(
       expandedHeight: maxHeight,
@@ -789,8 +831,9 @@ class _HomeViewState extends State<_HomeView>
               return Container(
                 decoration: BoxDecoration(
                   color: isShrunk
-                      ? const Color(0xFF0F172A)
+                      ? const Color(0xFF4C1D95)
                       : _headerColorAnimation.value,
+
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(t > 0.7 ? 0 : 30),
                     bottomRight: Radius.circular(t > 0.7 ? 0 : 30),

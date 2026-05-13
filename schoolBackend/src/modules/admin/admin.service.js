@@ -5,13 +5,16 @@ const pool = require("../../config/db");
  */
 exports.getAllTeachers = async () => {
     const [rows] = await pool.query(`
-    SELECT t.id, u.id as user_id, u.email, t.name, t.subject, t.phone 
+    SELECT t.id, u.id as user_id, u.email, t.name, t.subject, t.phone, 
+           t.dob, t.joining_date, t.qualification, t.experience, t.address, t.created_at
     FROM users u 
     INNER JOIN teachers t ON u.id = t.user_id 
     WHERE u.role = 'teacher'
   `);
+
     return rows;
 };
+
 
 /**
  * Get all students
@@ -20,7 +23,7 @@ exports.getAllStudents = async () => {
     const [rows] = await pool.query(`
     SELECT u.id as user_id, u.email, s.name, s.class, s.section, s.roll_number 
     FROM users u 
-    INNER JOIN students s ON u.id = s.user_id 
+    LEFT JOIN students s ON u.id = s.user_id 
     WHERE u.role = 'student'
   `);
     return rows;

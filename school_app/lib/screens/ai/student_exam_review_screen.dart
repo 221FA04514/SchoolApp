@@ -50,7 +50,7 @@ class _StudentExamReviewScreenState extends State<StudentExamReviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Review: ${widget.title}"),
+        title: Text("Evaluation: ${widget.title}"),
         flexibleSpace: Container(
           decoration: const BoxDecoration(color: Color(0xFF4A00E0)),
         ),

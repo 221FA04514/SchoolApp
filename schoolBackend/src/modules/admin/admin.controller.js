@@ -14,18 +14,30 @@ exports.getTeachers = async (req, res, next) => {
 
 exports.getStudents = async (req, res, next) => {
     try {
-        const [rows] = await pool.query(`
-            SELECT u.id as user_id, u.email, s.name, s.class, s.section, s.roll_number, s.section_id, sec.name as section_name
+        const { section_id } = req.query;
+        let query = `
+            SELECT u.id as user_id, u.email, COALESCE(s.name, 'Student') as name, s.class, s.section, s.roll_number, s.section_id, 
+                   sec.name as section_name, s.dob, s.admission_number, s.parent_name, s.address, s.parent_phone, s.phone
             FROM users u 
-            INNER JOIN students s ON u.id = s.user_id 
+            LEFT JOIN students s ON u.id = s.user_id 
             LEFT JOIN sections sec ON s.section_id = sec.id
             WHERE u.role = 'student'
-        `);
+        `;
+
+        const params = [];
+
+        if (section_id) {
+            query += " AND s.section_id = ?";
+            params.push(section_id);
+        }
+
+        const [rows] = await pool.query(query, params);
         return success(res, rows, "Students fetched");
     } catch (err) {
         next(err);
     }
 };
+
 
 exports.getSections = async (req, res, next) => {
     try {
@@ -82,10 +94,14 @@ exports.registerUser = async (req, res, next) => {
 
         if (role === "teacher") {
             await connection.query(
-                "INSERT INTO teachers (user_id, name, subject, phone) VALUES (?, ?, ?, ?)",
-                [userId, name, extraData.subject, extraData.phone]
+                "INSERT INTO teachers (user_id, name, subject, phone, dob, joining_date, qualification, experience, address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    userId, name, extraData.subject, extraData.phone,
+                    extraData.dob, extraData.joining_date, extraData.qualification, extraData.experience, extraData.address
+                ]
             );
-        } else if (role === "student") {
+        }
+ else if (role === "student") {
             const [sections] = await connection.query(
                 "SELECT id FROM sections WHERE class = ? AND section = ?",
                 [extraData.class, extraData.section]
@@ -93,10 +109,14 @@ exports.registerUser = async (req, res, next) => {
             const sectionId = sections.length > 0 ? sections[0].id : null;
 
             await connection.query(
-                "INSERT INTO students (user_id, name, class, section, roll_number, section_id) VALUES (?, ?, ?, ?, ?, ?)",
-                [userId, name, extraData.class, extraData.section, extraData.roll_number, sectionId]
+                "INSERT INTO students (user_id, name, class, section, roll_number, section_id, dob, admission_number, parent_name, address, parent_phone, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    userId, name, extraData.class, extraData.section, extraData.roll_number, sectionId,
+                    extraData.dob, extraData.admission_number, extraData.parent_name, extraData.address, extraData.parent_phone, extraData.phone
+                ]
             );
         }
+
 
         await connection.commit();
         return success(res, { userId }, "User registered successfully");
@@ -146,10 +166,15 @@ exports.updateUser = async (req, res, next) => {
         // 2. Update role-specific details
         if (role === "teacher") {
             await connection.query(
-                "UPDATE teachers SET name = ?, subject = ?, phone = ? WHERE user_id = ?",
-                [name, extraData.subject, extraData.phone, id]
+                "UPDATE teachers SET name = ?, subject = ?, phone = ?, dob = ?, joining_date = ?, qualification = ?, experience = ?, address = ? WHERE user_id = ?",
+                [
+                    name, extraData.subject, extraData.phone,
+                    extraData.dob, extraData.joining_date, extraData.qualification, extraData.experience, extraData.address,
+                    id
+                ]
             );
-        } else if (role === "student") {
+        }
+ else if (role === "student") {
             const [sections] = await connection.query(
                 "SELECT id FROM sections WHERE class = ? AND section = ?",
                 [extraData.class, extraData.section]
@@ -157,10 +182,15 @@ exports.updateUser = async (req, res, next) => {
             const sectionId = sections.length > 0 ? sections[0].id : null;
 
             await connection.query(
-                "UPDATE students SET name = ?, class = ?, section = ?, roll_number = ?, section_id = ? WHERE user_id = ?",
-                [name, extraData.class, extraData.section, extraData.roll_number, sectionId, id]
+                "UPDATE students SET name = ?, class = ?, section = ?, roll_number = ?, section_id = ?, dob = ?, admission_number = ?, parent_name = ?, address = ?, parent_phone = ?, phone = ? WHERE user_id = ?",
+                [
+                    name, extraData.class, extraData.section, extraData.roll_number, sectionId,
+                    extraData.dob, extraData.admission_number, extraData.parent_name, extraData.address, extraData.parent_phone, extraData.phone,
+                    id
+                ]
             );
         }
+
 
         await connection.commit();
         return success(res, null, "User updated successfully");

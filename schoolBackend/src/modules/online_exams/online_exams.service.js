@@ -43,13 +43,14 @@ exports.createOnlineExam = async ({ title, subject, section_id, start_time, end_
 
 exports.getAvailableExams = async (studentId, sectionId) => {
     const [rows] = await pool.query(
-        `SELECT e.*, ex.is_published,
-            (SELECT status FROM online_exam_attempts WHERE exam_id = e.id AND student_id = ? ORDER BY id DESC LIMIT 1) as attempt_status
+        `SELECT e.*, COALESCE(ex.is_published::int, 0) = 1 as is_published,
+            (SELECT status FROM online_exam_attempts WHERE exam_id = e.id AND student_id = ? ORDER BY id DESC LIMIT 1) as attempt_status,
+            (SELECT marks_obtained FROM online_exam_attempts WHERE exam_id = e.id AND student_id = ? ORDER BY id DESC LIMIT 1) as marks_obtained
      FROM online_exams e
-     JOIN exams ex ON e.linked_exam_id = ex.id
+     LEFT JOIN exams ex ON e.linked_exam_id = ex.id
      WHERE e.section_id = ?
      ORDER BY e.start_time DESC`,
-        [studentId, sectionId]
+        [studentId, studentId, sectionId]
     );
     return rows;
 };
@@ -57,10 +58,10 @@ exports.getAvailableExams = async (studentId, sectionId) => {
 exports.getTeacherExams = async (teacherId) => {
     const [rows] = await pool.query(
         `SELECT oe.*, 
-            ex.is_published,
-            s.name as section_name,
-            (SELECT COUNT(*) FROM online_exam_attempts WHERE exam_id = oe.id AND status = 'submitted') as attempt_count,
-            (SELECT COUNT(*) FROM students WHERE section_id = oe.section_id) as total_students
+            (ex.is_published::int = 1) as is_published,
+            (SELECT COUNT(*) FROM online_exam_attempts WHERE exam_id = oe.id) as attempt_count,
+            (SELECT COUNT(*) FROM students WHERE section_id = oe.section_id) as total_students,
+            s.name as section_name
          FROM online_exams oe
          JOIN exams ex ON oe.linked_exam_id = ex.id
          LEFT JOIN sections s ON oe.section_id = s.id
@@ -157,28 +158,30 @@ exports.submitAttempt = async (attemptId, answers) => {
         );
 
         // Sync to results table for student visibility
-        const [attRow] = await connection.query(`SELECT exam_id, student_id as user_id FROM online_exam_attempts WHERE id = ?`, [attemptId]);
-        const userId = attRow[0].user_id;
+        try {
+            const [attRow] = await connection.query(`SELECT exam_id, student_id as user_id FROM online_exam_attempts WHERE id = ?`, [attemptId]);
+            const userId = attRow[0].user_id;
 
-        // Get actual student_id from students table (not user_id)
-        const [studentRow] = await connection.query(`SELECT id FROM students WHERE user_id = ?`, [userId]);
-        const actualStudentId = studentRow[0]?.id;
+            // Get actual student_id from students table (not user_id)
+            const [studentRow] = await connection.query(`SELECT id FROM students WHERE user_id = ?`, [userId]);
+            const actualStudentId = studentRow[0]?.id;
 
-        if (!actualStudentId) {
-            console.error(`[EXAM] Could not find student record for user_id: ${userId}`);
-            await connection.commit();
-            return;
+            if (actualStudentId) {
+                const [exRow] = await connection.query(`SELECT title, subject, linked_exam_id FROM online_exams WHERE id = ?`, [attRow[0].exam_id]);
+                
+                if (exRow[0] && exRow[0].linked_exam_id) {
+                    await connection.query(
+                        `INSERT INTO results (student_id, subject, marks, remarks, exam_id)
+                         VALUES (?, ?, ?, ?, ?)
+                         ON CONFLICT (exam_id, student_id, subject) DO UPDATE SET marks = EXCLUDED.marks`,
+                        [actualStudentId, exRow[0].subject, totalMarks, "Online Exam: " + exRow[0].title, exRow[0].linked_exam_id]
+                    );
+                }
+            }
+        } catch (syncErr) {
+            console.error("[EXAM] Failed to sync to results table:", syncErr.message);
+            // We don't rollback here because the exam itself was submitted successfully
         }
-
-        const [exRow] = await connection.query(`SELECT title, subject, linked_exam_id FROM online_exams WHERE id = ?`, [attRow[0].exam_id]);
-
-        // PostgreSQL standard ON CONFLICT
-        await connection.query(
-            `INSERT INTO results (student_id, subject, marks, remarks, exam_id)
-             VALUES (?, ?, ?, ?, ?)
-             ON CONFLICT (exam_id, student_id, subject) DO UPDATE SET marks = EXCLUDED.marks`,
-            [actualStudentId, exRow[0].subject, totalMarks, "Online Exam: " + exRow[0].title, exRow[0].linked_exam_id]
-        );
 
         await connection.commit();
     } catch (err) {

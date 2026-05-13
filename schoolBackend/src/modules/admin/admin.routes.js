@@ -27,13 +27,25 @@ const adminOnly = (req, res, next) => {
     next();
 };
 
+const teacherOrAdmin = (req, res, next) => {
+    if (req.user.role !== "admin" && req.user.role !== "teacher") {
+        return res.status(403).json({ success: false, message: "Access denied" });
+    }
+    next();
+};
+
+// Read-only routes accessible to both teachers and admins
+router.get("/students", authMiddleware, teacherOrAdmin, getStudents);
+router.get("/sections", authMiddleware, teacherOrAdmin, getSections);
+router.get("/teachers", authMiddleware, teacherOrAdmin, getTeachers);
+
+// All remaining routes are admin-only
 router.use(authMiddleware, adminOnly);
+
 
 router.get("/stats", getDashboardStats);
 router.get("/analytics", require("./admin.controller").getAnalytics);
-router.get("/teachers", getTeachers);
-router.get("/students", getStudents);
-router.get("/sections", getSections);
+
 router.post("/sections", createSection);
 router.delete("/sections/:id", removeSection);
 router.post("/register", registerUser);

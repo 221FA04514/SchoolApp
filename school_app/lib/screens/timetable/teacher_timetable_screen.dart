@@ -132,104 +132,106 @@ class _TeacherTimetableScreenState extends State<TeacherTimetableScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6FB),
-      body: Stack(
-        children: [
-          // Curved header
-          Positioned(
-            top: 0, left: 0, right: 0,
-            height: 185,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF4A00E0), Color(0xFF2D31FA)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [
+            SliverAppBar(
+              expandedHeight: 200,
+              pinned: true,
+              stretch: true,
+              backgroundColor: const Color(0xFF4A00E0),
+              elevation: 0,
+              automaticallyImplyLeading: false,
+              leading: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircleAvatar(
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  child: const BackButton(color: Colors.white),
                 ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
+              ),
+              actions: [
+                IconButton(
+                  onPressed: () {
+                    _fetchMyTimetable();
+                    _fetchSections();
+                  },
+                  icon: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                centerTitle: false,
+                titlePadding: const EdgeInsets.only(left: 20, bottom: 62),
+                title: const Text(
+                  'Timetable Hub',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF4A00E0), Color(0xFF2D31FA)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                    // Abstract circles for premium look
+                    Positioned(
+                      right: -50,
+                      top: -50,
+                      child: CircleAvatar(
+                        radius: 120,
+                        backgroundColor: Colors.white.withOpacity(0.05),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(48),
+                child: Container(
+                  color: Colors.transparent,
+                  child: TabBar(
+                    controller: _tabController,
+                    indicatorColor: Colors.white,
+                    indicatorWeight: 4,
+                    indicatorSize: TabBarIndicatorSize.label,
+                    labelColor: Colors.white,
+                    unselectedLabelColor: Colors.white60,
+                    dividerColor: Colors.transparent,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                    tabs: const [
+                      Tab(text: 'MY SCHEDULE'),
+                      Tab(text: 'CLASS VIEW'),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-
-          SafeArea(
-            child: Column(
-              children: [
-                // App bar row
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Row(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const BackButton(color: Colors.white),
-                      ),
-                      const SizedBox(width: 14),
-                      const Text(
-                        'Timetable',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const Spacer(),
-                      // refresh button
-                      GestureDetector(
-                        onTap: () {
-                          _fetchMyTimetable();
-                          _fetchSections();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.refresh_rounded, color: Colors.white, size: 20),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Tab bar
-                TabBar(
-                  controller: _tabController,
-                  indicatorColor: Colors.white,
-                  indicatorWeight: 3,
-                  indicatorSize: TabBarIndicatorSize.label,
-                  indicatorPadding: const EdgeInsets.symmetric(horizontal: 4),
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white60,
-                  dividerColor: Colors.transparent,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                  tabs: const [
-                    Tab(text: 'MY SCHEDULE'),
-                    Tab(text: 'CLASS SCHEDULER'),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildMySchedule(),
-                      _buildClassScheduler(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ];
+        },
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildMySchedule(),
+            _buildClassScheduler(),
+          ],
+        ),
       ),
     );
   }

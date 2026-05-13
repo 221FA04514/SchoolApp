@@ -116,84 +116,87 @@ class _AdminDashboardState extends State<AdminDashboard>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4FA),
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          _buildAnimatingShrinkHeader(),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 25),
-                  _buildStatsRow(),
-                  const SizedBox(height: 30),
-                  const Text(
-                    "Control Center",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E263E),
-                      letterSpacing: -0.5,
+      body: SafeArea(
+        top: false, // Header needs to go to top
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            _buildAnimatingShrinkHeader(),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 25),
+                    _buildStatsRow(),
+                    const SizedBox(height: 30),
+                    const Text(
+                      "Control Center",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E263E),
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  GridView.count(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 15,
-                    mainAxisSpacing: 15,
-                    childAspectRatio: 0.95,
-                    children: [
-                      _buildPrimaryAdminCard("Teachers", "Manage Faculty", Icons.school_rounded, const Color(0xFFE3F2FD), const Color(0xFF1976D2), const ManageTeachersScreen()),
-                      _buildPrimaryAdminCard("Students", "Enrollment Desk", Icons.people_alt_rounded, const Color(0xFFFFF3E0), const Color(0xFFF57C00), const ManageStudentsScreen()),
-                      _buildPrimaryAdminCard("Timetable", "Class Scheduling", Icons.calendar_today_rounded, const Color(0xFFE0F2F1), const Color(0xFF00796B), const ManageTimetableScreen()),
-                      _buildPrimaryAdminCard("Sections", "Class Segments", Icons.layers_rounded, const Color(0xFFF3E5F5), const Color(0xFF7B1FA2), const ManageSectionsScreen()),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  const Text(
-                    "System Tools",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E263E),
-                      letterSpacing: -0.5,
+                    const SizedBox(height: 16),
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: 0.95,
+                      children: [
+                        _buildPrimaryAdminCard("Teachers", "Manage Faculty", Icons.school_rounded, const Color(0xFFE3F2FD), const Color(0xFF1976D2), const ManageTeachersScreen()),
+                        _buildPrimaryAdminCard("Students", "Enrollment Desk", Icons.people_alt_rounded, const Color(0xFFFFF3E0), const Color(0xFFF57C00), const ManageStudentsScreen()),
+                        _buildPrimaryAdminCard("Timetable", "Class Scheduling", Icons.calendar_today_rounded, const Color(0xFFE0F2F1), const Color(0xFF00796B), const ManageTimetableScreen()),
+                        _buildPrimaryAdminCard("Sections", "Class Segments", Icons.layers_rounded, const Color(0xFFF3E5F5), const Color(0xFF7B1FA2), const ManageSectionsScreen()),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: [
-                      _buildCompactAdminCard("Time Mgmt", Icons.access_time_filled_rounded, Colors.indigo.shade600, const ManagePeriodSettingsScreen()),
-                      _buildCompactAdminCard("Mappings", Icons.hub_rounded, Colors.deepOrange.shade600, const ManageMappingsScreen()),
-                      _buildCompactAdminCard("Substitution", Icons.swap_calls_rounded, Colors.pink.shade600, const ManageSubstitutionsScreen()),
-                      _buildCompactAdminCard("Notify Hub", Icons.campaign_rounded, Colors.red.shade700, const ManageNotificationsScreen()),
-                      _buildCompactAdminCard("Exams", Icons.assessment_rounded, Colors.amber.shade700, const ManageExamsScreen()),
-                      _buildCompactAdminCard("Leaves", Icons.event_note_rounded, Colors.green.shade700, const LeaveManagementScreen()),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  const Text(
-                    "System Insights",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E263E),
-                      letterSpacing: -0.5,
+                    const SizedBox(height: 30),
+                    const Text(
+                      "System Tools",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E263E),
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  _buildAnalyticsChart(),
-                  const SizedBox(height: 100),
-                ],
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _buildCompactAdminCard("Time Mgmt", Icons.access_time_filled_rounded, Colors.indigo.shade600, const ManagePeriodSettingsScreen()),
+                        _buildCompactAdminCard("Mappings", Icons.hub_rounded, Colors.deepOrange.shade600, const ManageMappingsScreen()),
+                        _buildCompactAdminCard("Substitution", Icons.swap_calls_rounded, Colors.pink.shade600, const ManageSubstitutionsScreen()),
+                        _buildCompactAdminCard("Notify Hub", Icons.campaign_rounded, Colors.red.shade700, const ManageNotificationsScreen()),
+                        _buildCompactAdminCard("Exams", Icons.assessment_rounded, Colors.amber.shade700, const ManageExamsScreen()),
+                        _buildCompactAdminCard("Leaves", Icons.event_note_rounded, Colors.green.shade700, const LeaveManagementScreen()),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    const Text(
+                      "System Insights",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E263E),
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    _buildAnalyticsChart(),
+                    const SizedBox(height: 120), // Increased for better clearance
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -467,8 +470,8 @@ class _AdminDashboardState extends State<AdminDashboard>
   }
 
   Widget _buildAnimatingShrinkHeader() {
-    const double maxHeight = 240.0;
-    const double minHeight = 110.0;
+    const double maxHeight = 200.0;
+    const double minHeight = 85.0;
 
     return SliverAppBar(
       expandedHeight: maxHeight,
@@ -503,8 +506,9 @@ class _AdminDashboardState extends State<AdminDashboard>
               return Container(
                 decoration: BoxDecoration(
                   color: isShrunk
-                      ? const Color(0xFF0F172A)
+                      ? const Color(0xFF4C1D95)
                       : _headerColorAnimation.value,
+
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(t > 0.7 ? 0 : 30),
                     bottomRight: Radius.circular(t > 0.7 ? 0 : 30),

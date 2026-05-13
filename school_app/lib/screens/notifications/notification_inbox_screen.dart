@@ -25,6 +25,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
     try {
       final res = await _api.get("/api/v1/notifications");
       final subRes = await _api.get("/api/v2/admin/substitutions/my-today");
+      final adminRes = await _api.get("/api/v2/admin/notifications/my");
       
       if (mounted) {
         setState(() {
@@ -46,7 +47,26 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
             };
           }).toList();
 
-          notifications = [...substitutions, ...regularNotifs];
+          final adminNotifs = (adminRes["data"] as List? ?? []).map((n) {
+            return {
+              ...n,
+              "id": "admin_${n['id']}",
+              "title": n["title"] ?? "Admin Update",
+              "body": n["body"] ?? n["message"] ?? "",
+              "type": "admin",
+              "is_read": n["receipt_status"] == 'read' ? 1 : 0,
+            };
+          }).toList();
+
+          notifications = [...substitutions, ...adminNotifs, ...regularNotifs];
+          
+          // Sort by date (descending)
+          notifications.sort((a, b) {
+            final dateA = DateTime.tryParse(a["created_at"].toString()) ?? DateTime(2000);
+            final dateB = DateTime.tryParse(b["created_at"].toString()) ?? DateTime(2000);
+            return dateB.compareTo(dateA);
+          });
+          
           isLoading = false;
         });
       }
@@ -88,31 +108,56 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: 200,
       pinned: true,
       stretch: true,
       backgroundColor: const Color(0xFF1A4DFF),
       elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          child: const BackButton(color: Colors.white),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
         title: const Text(
-          "Notifications Hub 📋",
+          "Notifications Hub",
           style: TextStyle(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w900,
             fontSize: 20,
             color: Colors.white,
             letterSpacing: -0.5,
           ),
         ),
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF1A4DFF), Color(0xFF0031D1)],
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1A4DFF), Color(0xFF0031D1)],
+                ),
+              ),
             ),
-          ),
+            // Decorative icon
+            Positioned(
+              right: -20,
+              top: -20,
+              child: Opacity(
+                opacity: 0.1,
+                child: const Icon(
+                  Icons.notifications_active_rounded,
+                  size: 180,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

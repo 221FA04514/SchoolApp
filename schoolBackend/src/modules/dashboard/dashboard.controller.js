@@ -35,52 +35,52 @@ exports.getStudentDashboard = async (req, res, next) => {
     const studentInfo = await getStudentInfo(userId);
     console.log(`[DEBUG] Dashboard Fetch - UserID: ${userId}, Role: ${role}`);
     console.log(`[DEBUG] Student Info Found:`, studentInfo);
-    const announcements = await getLatestAnnouncements();
 
-    let attendance = { present: 0, absent: 0, percentage: 0 };
-    let recentResults = [];
-
-    if (studentInfo) {
-      attendance = await attendanceService.getOverallAttendanceSummary(userId);
-      recentResults = await resultsService.getStudentResults(studentInfo.id);
-      
-      const pendingHw = await homeworkService.getPendingHomeworkCount(studentInfo.section_id || 0, userId);
-      const hwCompletion = await homeworkService.getHomeworkCompletion(studentInfo.section_id || 0, userId);
-      
-      const [[leaves]] = await pool.query(
-        "SELECT COUNT(*) as count FROM leaves WHERE student_id = ? AND status = 'approved'",
-        [userId]
-      );
-      
-      const [[recentLeave]] = await pool.query(
-        "SELECT status FROM leaves WHERE student_id = ? ORDER BY applied_at DESC LIMIT 1",
-        [userId]
-      );
-
-      const stats = {
-        pendingHomework: pendingHw || 0,
-        homeworkCompletionPercentage: hwCompletion || 0,
-        leavePercentage: 0, 
-        approvedLeaves: leaves.count,
-        recentLeaveStatus: recentLeave ? recentLeave.status : 'None'
-      };
-
-      console.log(`[DEBUG] Collected Stats for User ${userId}:`, stats);
-      // Removed duplicate results fetch
-
-      return success(res, {
-        student: studentInfo,
-        announcements,
-        attendance,
-        recentExam: recentResults.length > 0 ? recentResults[0] : null,
-        stats: stats,
-        fees: {
-          total: 0,
-          paid: 0,
-          due: 0,
-        },
-      }, "Dashboard data fetched");
+    if (!studentInfo) {
+      return error(res, "Student profile not found", 404);
     }
+
+    const attendance = await attendanceService.getOverallAttendanceSummary(userId);
+    const recentResults = await resultsService.getStudentResults(studentInfo.id);
+    const announcements = await getLatestAnnouncements(studentInfo.section_id);
+    
+    const pendingHw = await homeworkService.getPendingHomeworkCount(studentInfo.section_id || 0, userId);
+    const hwCompletion = await homeworkService.getHomeworkCompletion(studentInfo.section_id || 0, userId);
+    
+    const [leavesRows] = await pool.query(
+      "SELECT COUNT(*) as count FROM leaves WHERE student_id = ? AND status = 'approved'",
+      [userId]
+    );
+    const leavesCount = parseInt(leavesRows[0]?.count || 0, 10);
+    
+    const [recentLeaveRows] = await pool.query(
+      "SELECT status FROM leaves WHERE student_id = ? ORDER BY applied_at DESC LIMIT 1",
+      [userId]
+    );
+    const recentLeaveStatus = recentLeaveRows[0]?.status || 'None';
+
+    const stats = {
+      pendingHomework: pendingHw || 0,
+      homeworkCompletionPercentage: hwCompletion || 0,
+      leavePercentage: 0, 
+      approvedLeaves: leavesCount,
+      recentLeaveStatus: recentLeaveStatus
+    };
+
+    console.log(`[DEBUG] Collected Stats for User ${userId}:`, stats);
+
+    return success(res, {
+      student: studentInfo,
+      announcements,
+      attendance,
+      recentExam: recentResults.length > 0 ? recentResults[0] : null,
+      stats: stats,
+      fees: {
+        total: 0,
+        paid: 0,
+        due: 0,
+      },
+    }, "Dashboard data fetched");
 
   } catch (err) {
     next(err);

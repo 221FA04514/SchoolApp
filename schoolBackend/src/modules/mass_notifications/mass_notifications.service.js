@@ -22,20 +22,15 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
                 console.log(`[MassNotif] Found ${users.length} users for role ${target.id}`);
                 users.forEach(u => targetUserIds.add(u.id));
 
-                // 2.1 Sync with Announcements Board (For Students/Everyone)
-                if (target.id === 'student') {
+                // 2.1 Sync with Announcements Board (For Students/Teachers/Everyone)
+                if (['student', 'teacher', 'everyone'].includes(target.id)) {
                     try {
-                        console.log(`[MassNotif] Syncing to announcements for student`);
                         await connection.query(
                             "INSERT INTO announcements (title, description, created_by, role, section_id, scheduled_at, attachment_url) VALUES (?, ?, ?, ?, ?, ?, ?)",
                             [title, body, created_by, 'admin', null, scheduled_at, attachment_url || null]
                         );
-                        console.log(`[MassNotif] Synced to announcements successfully`);
                     } catch (syncErr) {
-                        const fs = require('fs');
-                        fs.appendFileSync('error_log.txt', `[MassNotif] Announcement Sync Error: ${syncErr.message}\n`);
-                        console.error(`[MassNotif] Announcement Sync Error:`, syncErr);
-                        // Do not rethrow, so notification still sends
+                        console.error(`[MassNotif] Announcement Sync Error (Role):`, syncErr);
                     }
                 }
             } else if (target.type === 'section') {
@@ -44,6 +39,16 @@ exports.createMassNotification = async ({ title, body, attachment_url, created_b
                     [target.id, target.id]
                 );
                 users.forEach(u => targetUserIds.add(u.user_id));
+
+                // 2.2 Sync with Announcements Board (For Section)
+                try {
+                    await connection.query(
+                        "INSERT INTO announcements (title, description, created_by, role, section_id, scheduled_at, attachment_url) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                        [title, body, created_by, 'admin', target.id, scheduled_at, attachment_url || null]
+                    );
+                } catch (syncErr) {
+                    console.error(`[MassNotif] Announcement Sync Error (Section):`, syncErr);
+                }
             } else if (target.type === 'group' && target.id === 'fee_defaulters') {
                 const [users] = await connection.query(
                     "SELECT u.id FROM users u JOIN students s ON u.id = s.user_id LEFT JOIN fee_payments fp ON s.id = fp.student_id WHERE fp.id IS NULL OR fp.status != 'paid'"

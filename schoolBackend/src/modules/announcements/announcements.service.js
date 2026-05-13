@@ -34,9 +34,9 @@ exports.createAnnouncement = async ({
 exports.getTeacherAnnouncements = async (teacherId) => {
   const [rows] = await pool.query(
     `
-    SELECT id, title, description, created_at, deadline
+    SELECT id, title, description, created_at, deadline, role
     FROM announcements
-    WHERE created_by = ? AND role = 'teacher'
+    WHERE (created_by = ? AND role = 'teacher') OR role = 'admin'
     ORDER BY created_at DESC
     `,
     [teacherId]
@@ -57,6 +57,7 @@ exports.getAllAnnouncements = async (section_id = null, userId = null) => {
       a.attachment_url,
       a.created_at,
       a.deadline,
+      a.role,
       COALESCE(t.name, 'Administrator') as creator_name
     FROM announcements a
     LEFT JOIN teachers t ON a.created_by = t.user_id

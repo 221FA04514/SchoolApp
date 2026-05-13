@@ -45,6 +45,9 @@ exports.fetchTeacherDashboard = async (teacher_id) => {
     [teacher?.name || "", today]
   );
 
+  // 5. Announcements
+  const announcements = await exports.getLatestAnnouncements(null);
+
   return {
     teacher: {
       name:    teacher?.name    || "Unknown",
@@ -57,6 +60,7 @@ exports.fetchTeacherDashboard = async (teacher_id) => {
       pending_doubts: doubts.pending,
     },
     today_schedule: schedule,
+    announcements: announcements,
   };
 };
 
@@ -69,6 +73,7 @@ exports.getStudentInfo = async (userId) => {
         name,
         class,
         section,
+        section_id,
         roll_number
      FROM students
      WHERE user_id = ?`,
@@ -78,18 +83,24 @@ exports.getStudentInfo = async (userId) => {
   return rows[0];
 };
 
-// TEMP: latest announcements (limit 3)
-exports.getLatestAnnouncements = async () => {
-  const [rows] = await pool.query(
-    `SELECT 
-        id,
-        title,
-        description,
-        created_at
-     FROM announcements
-     ORDER BY created_at DESC
-     LIMIT 3`
-  );
+// Latest announcements for a specific section or global
+exports.getLatestAnnouncements = async (section_id = null) => {
+  let query = `
+    SELECT id, title, description, created_at, scheduled_at 
+    FROM announcements 
+    WHERE (scheduled_at IS NULL OR scheduled_at <= CURRENT_TIMESTAMP)
+  `;
+  const params = [];
+  
+  if (section_id) {
+    query += " AND (section_id IS NULL OR section_id = ?)";
+    params.push(section_id);
+  } else {
+    query += " AND section_id IS NULL";
+  }
 
+  query += " ORDER BY created_at DESC LIMIT 5";
+
+  const [rows] = await pool.query(query, params);
   return rows;
 };

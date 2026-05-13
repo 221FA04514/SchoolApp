@@ -26,6 +26,7 @@ class _TeacherCreateHomeworkScreenState
   List sections = [];
   bool isLoading = true;
   bool isSubmitting = false;
+  bool needsSubmission = true;
 
   @override
   void initState() {
@@ -88,6 +89,7 @@ class _TeacherCreateHomeworkScreenState
         "subject": subject,
         "section_id": selectedSectionId,
         "due_date": selectedDueDate!.toIso8601String().split('T')[0],
+        "needs_submission": needsSubmission ? 1 : 0,
       });
 
       if (mounted) {
@@ -206,7 +208,26 @@ class _TeacherCreateHomeworkScreenState
                     maxLines: 5,
                     decoration: _inputDecoration("What should students do?"),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 20),
+
+                  // --- Needs Submission Toggle ---
+                  SwitchListTile(
+                    title: const Text(
+                      "Requires Online Submission",
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blueGrey,
+                      ),
+                    ),
+                    subtitle: const Text(
+                      "Turn off for reading/offline tasks",
+                      style: TextStyle(fontSize: 12),
+                    ),
+                    value: needsSubmission,
+                    activeColor: const Color(0xFF1fa2ff),
+                    onChanged: (val) => setState(() => needsSubmission = val),
+                  ),
+                  const SizedBox(height: 24),
 
                   // --- Submit Button ---
                   ElevatedButton(

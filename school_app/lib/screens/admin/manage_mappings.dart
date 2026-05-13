@@ -18,14 +18,28 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
 
   int? selectedTeacherId;
   int? selectedSectionId;
-  String? selectedRole = 'Subject Teacher';
+  
+  // Default to Class Teacher as requested
+  String? selectedRole = 'Class Teacher';
   final subjectController = TextEditingController();
-  final yearController = TextEditingController(text: "2024-2025");
+  late TextEditingController yearController;
 
   @override
   void initState() {
     super.initState();
+    yearController = TextEditingController(text: _getCurrentAcademicYear());
     _fetchInitialData();
+  }
+
+  String _getCurrentAcademicYear() {
+    final now = DateTime.now();
+    final year = now.year;
+    // Standard Academic Year logic (April to March)
+    if (now.month >= 4) {
+      return "$year-${year + 1}";
+    } else {
+      return "${year - 1}-$year";
+    }
   }
 
   Future<void> _fetchInitialData() async {
@@ -48,42 +62,36 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
   }
 
   Future<void> _createLink() async {
-    if (selectedTeacherId == null ||
-        selectedSectionId == null ||
-        subjectController.text.isEmpty ||
-        selectedRole == null) {
+    if (selectedTeacherId == null || selectedSectionId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
+        const SnackBar(content: Text("Please select Teacher and Section")),
       );
       return;
     }
 
     setState(() => isSubmitting = true);
 
-    String dbRole = 'subject_teacher';
-    if (selectedRole == 'Class Teacher') dbRole = 'class_teacher';
-    if (selectedRole == 'Mentor') dbRole = 'mentor';
+    // Get section name to use as a placeholder for subject_name since it's required in DB
+    final section = sections.firstWhere((s) => s["id"] == selectedSectionId);
+    final sectionName = "${section["class"]}-${section["section"] ?? section["section_name"] ?? ""}";
 
     try {
       final res = await _api.post("/api/v2/admin/mappings", {
         "teacher_id": selectedTeacherId,
         "section_id": selectedSectionId,
-        "subject_name": subjectController.text,
-        "role": dbRole,
+        "subject_name": "Class Teacher ($sectionName)", // Descriptive placeholder
+        "role": 'class_teacher',
         "academic_year": yearController.text,
       });
       if (res["success"]) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("🚀 Mapping established!")),
+            const SnackBar(content: Text("🚀 Class Teacher assigned!")),
           );
           // clear fields
           setState(() {
             selectedTeacherId = null;
             selectedSectionId = null;
-            subjectController.clear();
-            selectedRole = 'Subject Teacher';
-            yearController.text = "2024-2025";
           });
         }
         await _fetchInitialData();
@@ -105,18 +113,18 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Sever Mapping?"),
+        title: const Text("Remove Assignment?"),
         content: Text(
-          "Discard linking for '${m["teacher_name"]}' in '${m["subject_name"]}'?",
+          "Unassign '${m["teacher_name"]}' from being Class Teacher of '${m["section_name"] ?? m["class"]}'?",
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Keep it"),
+            child: const Text("Keep"),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Sever", style: TextStyle(color: Colors.red)),
+            child: const Text("Remove", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -154,28 +162,30 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildLinkForm(),
-                  const SizedBox(height: 24),
-                  const Text(
-                    "Existing Mappings",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF455A64),
+      body: SafeArea( // Ensures app stays "upside of buttons"
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildLinkForm(),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Existing Class Teachers",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF455A64),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildMappingList(),
-                ],
+                    const SizedBox(height: 16),
+                    _buildMappingList(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -198,10 +208,10 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.link, color: Color(0xFF673AB7)),
+              const Icon(Icons.assignment_ind, color: Color(0xFF673AB7)),
               const SizedBox(width: 8),
               const Text(
-                "Link Subject to Teacher",
+                "Assign Class Teacher",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -225,7 +235,7 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
           _buildDropdown<int>(
             value: selectedSectionId,
             hint: "Select Section",
-            icon: Icons.book,
+            icon: Icons.class_,
             items: sections
                 .map((s) => DropdownMenuItem<int>(
                     value: s["id"],
@@ -233,36 +243,6 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
                         "${s["class"]}-${s["section"] ?? s["section_name"] ?? ""}")))
                 .toList(),
             onChanged: (val) => setState(() => selectedSectionId = val),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildTextField(
-                  controller: subjectController,
-                  hint: "Subject ...",
-                  // No label parameter here so it shows placeholder style
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildDropdown<String>(
-                  value: selectedRole,
-                  hint: "Role",
-                  label: "Role",
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'Subject Teacher',
-                        child: Text("Subject Teacher")),
-                    DropdownMenuItem(
-                        value: 'Class Teacher', child: Text("Class Teacher")),
-                    DropdownMenuItem(value: 'Mentor', child: Text("Mentor")),
-                  ],
-                  onChanged: (val) => setState(() => selectedRole = val),
-                  hasIcon: false,
-                ),
-              ),
-            ],
           ),
           const SizedBox(height: 16),
           _buildTextField(
@@ -283,7 +263,7 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
                 elevation: 0,
               ),
               onPressed: isSubmitting ? null : _createLink,
-              icon: const Icon(Icons.link, color: Colors.white, size: 20),
+              icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
               label: isSubmitting
                   ? const SizedBox(
                       width: 24,
@@ -294,7 +274,7 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
                       ),
                     )
                   : const Text(
-                      "Create Link",
+                      "Assign Now",
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -394,11 +374,11 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
           padding: const EdgeInsets.all(32.0),
           child: Column(
             children: [
-              Icon(Icons.link_off_rounded,
+              Icon(Icons.person_off_rounded,
                   size: 64, color: Colors.grey.shade300),
               const SizedBox(height: 16),
               const Text(
-                "No mappings found",
+                "No class teachers assigned",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -417,6 +397,10 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
       itemCount: mappings.length,
       itemBuilder: (context, index) {
         final m = mappings[index];
+        final className = m["class"]?.toString() ?? 'N/A';
+        final sectionName = m["section_name"]?.toString() ?? 'N/A';
+        final academicYear = m["academic_year"] ?? 'N/A';
+
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16.0),
@@ -437,11 +421,11 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3E5F5), // Light purple
+                  color: const Color(0xFFF3E5F5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.book, // Matches screenshot's book icon
+                  Icons.person,
                   color: Color(0xFF673AB7),
                 ),
               ),
@@ -451,26 +435,32 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "${m["subject_name"]} - ${m["section_name"] ?? m["class"] ?? 'A'}",
+                      m["teacher_name"],
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      "Teacher: ${m["teacher_name"]}",
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                      ),
+                    Row(
+                      children: [
+                        const Icon(Icons.class_, size: 14, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Class: $className | Section: $sectionName",
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
                     ),
-                    Text(
-                      "Role: ${m["role"]?.toString() ?? 'class_teacher'}",
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 13,
-                      ),
+                    Row(
+                      children: [
+                        const Icon(Icons.calendar_today, size: 14, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Text(
+                          "Year: $academicYear",
+                          style: const TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -478,7 +468,7 @@ class _ManageMappingsScreenState extends State<ManageMappingsScreen> {
               IconButton(
                 icon: Icon(
                   Icons.delete_outline,
-                  color: Colors.deepOrange.shade400,
+                  color: Colors.red.shade400,
                   size: 24,
                 ),
                 onPressed: () => _confirmDelete(m),

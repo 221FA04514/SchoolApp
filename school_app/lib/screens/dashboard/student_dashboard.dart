@@ -123,28 +123,36 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF1F4FA),
-      body: FutureBuilder<StudentDashboardModel>(
-        future: dashboardFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Color(0xFF0056D2)),
-            );
-          }
-          final data =
-              snapshot.data ??
-              StudentDashboardModel(
-                name: "Student",
-                className: "N/A",
-                section: "N/A",
-                roll: "N/A",
-                attendancePercentage: 0,
-                feesDue: 0,
-                announcements: [],
+      body: SafeArea(
+        top: false,
+        child: FutureBuilder<StudentDashboardModel>(
+          future: dashboardFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF0056D2)),
               );
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Error: ${snapshot.error ?? 'Unknown error'}"),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: _refreshData,
+                      child: const Text("Retry"),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          return _getCurrentPage(data);
-        },
+            final data = snapshot.data!;
+            return _getCurrentPage(data);
+          },
+        ),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
@@ -389,7 +397,7 @@ class _HomeViewState extends State<_HomeView>
                   _buildSectionTitle("Today's Schedule", trailing: "Full View"),
                   const SizedBox(height: 15),
                   _buildScheduleList(),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 120),
                 ],
               ),
             ),
@@ -429,8 +437,8 @@ class _HomeViewState extends State<_HomeView>
 
   // --- NEW ADVANCED SHRINKING HEADER ---
   Widget _buildAnimatingShrinkHeader(StudentDashboardModel data) {
-    const double maxHeight = 260.0;
-    const double minHeight = 110.0;
+    const double maxHeight = 200.0;
+    const double minHeight = 85.0;
 
     return SliverAppBar(
       expandedHeight: maxHeight,
@@ -453,7 +461,8 @@ class _HomeViewState extends State<_HomeView>
 
               return Container(
                 decoration: BoxDecoration(
-                  color: isShrunk ? const Color(0xFF0F172A) : _headerColorAnimation.value,
+                  color: isShrunk ? const Color(0xFF4C1D95) : _headerColorAnimation.value,
+
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(t > 0.7 ? 0 : 30),
                     bottomRight: Radius.circular(t > 0.7 ? 0 : 30),

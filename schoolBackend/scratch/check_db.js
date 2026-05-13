@@ -1,16 +1,24 @@
 const pool = require('../src/config/db');
-async function check() {
+
+async function checkData() {
   try {
-    const [rows] = await pool.query("SELECT table_name, column_name, data_type FROM information_schema.columns WHERE table_name = 'period_settings'");
-    console.log(JSON.stringify(rows, null, 2));
-    
-    const [data] = await pool.query("SELECT * FROM period_settings");
-    console.log('Current Data:', JSON.stringify(data, null, 2));
-    
+    console.log("--- Homework Table ---");
+    const [hwRows] = await pool.query("SELECT * FROM homework LIMIT 5");
+    console.log(hwRows);
+
+    console.log("\n--- Students Table ---");
+    const [stdRows] = await pool.query("SELECT * FROM students LIMIT 5");
+    console.log(stdRows);
+
+    console.log("\n--- Exams Table (is_published status) ---");
+    const [examRows] = await pool.query("SELECT id, name, is_published FROM exams LIMIT 5");
+    console.log(examRows);
+
     process.exit(0);
-  } catch(e) {
-    console.error(e);
+  } catch (err) {
+    console.error(err);
     process.exit(1);
   }
 }
-check();
+
+checkData();

@@ -51,17 +51,17 @@ class StudentDashboardModel {
     }
 
     return StudentDashboardModel(
-      name: json["student"]?["name"] ?? "Student",
-      className: json["student"]?["class"] ?? "",
-      section: json["student"]?["section"] ?? "",
-      roll: json["student"]?["roll_number"] ?? "",
+      name: json["student"]?["name"]?.toString() ?? "Student",
+      className: json["student"]?["class"]?.toString() ?? "",
+      section: json["student"]?["section"]?.toString() ?? "",
+      roll: json["student"]?["roll_number"]?.toString() ?? "",
       attendancePercentage: attendance,
-      feesDue: json["fees"]?["due"] ?? 0,
+      feesDue: (json["fees"]?["due"] ?? 0).toInt(),
       announcements: json["announcements"] ?? [],
       pendingHomework: pendingHw,
       leavePercentage: (json["stats"]?["leavePercentage"] ?? 0).toInt(),
       homeworkCompletionPercentage: completion,
-      recentLeaveStatus: json["stats"]?["recentLeaveStatus"] ?? 'None',
+      recentLeaveStatus: json["stats"]?["recentLeaveStatus"]?.toString() ?? 'None',
       recentResult: json["student"]?["recent_result"]?.toString(),
     );
   }

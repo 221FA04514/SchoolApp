@@ -11,14 +11,15 @@ exports.createHomework = async ({
   due_date,
   created_by,
   is_offline = false,
+  needs_submission = true,
 }) => {
   const [result] = await pool.query(
     `
     INSERT INTO homework
-      (title, description, subject, section_id, due_date, created_by, is_offline)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+      (title, description, subject, section_id, due_date, created_by, is_offline, needs_submission)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
-    [title, description, subject, section_id, due_date, created_by, is_offline]
+    [title, description, subject, section_id, due_date, created_by, is_offline, needs_submission]
   );
 
   return {
@@ -28,6 +29,7 @@ exports.createHomework = async ({
     subject,
     section_id,
     due_date,
+    needs_submission,
   };
 };
 
@@ -37,7 +39,7 @@ exports.createHomework = async ({
 exports.getTeacherHomework = async (teacherId) => {
   const [rows] = await pool.query(
     `
-    SELECT h.id, h.title, h.subject, h.due_date, s.name AS section
+    SELECT h.id, h.title, h.description, h.subject, h.due_date, s.name AS section
     FROM homework h
     JOIN sections s ON s.id = h.section_id
     WHERE h.created_by = ?
@@ -55,18 +57,18 @@ exports.getTeacherHomework = async (teacherId) => {
 exports.getStudentHomework = async (sectionId, studentId) => {
   const [rows] = await pool.query(
     `
-    SELECT h.id, h.title, h.description, h.subject, h.due_date, h.created_at,
+    SELECT h.id, h.title, h.description, h.subject, h.due_date, h.created_at, h.needs_submission,
            COALESCE(shs.is_completed, 0) as is_completed,
-           hs.marks, hs.feedback, hs.status as submission_status
+           (SELECT marks FROM homework_submissions WHERE homework_id = h.id AND student_id = ? ORDER BY id DESC LIMIT 1) as marks,
+           (SELECT feedback FROM homework_submissions WHERE homework_id = h.id AND student_id = ? ORDER BY id DESC LIMIT 1) as feedback,
+           (SELECT status FROM homework_submissions WHERE homework_id = h.id AND student_id = ? ORDER BY id DESC LIMIT 1) as submission_status
     FROM homework h
     LEFT JOIN student_homework_status shs 
            ON shs.homework_id = h.id AND shs.student_id = ?
-    LEFT JOIN homework_submissions hs
-           ON hs.homework_id = h.id AND hs.student_id = ?
     WHERE h.section_id = ?
     ORDER BY h.created_at DESC
     `,
-    [studentId, studentId, sectionId]
+    [studentId, studentId, studentId, studentId, sectionId]
   );
 
   return rows;
@@ -76,7 +78,7 @@ exports.getStudentHomework = async (sectionId, studentId) => {
  * Student: get pending homework count
  */
 exports.getPendingHomeworkCount = async (sectionId, studentId) => {
-  const [[result]] = await pool.query(
+  const [rows] = await pool.query(
     `
     SELECT COUNT(*) as count
     FROM homework h
@@ -87,27 +89,30 @@ exports.getPendingHomeworkCount = async (sectionId, studentId) => {
     [studentId, sectionId]
   );
 
-  return result.count;
+  return parseInt(rows[0]?.count || 0, 10);
 };
 
 /**
  * Student: get homework completion percentage
  */
 exports.getHomeworkCompletion = async (sectionId, studentId) => {
-  const [[total]] = await pool.query(
+  const [totalRows] = await pool.query(
     "SELECT COUNT(*) as count FROM homework WHERE section_id = ?",
     [sectionId]
   );
-  const [[completed]] = await pool.query(
+  const total = parseInt(totalRows[0]?.count || 0, 10);
+
+  const [completedRows] = await pool.query(
     `SELECT COUNT(*) as count 
      FROM student_homework_status shs
      JOIN homework h ON shs.homework_id = h.id
      WHERE shs.student_id = ? AND h.section_id = ? AND shs.is_completed = 1`,
     [studentId, sectionId]
   );
+  const completed = parseInt(completedRows[0]?.count || 0, 10);
 
-  if (total.count === 0) return 0;
-  return Math.round((completed.count / total.count) * 100);
+  if (total === 0) return 0;
+  return Math.round((completed / total) * 100);
 };
 
 /**
@@ -161,7 +166,7 @@ exports.getSubmissionStats = async (homework_id) => {
 /**
  * Grade a submission
  */
-exports.gradeSubmission = async (submissionId, { marks, feedback, status = 'graded' }) => {
+exports.gradeSubmission = async (submissionId, { marks, feedback, status = 'approved' }) => {
   await pool.query(
     `UPDATE homework_submissions SET marks = ?, feedback = ?, status = ? WHERE id = ?`,
     [marks, feedback, status, submissionId]

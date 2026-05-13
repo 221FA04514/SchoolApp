@@ -198,23 +198,27 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                 const SizedBox(height: 10),
 
                 Expanded(
-                  child: loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : homeworkList.isEmpty
-                      ? _buildEmptyState()
-                      : ListView.builder(
-                          padding: const EdgeInsets.only(
-                            left: 16,
-                            right: 16,
-                            bottom: 20,
-                            top: 10, // Added top padding
+                  child: RefreshIndicator(
+                    onRefresh: fetchHomework,
+                    color: const Color(0xFF4A00E0),
+                    child: loading
+                        ? const Center(child: CircularProgressIndicator())
+                        : homeworkList.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              bottom: 20,
+                              top: 10, // Added top padding
+                            ),
+                            itemCount: homeworkList.length,
+                            itemBuilder: (context, index) {
+                              final hw = homeworkList[index];
+                              return _buildHomeworkCard(hw, index);
+                            },
                           ),
-                          itemCount: homeworkList.length,
-                          itemBuilder: (context, index) {
-                            final hw = homeworkList[index];
-                            return _buildHomeworkCard(hw, index);
-                          },
-                        ),
+                  ),
                 ),
               ],
             ),
@@ -313,22 +317,28 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.task_alt_rounded, size: 60, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            "No Homework Assigned",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade500,
-              fontWeight: FontWeight.w600,
-            ),
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.task_alt_rounded, size: 60, color: Colors.grey.shade300),
+              const SizedBox(height: 16),
+              Text(
+                "No Homework Assigned",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -367,14 +377,23 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                     Text(hw.description),
                     if (hw.submissionStatus != null) ...[
                       const Divider(height: 30),
-                      Text("Submission Status: ${(hw.submissionStatus!).toUpperCase()}", 
-                        style: TextStyle(fontWeight: FontWeight.bold, 
-                          color: hw.submissionStatus == 'graded' ? Colors.green : (hw.submissionStatus == 'rejected' ? Colors.red : Colors.blue)
-                        )
+                      Text(
+                        "Submission Status: ${(hw.submissionStatus!).toUpperCase()}",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: (hw.submissionStatus == 'approved' || hw.submissionStatus == 'graded')
+                              ? Colors.green
+                              : (hw.submissionStatus == 'rejected' ? Colors.red : Colors.blue),
+                        ),
                       ),
                       const SizedBox(height: 8),
-                      if (hw.marks != null) Text("Marks: ${hw.marks}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                      if (hw.feedback != null && hw.feedback!.isNotEmpty) Text("Feedback: ${hw.feedback}"),
+                      if (hw.marks != null)
+                        Text(
+                          "Marks: ${hw.marks}",
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      if (hw.feedback != null && hw.feedback!.isNotEmpty)
+                        Text("Feedback: ${hw.feedback}"),
                     ],
                   ],
                 ),
@@ -445,7 +464,7 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                       const SizedBox(width: 8),
                       const SizedBox(width: 8),
                       // Upload Button
-                      if (!isDone) ...[
+                      if (!isDone && hw.needsSubmission && hw.submissionStatus == null) ...[
                         GestureDetector(
                           onTap: () => _pickAndUploadHomework(hw.id),
                           child: Container(
@@ -575,11 +594,50 @@ class _StudentHomeworkScreenState extends State<StudentHomeworkScreen>
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey.shade400,
+                                color: Colors.grey.shade600,
                                 height: 1.4,
-                                // No strike-through
                               ),
                             ),
+                            if (hw.submissionStatus != null || !hw.needsSubmission) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: (hw.submissionStatus == 'approved' || hw.submissionStatus == 'graded')
+                                          ? Colors.green.shade50 
+                                          : (hw.submissionStatus == 'rejected' ? Colors.red.shade50 : Colors.blue.shade50),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      !hw.needsSubmission ? "OFFLINE TASK" : (hw.submissionStatus?.toUpperCase() ?? "SUBMITTED"),
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: (hw.submissionStatus == 'approved' || hw.submissionStatus == 'graded')
+                                            ? Colors.green 
+                                            : (hw.submissionStatus == 'rejected' ? Colors.red : Colors.blue),
+                                      ),
+                                    ),
+                                  ),
+                                  if (hw.marks != null) ...[
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      "Marks: ${hw.marks}",
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              if (hw.feedback != null && hw.feedback!.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Feedback: ${hw.feedback}",
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontStyle: FontStyle.italic),
+                                ),
+                              ],
+                            ],
                           ],
                         ),
                       ),

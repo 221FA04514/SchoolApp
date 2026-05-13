@@ -137,61 +137,70 @@ class _ResourceLibraryScreenState extends State<ResourceLibraryScreen> {
 
   Widget _buildPremiumHeader() {
     return SliverAppBar(
-      expandedHeight: 180,
+      expandedHeight: 200,
       pinned: true,
-      elevation: 0,
+      stretch: true,
       backgroundColor: const Color(0xFF4A00E0),
+      elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          child: const BackButton(color: Colors.white),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF4A00E0), Color(0xFF6B11CB)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+        centerTitle: false,
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
+        title: const Text(
+          "Digital Library",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            color: Colors.white,
+            letterSpacing: -0.5,
           ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -20,
-                top: -20,
-                child: Opacity(
-                  opacity: 0.1,
-                  child: Icon(
-                    Icons.library_books_rounded,
-                    size: 200,
+        ),
+        background: Stack(
+          fit: StackFit.expand,
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF4A00E0), Color(0xFF6B11CB)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+            Positioned(
+              right: -20,
+              top: -20,
+              child: Opacity(
+                opacity: 0.1,
+                child: const Icon(
+                  Icons.library_books_rounded,
+                  size: 200,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 60,
+              left: 20,
+              child: Opacity(
+                opacity: 0.7,
+                child: const Text(
+                  "Access your academic\nresources instantly",
+                  style: TextStyle(
                     color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-              const Positioned(
-                bottom: 25,
-                left: 20,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Digital Library",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1,
-                      ),
-                    ),
-                    Text(
-                      "Access your academic resources instantly",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

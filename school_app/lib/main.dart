@@ -4,8 +4,21 @@ import 'core/auth/auth_provider.dart';
 import 'screens/auth/login_selection_screen.dart';
 import 'core/socket/socket_service.dart';
 
+import 'package:flutter/services.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set preferred orientations and system UI mode for responsiveness
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    systemNavigationBarColor: Colors.transparent,
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarIconBrightness: Brightness.dark,
+  ));
+
   final socketService = SocketService();
 
   // Try to init socket on startup (if token exists)

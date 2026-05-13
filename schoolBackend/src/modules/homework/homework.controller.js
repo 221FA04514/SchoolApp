@@ -15,7 +15,7 @@ const pool = require("../../config/db");
 exports.createHomework = async (req, res, next) => {
   try {
     const { role, userId } = req.user;
-    const { title, description, subject, section_id, due_date, is_offline } = req.body;
+    const { title, description, subject, section_id, due_date, is_offline, needs_submission } = req.body;
 
     if (role !== "teacher") {
       return error(res, "Access denied", 403);
@@ -33,6 +33,7 @@ exports.createHomework = async (req, res, next) => {
       due_date,
       created_by: userId,
       is_offline: is_offline || false,
+      needs_submission,
     });
 
     return success(res, homework, "Homework created");

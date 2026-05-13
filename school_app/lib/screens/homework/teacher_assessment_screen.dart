@@ -64,7 +64,7 @@ class _TeacherHomeworkAssessmentScreenState
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            status == 'graded'
+            status == 'approved'
                 ? "Approved successfully!"
                 : "Rejected successfully!",
           ),
@@ -117,7 +117,7 @@ class _TeacherHomeworkAssessmentScreenState
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: sub["status"] == "graded"
+                                color: (sub["status"] == "approved" || sub["status"] == "graded")
                                     ? Colors.green.shade50
                                     : sub["status"] == "rejected"
                                     ? Colors.red.shade50
@@ -127,7 +127,7 @@ class _TeacherHomeworkAssessmentScreenState
                               child: Text(
                                 sub["status"].toString().toUpperCase(),
                                 style: TextStyle(
-                                  color: sub["status"] == "graded"
+                                  color: (sub["status"] == "approved" || sub["status"] == "graded")
                                       ? Colors.green
                                       : sub["status"] == "rejected"
                                       ? Colors.red
@@ -168,14 +168,15 @@ class _TeacherHomeworkAssessmentScreenState
                           ),
                         ],
                         const Divider(),
-                        if (sub["status"] != "graded" &&
+                        if (sub["status"] != "approved" &&
+                            sub["status"] != "graded" &&
                             sub["status"] != "rejected") ...[
                           Row(
                             children: [
                               Expanded(
                                 child: ElevatedButton(
                                   onPressed: () =>
-                                      _showGradeDialog(sub["id"], 0, 'graded'),
+                                      _showGradeDialog(sub["id"], 0, 'approved'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green,
                                     foregroundColor: Colors.white,
@@ -201,26 +202,54 @@ class _TeacherHomeworkAssessmentScreenState
                             ],
                           ),
                         ] else ...[
-                          Text(
-                            "Marks: ${sub["marks"]} | Feedback: ${sub["feedback"]}",
-                            style: TextStyle(
+                          // Already graded or rejected
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
                               color: sub["status"] == "rejected"
-                                  ? Colors.red
-                                  : Colors.black87,
-                              fontWeight: sub["status"] == "rejected"
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                                  ? Colors.red.shade50
+                                  : Colors.green.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      sub["status"] == "rejected"
+                                          ? Icons.cancel
+                                          : Icons.check_circle,
+                                      color: sub["status"] == "rejected"
+                                          ? Colors.red
+                                          : Colors.green,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      sub["status"] == "rejected"
+                                          ? "Rejected"
+                                          : "Graded: ${sub['marks']} Marks",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: sub["status"] == "rejected"
+                                            ? Colors.red
+                                            : Colors.green,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (sub["feedback"] != null &&
+                                    sub["feedback"].toString().isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "Feedback: ${sub['feedback']}",
+                                    style: const TextStyle(fontSize: 12),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
-                          if (sub["status"] == "rejected")
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: ElevatedButton(
-                                onPressed: () =>
-                                    _showGradeDialog(sub["id"], 0, 'graded'),
-                                child: const Text("Re-evaluate / Approve"),
-                              ),
-                            ),
                         ],
                       ],
                     ),
@@ -241,12 +270,12 @@ class _TeacherHomeworkAssessmentScreenState
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          status == 'graded' ? "Approve & Grade" : "Reject Submission",
+          status == 'approved' ? "Approve & Grade" : "Reject Submission",
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (status == 'graded')
+            if (status == 'approved')
               TextField(
                 controller: marksController,
                 decoration: const InputDecoration(labelText: "Marks"),
@@ -255,7 +284,7 @@ class _TeacherHomeworkAssessmentScreenState
             TextField(
               controller: feedbackController,
               decoration: InputDecoration(
-                labelText: status == 'graded'
+                labelText: status == 'approved'
                     ? "Feedback / Marks Comment"
                     : "Reason for Rejection",
               ),
@@ -279,10 +308,10 @@ class _TeacherHomeworkAssessmentScreenState
               Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: status == 'graded' ? Colors.green : Colors.red,
+              backgroundColor: status == 'approved' ? Colors.green : Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: Text(status == 'graded' ? "Submit Grade" : "Confirm Reject"),
+            child: Text(status == 'approved' ? "Submit Grade" : "Confirm Reject"),
           ),
         ],
       ),

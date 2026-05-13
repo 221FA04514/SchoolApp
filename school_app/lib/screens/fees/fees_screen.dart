@@ -195,21 +195,54 @@ class _FeesScreenState extends State<FeesScreen> with SingleTickerProviderStateM
 
   Widget _buildHeader() {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 180,
       pinned: true,
-      elevation: 0,
+      stretch: true,
       backgroundColor: const Color(0xFF4A00E0),
-      automaticallyImplyLeading: false,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          child: IconButton(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
           ),
         ),
-        title: Row(
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        centerTitle: false,
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
+        title: const Text(
+          "Fees Portal",
+          style: TextStyle(
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
+        ),
+        background: Stack(
+          fit: StackFit.expand,
           children: [
-            IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20)),
-            const Text("FEES PORTAL", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: 1)),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF4A00E0), Color(0xFF8E2DE2)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+            // Abstract shape
+            Positioned(
+              right: -50,
+              top: -50,
+              child: CircleAvatar(
+                radius: 120,
+                backgroundColor: Colors.white.withOpacity(0.05),
+              ),
+            ),
           ],
         ),
       ),

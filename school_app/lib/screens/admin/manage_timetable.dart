@@ -593,18 +593,25 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 180,
+      expandedHeight: 200,
       pinned: true,
       stretch: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF673AB7),
       elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          child: const BackButton(color: Colors.white),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 20),
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
         title: const Text(
           "Timetable Studio",
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
             fontSize: 22,
             color: Colors.white,
             letterSpacing: -0.5,
@@ -613,21 +620,18 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            ClipPath(
-              clipper: _HeaderClipper(),
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
-                  ),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
                 ),
               ),
             ),
             Positioned(
-              right: -50,
-              top: -50,
+              right: -30,
+              top: -30,
               child: CircleAvatar(
                 radius: 100,
                 backgroundColor: Colors.white.withOpacity(0.05),
@@ -646,27 +650,35 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
             child: Row(
               children: [
-                Icon(Icons.folder_open_rounded, color: Colors.amber, size: 24),
-                SizedBox(width: 8),
-                Text(
-                  "Classes",
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.folder_copy_rounded, color: Colors.amber, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  "ACTIVE SECTIONS",
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.grey,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                    color: Colors.blueGrey,
+                    letterSpacing: 1.2,
                   ),
                 ),
               ],
             ),
           ),
           SizedBox(
-            height: 60,
+            height: 54,
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
               itemCount: sections.length,
               separatorBuilder: (_, __) => const SizedBox(width: 12),
@@ -679,23 +691,19 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
                     fetchTimetable(s["id"]);
                   },
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
+                    duration: const Duration(milliseconds: 250),
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF673AB7)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      color: isSelected ? const Color(0xFF673AB7) : Colors.white,
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: isSelected
-                            ? Colors.transparent
-                            : Colors.grey.withOpacity(0.2),
+                        color: isSelected ? Colors.transparent : Colors.grey.withOpacity(0.2),
                       ),
                       boxShadow: [
                         if (isSelected)
                           BoxShadow(
                             color: const Color(0xFF673AB7).withOpacity(0.3),
-                            blurRadius: 10,
+                            blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
                       ],
@@ -704,11 +712,9 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
                       child: Text(
                         s["name"],
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.grey.shade700,
-                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: isSelected ? Colors.white : Colors.blueGrey.shade700,
+                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -717,7 +723,7 @@ class _ManageTimetableScreenState extends State<ManageTimetableScreen> {
               },
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
         ],
       ),
     );

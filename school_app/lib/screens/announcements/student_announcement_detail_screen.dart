@@ -70,29 +70,26 @@ class _StudentAnnouncementDetailScreenState
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 160,
+      expandedHeight: 200,
       pinned: true,
       stretch: true,
       backgroundColor: const Color(0xFF4A00E0),
       elevation: 0,
       leading: Padding(
-        padding: const EdgeInsets.only(left: 10, top: 10, bottom: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
           child: const BackButton(color: Colors.white),
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 20),
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
         title: const Text(
           "Notice Detail",
           style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            fontSize: 20,
             color: Colors.white,
             letterSpacing: -0.5,
           ),
@@ -109,20 +106,29 @@ class _StudentAnnouncementDetailScreenState
                 ),
               ),
             ),
+            // Dynamic abstract shapes
             Positioned(
-              right: -50,
-              top: -50,
-              child: CircleAvatar(
-                radius: 100,
-                backgroundColor: Colors.white.withOpacity(0.05),
+              right: -40,
+              top: -40,
+              child: Container(
+                width: 180,
+                height: 180,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.1),
+                ),
               ),
             ),
             Positioned(
-              left: -30,
-              bottom: -30,
-              child: CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.white.withOpacity(0.03),
+              left: 40,
+              top: 80,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.05),
+                ),
               ),
             ),
           ],

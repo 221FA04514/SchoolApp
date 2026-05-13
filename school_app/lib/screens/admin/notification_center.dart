@@ -137,19 +137,26 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 140,
+      expandedHeight: 200,
       pinned: true,
       stretch: true,
       backgroundColor: const Color(0xFF673AB7),
       elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          child: const BackButton(color: Colors.white),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
         title: const Text(
           "Notify Hub",
           style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            fontSize: 22,
             color: Colors.white,
             letterSpacing: -0.5,
           ),
@@ -157,15 +164,12 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            ClipPath(
-              clipper: _HeaderClipper(),
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
-                  ),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
                 ),
               ),
             ),
@@ -173,7 +177,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
               right: -30,
               top: -30,
               child: CircleAvatar(
-                radius: 70,
+                radius: 100,
                 backgroundColor: Colors.white.withOpacity(0.05),
               ),
             ),

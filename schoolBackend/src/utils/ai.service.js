@@ -228,20 +228,22 @@ exports.generateSmartHomework = async ({ subject, topic, difficulty, count = 5 }
         Difficulty: ${difficulty}
         
         RULES:
-        1. Return as a JSON array of objects: 
-           [
-             { 
-               "question": "...", 
-               "answer": "...", 
-               "type": "mcq", 
-               "options": ["opt1", "opt2", "opt3", "opt4"] 
-             },
-             { 
-               "question": "...", 
-               "answer": "...", 
-               "type": "fib" 
-             }
-           ]
+        1. Return a JSON object containing a "questions" array: 
+           {
+             "questions": [
+               { 
+                 "question": "...", 
+                 "answer": "...", 
+                 "type": "mcq", 
+                 "options": ["opt1", "opt2", "opt3", "opt4"] 
+               },
+               { 
+                 "question": "...", 
+                 "answer": "...", 
+                 "type": "fib" 
+               }
+             ]
+           }
         2. Provide a mix of multiple choice (mcq) and fill-in-the-blank (fib) questions.
         3. For 'fib' (Fill in the Blank), the question should have a blank represented by underscores (e.g., "The capital of France is ______").
         4. Use plain text only. No LaTeX.

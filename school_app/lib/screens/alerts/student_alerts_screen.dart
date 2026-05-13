@@ -79,6 +79,9 @@ class _StudentAlertsScreenState extends State<StudentAlertsScreen> {
         setState(() {
           final List data = response["data"];
           for (var ann in data) {
+            // Filter out admin role announcements if they are already handled by mass notifications
+            if (ann["role"] == 'admin') continue;
+
             _notifications.add({
               "id": ann["id"]?.toString() ?? "",
               "title": ann["title"] ?? "Announcement",

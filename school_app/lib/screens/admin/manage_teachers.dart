@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/api/api_service.dart';
 import '../../core/widgets/success_feedback_overlay.dart';
+import '../dashboard/teacher_detail_screen.dart';
+
 
 class ManageTeachersScreen extends StatefulWidget {
   const ManageTeachersScreen({super.key});
@@ -93,18 +95,25 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
 
   Widget _buildSliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 180,
+      expandedHeight: 200,
       pinned: true,
       stretch: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: const Color(0xFF673AB7),
       elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: Colors.white.withOpacity(0.2),
+          child: const BackButton(color: Colors.white),
+        ),
+      ),
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 20),
+        titlePadding: const EdgeInsets.only(left: 72, bottom: 20),
         title: const Text(
           "Manage Teachers",
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w900,
             fontSize: 22,
             color: Colors.white,
             letterSpacing: -0.5,
@@ -113,24 +122,30 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
         background: Stack(
           fit: StackFit.expand,
           children: [
-            ClipPath(
-              clipper: _HeaderClipper(),
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
-                  ),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF673AB7), Color(0xFF512DA8)],
                 ),
               ),
             ),
+            // Abstract background elements
             Positioned(
-              right: -50,
-              top: -50,
+              right: -30,
+              top: -30,
               child: CircleAvatar(
                 radius: 100,
                 backgroundColor: Colors.white.withOpacity(0.05),
+              ),
+            ),
+            Positioned(
+              left: -20,
+              bottom: 40,
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor: Colors.white.withOpacity(0.03),
               ),
             ),
           ],
@@ -217,111 +232,115 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
   }
 
   Widget _buildTeacherCard(Map t) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: const Color(0xFF673AB7).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Icon(Icons.person, color: Color(0xFF673AB7), size: 28),
-              ),
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TeacherDetailScreen(teacher: t))),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
-                    t["name"],
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF673AB7).withOpacity(0.1),
+                      shape: BoxShape.circle,
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    child: const Center(
+                      child: Icon(Icons.person, color: Color(0xFF673AB7), size: 28),
+                    ),
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.book, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          t["subject"]?.toString() ?? "General",
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t["name"],
                           style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.book, size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                t["subject"]?.toString() ?? "General",
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
+                  const Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 20),
+                ],
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TeacherDetailScreen(teacher: t))),
+                    icon: const Icon(Icons.visibility_outlined, size: 16, color: Color(0xFF673AB7)),
+                    label: const Text("See Details", style: TextStyle(color: Color(0xFF673AB7), fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
                   Row(
                     children: [
-                      const Icon(Icons.phone, size: 14, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        t["phone"] ?? "Not provided",
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 13,
-                        ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: Color(0xFF673AB7), size: 20),
+                        onPressed: () => _showEditTeacherDialog(t),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(8),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                        onPressed: () => _deleteTeacher(t),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(8),
                       ),
                     ],
                   ),
                 ],
               ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.edit,
-                    color: Color(0xFF673AB7),
-                    size: 22,
-                  ),
-                  onPressed: () => _showEditTeacherDialog(t),
-                ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.delete_outline,
-                    color: Colors.red,
-                    size: 22,
-                  ),
-                  onPressed: () => _deleteTeacher(t),
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+
 
   void _showAddTeacherDialog() {
     final nameController = TextEditingController();
@@ -329,6 +348,12 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
     final passwordController = TextEditingController();
     final subjectController = TextEditingController();
     final phoneController = TextEditingController();
+    final dobController = TextEditingController();
+    final joiningDateController = TextEditingController();
+    final qualificationController = TextEditingController();
+    final experienceController = TextEditingController();
+    final addressController = TextEditingController();
+
 
     showModalBottomSheet(
       context: context,
@@ -384,6 +409,13 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                   "Contact Number",
                   Icons.phone_android_rounded,
                 ),
+                _buildDateField(context, dobController, "Date of Birth", Icons.calendar_today_rounded),
+                _buildDateField(context, joiningDateController, "Joining Date", Icons.work_history_rounded),
+
+                _buildTextField(qualificationController, "Highest Qualification", Icons.school_rounded),
+                _buildTextField(experienceController, "Total Experience", Icons.auto_graph_rounded),
+                _buildTextField(addressController, "Current Address", Icons.home_rounded),
+
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -405,7 +437,13 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                           "password": passwordController.text,
                           "subject": subjectController.text,
                           "phone": phoneController.text,
+                          "dob": dobController.text,
+                          "joining_date": joiningDateController.text,
+                          "qualification": qualificationController.text,
+                          "experience": experienceController.text,
+                          "address": addressController.text,
                         });
+
                         if (!mounted) return;
                         Navigator.pop(context);
                         SuccessFeedbackOverlay.show(context, message: "${nameController.text} has been registered.");
@@ -442,6 +480,12 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
     final passwordController = TextEditingController();
     final subjectController = TextEditingController(text: t["subject"]);
     final phoneController = TextEditingController(text: t["phone"]);
+    final dobController = TextEditingController(text: t["dob"] ?? "");
+    final joiningDateController = TextEditingController(text: t["joining_date"] ?? "");
+    final qualificationController = TextEditingController(text: t["qualification"] ?? "");
+    final experienceController = TextEditingController(text: t["experience"] ?? "");
+    final addressController = TextEditingController(text: t["address"] ?? "");
+
 
     showModalBottomSheet(
       context: context,
@@ -497,6 +541,13 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                   "Contact Number",
                   Icons.phone_android_rounded,
                 ),
+                _buildDateField(context, dobController, "Date of Birth", Icons.calendar_today_rounded),
+                _buildDateField(context, joiningDateController, "Joining Date", Icons.work_history_rounded),
+
+                _buildTextField(qualificationController, "Highest Qualification", Icons.school_rounded),
+                _buildTextField(experienceController, "Total Experience", Icons.auto_graph_rounded),
+                _buildTextField(addressController, "Current Address", Icons.home_rounded),
+
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,
@@ -517,7 +568,13 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
                           "password": passwordController.text,
                           "subject": subjectController.text,
                           "phone": phoneController.text,
+                          "dob": dobController.text,
+                          "joining_date": joiningDateController.text,
+                          "qualification": qualificationController.text,
+                          "experience": experienceController.text,
+                          "address": addressController.text,
                         });
+
                         if (!mounted) return;
                         Navigator.pop(context);
                         SuccessFeedbackOverlay.show(context, message: "Profile updated successfully.");
@@ -548,7 +605,60 @@ class _ManageTeachersScreenState extends State<ManageTeachersScreen> {
     );
   }
 
+  Widget _buildDateField(BuildContext context, TextEditingController controller, String label, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextField(
+        controller: controller,
+        readOnly: true,
+        onTap: () async {
+          final DateTime? picked = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime(1900),
+            lastDate: DateTime.now(),
+            builder: (context, child) {
+              return Theme(
+                data: Theme.of(context).copyWith(
+                  colorScheme: const ColorScheme.light(
+                    primary: Color(0xFF673AB7),
+                    onPrimary: Colors.white,
+                    onSurface: Colors.black,
+                  ),
+                ),
+                child: child!,
+              );
+            },
+          );
+          if (picked != null) {
+            controller.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+          }
+        },
+        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: Colors.blueGrey.shade400,
+            fontWeight: FontWeight.w500,
+          ),
+          prefixIcon: Icon(icon, size: 20, color: const Color(0xFF673AB7)),
+          filled: true,
+          fillColor: const Color(0xFFF4F6FB),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.blueGrey.shade50),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: Color(0xFF673AB7), width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildTextField(
+
     TextEditingController controller,
     String label,
     IconData icon, {
