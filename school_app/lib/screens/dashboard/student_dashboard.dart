@@ -309,10 +309,7 @@ class _HomeViewState extends State<_HomeView>
     )..repeat(reverse: true);
 
     _headerColorAnimation = _animationController.drive(
-      ColorTween(
-        begin: _dynamicColors[0],
-        end: _dynamicColors[2],
-      ),
+      ColorTween(begin: _dynamicColors[0], end: _dynamicColors[2]),
     );
 
     _circleAnimation = CurvedAnimation(
@@ -453,7 +450,8 @@ class _HomeViewState extends State<_HomeView>
             animation: _animationController,
             builder: (context, child) {
               final double currentHeight = constraints.biggest.height;
-              final double t = (maxHeight - currentHeight) / (maxHeight - minHeight);
+              final double t =
+                  (maxHeight - currentHeight) / (maxHeight - minHeight);
               final double contentOpacity = (1.0 - (t * 3)).clamp(0.0, 1.0);
               final double quoteOpacity = (1.0 - (t * 6)).clamp(0.0, 1.0);
               final double scale = 1.0 - (t * 0.2).clamp(0.0, 0.2);
@@ -461,7 +459,9 @@ class _HomeViewState extends State<_HomeView>
 
               return Container(
                 decoration: BoxDecoration(
-                  color: isShrunk ? const Color(0xFF4C1D95) : _headerColorAnimation.value,
+                  color: isShrunk
+                      ? const Color(0xFF4C1D95)
+                      : _headerColorAnimation.value,
 
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(t > 0.7 ? 0 : 30),
@@ -533,7 +533,10 @@ class _HomeViewState extends State<_HomeView>
                               padding: const EdgeInsets.all(2),
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white30, width: 2),
+                                border: Border.all(
+                                  color: Colors.white30,
+                                  width: 2,
+                                ),
                               ),
                               child: CircleAvatar(
                                 radius: 28,
@@ -564,7 +567,9 @@ class _HomeViewState extends State<_HomeView>
                                             ? "Welcome back,"
                                             : "Active Board"),
                                   style: TextStyle(
-                                    color: t > 0.7 ? Colors.amber : Colors.white70,
+                                    color: t > 0.7
+                                        ? Colors.amber
+                                        : Colors.white70,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w900,
                                     letterSpacing: t > 0.7 ? 2.5 : 0.5,
@@ -582,7 +587,9 @@ class _HomeViewState extends State<_HomeView>
                                 ),
                                 if (contentOpacity > 0.6)
                                   Text(
-                                    DateFormat('EEEE, MMM d').format(DateTime.now()),
+                                    DateFormat(
+                                      'EEEE, MMM d',
+                                    ).format(DateTime.now()),
                                     style: const TextStyle(
                                       color: Colors.white60,
                                       fontSize: 11,
@@ -612,7 +619,7 @@ class _HomeViewState extends State<_HomeView>
 
   List<Widget> _buildBackgroundCircles(double scrollT) {
     if (scrollT > 0.8) return [];
-    
+
     return [
       _buildCircle(
         top: -50 + (scrollT * 40),
@@ -648,10 +655,18 @@ class _HomeViewState extends State<_HomeView>
     required double offsetMultiplier,
   }) {
     return Positioned(
-      top: top != null ? top + (_circleAnimation.value * 20 * offsetMultiplier) : null,
-      bottom: bottom != null ? bottom + (_circleAnimation.value * 20 * offsetMultiplier) : null,
-      left: left != null ? left + (_circleAnimation.value * 20 * offsetMultiplier) : null,
-      right: right != null ? right + (_circleAnimation.value * 20 * offsetMultiplier) : null,
+      top: top != null
+          ? top + (_circleAnimation.value * 20 * offsetMultiplier)
+          : null,
+      bottom: bottom != null
+          ? bottom + (_circleAnimation.value * 20 * offsetMultiplier)
+          : null,
+      left: left != null
+          ? left + (_circleAnimation.value * 20 * offsetMultiplier)
+          : null,
+      right: right != null
+          ? right + (_circleAnimation.value * 20 * offsetMultiplier)
+          : null,
       child: Opacity(
         opacity: opacity,
         child: Container(
@@ -863,7 +878,7 @@ class _HomeViewState extends State<_HomeView>
           children: [
             Expanded(
               child: _buildRhythmicCard(
-                title: "Notices",
+                title: "Notice",
                 sub: "School Feed",
                 icon: Icons.campaign_rounded,
                 color: const Color(0xFFE1F5FE),
